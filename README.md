@@ -1,5 +1,11 @@
 # Sean Media Server
 
+**Version:** 1.0
+**Status:** Production Ready | Stable | Backed Up | Recoverable
+**Date:** June 30, 2026
+
+---
+
 A dedicated Raspberry Pi 4 home media server running Jellyfin.
 
 ## Purpose
@@ -17,12 +23,13 @@ The Media Server must remain fully functional even if Sean OS is offline.
 | Item | Value |
 |---|---|
 | Hostname | `media-server` |
-| IP Address | `10.0.0.225` |
+| IP Address | `10.0.0.225` (DHCP reserved) |
 | OS | Debian GNU/Linux 13 (Trixie) |
 | Jellyfin | 10.11.11 |
 | Web UI | http://10.0.0.225:8096 |
 | SSH | `ssh sean@10.0.0.225` |
 | Media Root | `/srv/media/` |
+| GitHub | https://github.com/Doggo215/Sean-Media-Server |
 
 ---
 
@@ -50,6 +57,7 @@ The Media Server must remain fully functional even if Sean OS is offline.
 | [HARDWARE.md](HARDWARE.md) | Hardware specifications |
 | [SOFTWARE.md](SOFTWARE.md) | Installed packages and services |
 | [BACKUP.md](BACKUP.md) | Backup procedures and recovery |
+| [DISASTER_RECOVERY.md](DISASTER_RECOVERY.md) | Complete rebuild guide — target 52 minutes |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Known issues and solutions |
 | [NOTES.md](NOTES.md) | Scratch pad and working notes |
 | [TODO.md](TODO.md) | Outstanding tasks |
@@ -58,13 +66,52 @@ The Media Server must remain fully functional even if Sean OS is offline.
 
 ## Scripts
 
-| Script | Purpose |
-|---|---|
-| `scripts/install.sh` | Full server installation from scratch |
-| `scripts/update.sh` | System and Jellyfin updates |
-| `scripts/backup.sh` | Backup Jellyfin config and metadata |
-| `scripts/restore.sh` | Restore from backup |
-| `scripts/health-check.sh` | Verify server health |
+| Script | Purpose | Schedule |
+|---|---|---|
+| `scripts/backup.sh` | Backup Jellyfin config, Samba, system | Nightly 2:00 AM |
+| `scripts/weekly-backup.sh` | Compressed archive + checksum + prune | Sunday 2:00 AM |
+| `scripts/verify-backup.sh` | Verify backup integrity | On demand |
+| `scripts/health-check.sh` | 19-point health report | On demand |
+| `scripts/restore.sh` | Full restore from backup archive | On demand |
+| `scripts/install.sh` | Full server installation from scratch | On demand |
+| `scripts/update.sh` | System and Jellyfin updates | On demand |
+
+---
+
+## Backup
+
+| Type | Frequency | Retained | Location |
+|---|---|---|---|
+| Daily | Every night at 2:00 AM | 7 days | `~/Backups/MediaServer-Backups/Daily/` |
+| Weekly | Every Sunday at 2:00 AM | 8 weeks | `~/Backups/MediaServer-Backups/Weekly/` |
+| Manual | On demand | Until pruned | `~/Backups/MediaServer-Backups/Manual/` |
+
+---
+
+## Network
+
+The Pi's IP address `10.0.0.225` is reserved via DHCP at the router (10.0.0.1).
+The IP is not hardcoded on the Pi — networking is centrally managed by the router.
+
+To update the reservation: log into http://10.0.0.1 → DHCP → Static Leases → `media-server`.
+
+---
+
+## Emergency
+
+```bash
+# Health check
+bash ~/Desktop/Sean-Media-Server/scripts/health-check.sh
+
+# Manual backup
+bash ~/Desktop/Sean-Media-Server/scripts/backup.sh manual
+
+# Verify backup
+bash ~/Desktop/Sean-Media-Server/scripts/verify-backup.sh ~/Backups/MediaServer-Backups/Daily/<date>
+
+# Check Jellyfin
+ssh sean@10.0.0.225 "systemctl status jellyfin --no-pager | head -5"
+```
 
 ---
 
@@ -72,4 +119,9 @@ The Media Server must remain fully functional even if Sean OS is offline.
 
 Phase 1 (Foundation) — Complete
 Phase 2 (Media Library) — Complete
-Phase 3 (First Import + Optimization) — In Progress
+Phase 3 (Import + Samba + Media Drop + Backup) — Complete
+
+**v1.0 — Production Ready**
+This server is in maintenance mode. Future work focuses on media library expansion,
+reliability improvements, and storage expansion to the planned 4TB drive.
+Sean OS integration will not begin until the Media Server has proven stable in production.

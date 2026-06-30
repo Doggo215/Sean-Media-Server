@@ -2,68 +2,82 @@
 
 ---
 
-## What Must Be Backed Up
+## What Is Backed Up
 
-| Data | Location | Priority |
+| Data | Location on Pi | Priority |
 |---|---|---|
 | Jellyfin database | `/var/lib/jellyfin/` | Critical |
 | Jellyfin config | `/etc/jellyfin/` | Critical |
-| Jellyfin logs | `/var/log/jellyfin/` | Low |
-| Media files | `/srv/media/` | Critical (irreplaceable for home videos/photos) |
-| Service files | `/etc/systemd/system/` | Medium |
-| SSH keys | `/home/sean/.ssh/` | Medium |
+| Samba config | `/etc/samba/smb.conf` | Critical |
+| System info | hostname, OS, packages | High |
+| Service definitions | `/etc/systemd/system/` | High |
+| Network config | `/etc/hosts`, `/etc/hostname` | High |
+| Media directory tree | `/srv/media/` (structure only, not files) | Medium |
+| Media Drop scripts | Mac local copy | High |
+| Launch Agent | `~/Library/LaunchAgents/` | High |
+| Documentation | All `.md` files | Medium |
 
-Media files (movies, TV) can be re-ripped from physical media if lost. Home videos and family photos cannot be replaced — treat them as highest priority.
+**Media files (movies, TV) are not backed up by these scripts.** They are large and assumed recoverable from physical media. Home videos and family photos should have a separate manual backup strategy.
 
 ---
 
-## Backup Strategy (To Be Implemented — Phase 5)
+## Schedule
 
-### Jellyfin Config + Database
+| Type | Frequency | Time | Script | Log |
+|---|---|---|---|---|
+| Nightly | Every night | 2:00 AM | `backup.sh` | `~/Library/Logs/MediaServer/backup.log` |
+| Weekly | Every Sunday | 2:00 AM | `weekly-backup.sh` | `~/Library/Logs/MediaServer/weekly-backup.log` |
+| Manual | On demand | — | `backup.sh manual` | stdout |
 
-Back up `/var/lib/jellyfin/` and `/etc/jellyfin/` to:
-- External USB drive (when 4TB drive is connected)
-- Periodic SCP transfer to Mac
-- Future: NAS or cloud backup
+Both jobs are configured in crontab on the Mac. To verify:
+```bash
+crontab -l | grep "Sean Media Server"
+```
 
-### Media Files
+---
 
-Home videos and family photos should eventually have a second copy:
-- Option A: Second external USB drive
-- Option B: NAS with RAID
-- Option C: Cloud backup (Backblaze B2 — low cost, large storage)
+## Retention Policy
 
-### Frequency
-
-| Backup Type | Recommended Frequency |
+| Type | Retained |
 |---|---|
-| Jellyfin config + database | Weekly |
-| Home videos / family photos | After each new import |
-| Full system image | After major changes |
+| Daily backups | 7 days |
+| Weekly archives | 8 weeks (compressed `.tar.gz` + SHA256 checksum) |
+| Manual backups | Until manually pruned |
 
 ---
 
-## Manual Backup Commands (Temporary — Until Automation)
+## Locations
 
-### Back up Jellyfin data to Mac
-
-```bash
-# From Mac
-rsync -av sean@10.0.0.225:/var/lib/jellyfin/ ~/Backups/jellyfin-data/
-rsync -av sean@10.0.0.225:/etc/jellyfin/ ~/Backups/jellyfin-config/
 ```
-
-### Back up home videos to Mac
-
-```bash
-rsync -av sean@10.0.0.225:/srv/media/home-videos/ ~/Backups/home-videos/
-rsync -av sean@10.0.0.225:/srv/media/family-photos/ ~/Backups/family-photos/
+~/Backups/MediaServer-Backups/
+├── Daily/          ← nightly backups (kept 7 days)
+├── Weekly/         ← compressed archives (kept 8 weeks)
+├── Manual/         ← on-demand backups (kept forever)
+└── Restore/        ← put archive here before running restore.sh
 ```
 
 ---
 
-## Restore Procedure
+## Scripts
 
-Documented in `scripts/restore.sh` (to be written in Phase 5).
+```bash
+# Manual backup right now
+bash ~/Desktop/Sean-Media-Server/scripts/backup.sh manual
 
-Key principle: restoring Jellyfin config + database to a fresh Jellyfin install on the same media paths should recover all libraries, metadata, artwork, users, and watch history without any manual re-import.
+# Weekly archive (compress + checksum + prune)
+bash ~/Desktop/Sean-Media-Server/scripts/weekly-backup.sh
+
+# Verify a backup
+bash ~/Desktop/Sean-Media-Server/scripts/verify-backup.sh ~/Backups/MediaServer-Backups/Daily/<date>
+
+# Restore from archive
+bash ~/Desktop/Sean-Media-Server/scripts/restore.sh ~/Backups/MediaServer-Backups/Weekly/media-server-backup-YYYY-MM-DD.tar.gz
+```
+
+---
+
+## Disaster Recovery
+
+See [DISASTER_RECOVERY.md](DISASTER_RECOVERY.md) for complete rebuild instructions.
+
+Target recovery time from a brand-new Pi: **under 60 minutes**.

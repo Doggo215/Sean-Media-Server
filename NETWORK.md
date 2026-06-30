@@ -7,32 +7,31 @@
 | Item | Value |
 |---|---|
 | Hostname | `media-server` |
-| Primary IP | `10.0.0.225` |
-| Secondary IP | `10.0.0.226` |
+| Primary IP | `10.0.0.225` (DHCP reserved — permanent) |
 | Network | `10.0.0.0/24` |
-| Connection | Wired Ethernet (preferred, always use wired) |
+| Connection | Wired Ethernet |
 | Router | `10.0.0.1` |
 | SSH | `ssh sean@10.0.0.225` |
 | Jellyfin Web UI | `http://10.0.0.225:8096` |
 | mDNS | `media-server.local` (via avahi-daemon) |
-
-## IP Address Note
-
-The Pi currently has a DHCP-assigned IP. A static IP assignment is planned to ensure TVs, the Mac, and future Sean OS integration always reach the server at the same address.
-
-**Recommended static IP:** `10.0.0.50` (or another low-conflict address — confirm with router before assigning)
+| GitHub | https://github.com/Doggo215/Sean-Media-Server |
 
 ---
 
-## Pending: Static IP Assignment
+## Static IP — DHCP Reservation
 
-Options (in order of preference):
+The IP address `10.0.0.225` is permanently reserved for this Pi via a DHCP reservation at the router.
 
-1. **Router DHCP reservation** — assign `10.0.0.225` permanently to the Pi's MAC address in the router admin panel. No Pi configuration required. Most reliable.
+**The IP is not hardcoded on the Pi.** Networking is centrally managed by the router. If the Pi is ever replaced:
+1. Log into http://10.0.0.1
+2. Go to DHCP → Static Leases (or DHCP Reservations)
+3. Find `media-server` and update the MAC address to the new Pi's MAC
+4. The IP `10.0.0.225` will continue to be assigned automatically
 
-2. **Pi-side static IP** — configure via NetworkManager on the Pi. Works without router access.
-
-Static IP should be configured before Phase 6 (Sean OS integration) to ensure reliable API access from Pi 5.
+To find the Pi's MAC address:
+```bash
+ssh sean@10.0.0.225 "ip link show eth0 | grep link/ether"
+```
 
 ---
 
@@ -44,6 +43,10 @@ Static IP should be configured before Phase 6 (Sean OS integration) to ensure re
 | 8096 | Jellyfin HTTP | Local network only |
 | 139 | Samba NetBIOS | Local network only |
 | 445 | Samba SMB | Local network only |
+
+No ports are exposed to the internet. Remote access has not been configured and is not planned unless explicitly requested.
+
+---
 
 ## SMB File Shares
 
@@ -66,8 +69,6 @@ Connect from macOS Finder → Go → Connect to Server:
 6. Check "Remember this password in my keychain" to avoid future prompts
 
 To mount both shares, repeat with `smb://media-server.local/incoming`.
-
-No ports are exposed to the internet. Remote access has not been configured and is not planned unless explicitly requested.
 
 ---
 
