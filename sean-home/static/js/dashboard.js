@@ -139,6 +139,72 @@ async function pollSports() {
   setTimeout(pollSports, nextDelay);
 }
 
+function renderGaming(data) {
+  const sections = [];
+
+  const fn = data.fortnite;
+  if (fn && fn.available) {
+    const statusLine = fn.status ? `<div class="gaming-status">Status: ${fn.status}</div>` : "";
+    const newsLines = (fn.news || [])
+      .slice(0, 2)
+      .map((n) => `<div class="gaming-line">📰 ${n.title}</div>`)
+      .join("");
+    const shopLines = (fn.shop || [])
+      .slice(0, 3)
+      .map((s) => `<div class="gaming-line">🛒 ${s.name}${s.price ? ` — ${s.price} V-Bucks` : ""}</div>`)
+      .join("");
+    sections.push(`
+      <div class="gaming-section">
+        <div class="gaming-subtitle">Fortnite</div>
+        ${statusLine}
+        ${newsLines || `<div class="gaming-line gaming-dim">No news available</div>`}
+        ${shopLines || `<div class="gaming-line gaming-dim">Shop unavailable</div>`}
+      </div>
+    `);
+  } else {
+    sections.push(`
+      <div class="gaming-section">
+        <div class="gaming-subtitle">Fortnite</div>
+        <div class="gaming-line gaming-dim">Fortnite data unavailable</div>
+      </div>
+    `);
+  }
+
+  sections.push(`
+    <div class="gaming-section">
+      <div class="gaming-subtitle">PlayStation</div>
+      <div class="gaming-line gaming-dim">${data.playstation.placeholder}</div>
+    </div>
+  `);
+
+  sections.push(`
+    <div class="gaming-section">
+      <div class="gaming-subtitle">Friends Online</div>
+      <div class="gaming-line gaming-dim">${data.friends_online.placeholder}</div>
+    </div>
+  `);
+
+  return sections.join("");
+}
+
+async function pollGaming() {
+  const bodyEl = document.getElementById("gaming-body");
+  if (!bodyEl) return;
+
+  try {
+    const res = await fetch("/api/gaming");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    bodyEl.innerHTML = data.available
+      ? renderGaming(data)
+      : `<p class="placeholder-text">Gaming data unavailable</p>`;
+  } catch (err) {
+    // Fail gracefully — never crash the dashboard over a gaming data outage
+    console.warn("Sean Home: gaming unavailable", err);
+    bodyEl.innerHTML = `<p class="placeholder-text">Gaming data unavailable</p>`;
+  }
+}
+
 tickClock();
 setInterval(tickClock, 1000);
 
@@ -149,3 +215,6 @@ pollWeather();
 setInterval(pollWeather, 600000); // 10 min — matches server-side cache TTL
 
 pollSports(); // self-scheduling — interval adapts to live-game state
+
+pollGaming();
+setInterval(pollGaming, 1800000); // 30 min — matches server-side cache TTL

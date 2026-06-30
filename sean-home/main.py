@@ -71,6 +71,15 @@ SPORTS_CACHE_TTL_LIVE = 60    # poll faster while a tracked game is in progress
 SPORTS_CACHE_TTL_IDLE = 600   # otherwise match the weather cache cadence
 _sports_cache = {"data": None, "fetched_at": 0, "ttl": SPORTS_CACHE_TTL_IDLE}
 
+# fortnite-api.com — free, public, no auth required
+FORTNITE_NEWS_URL = "https://fortnite-api.com/v2/news/br"
+FORTNITE_SHOP_URL = "https://fortnite-api.com/v2/shop"
+# Epic's own status page API — public, no auth, standard statuspage.io format
+EPIC_STATUS_URL = "https://status.epicgames.com/api/v2/summary.json"
+
+GAMING_CACHE_TTL = 1800  # 30 min — shop/news/status don't change minute to minute
+_gaming_cache = {"data": None, "fetched_at": 0}
+
 app = FastAPI(title="Sean Home", version="1.0.0")
 app.mount("/static", StaticFiles(directory="/home/sean/sean-home/static"), name="static")
 templates = Jinja2Templates(directory="/home/sean/sean-home/templates")
@@ -358,6 +367,100 @@ async def sports():
     _sports_cache["data"] = result
     _sports_cache["fetched_at"] = now
     _sports_cache["ttl"] = ttl
+    return {**result, "cached": False}
+
+
+# ─── Gaming ──────────────────────────────────────────────────────────────────
+
+async def fetch_fortnite_news(client):
+    resp = await client.get(FORTNITE_NEWS_URL)
+    resp.raise_for_status()
+    return resp.json()
+
+
+async def fetch_fortnite_shop(client):
+    resp = await client.get(FORTNITE_SHOP_URL)
+    resp.raise_for_status()
+    return resp.json()
+
+
+async def fetch_epic_status(client):
+    resp = await client.get(EPIC_STATUS_URL)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def parse_fortnite_news(payload):
+    motds = ((payload.get("data") or {}).get("motds") or [])[:3]
+    return [{"title": m.get("title"), "body": m.get("body")} for m in motds if m.get("title")]
+
+
+def parse_fortnite_shop(payload):
+    entries = ((payload.get("data") or {}).get("entries") or [])[:6]
+    items = []
+    for e in entries:
+        br_items = e.get("brItems") or []
+        name = br_items[0]["name"] if br_items else (e.get("layout") or {}).get("name", "Item")
+        items.append({"name": name, "price": e.get("finalPrice")})
+    return items
+
+
+def parse_epic_status(payload):
+    components = payload.get("components") or []
+    fortnite_component = next((c for c in components if "fortnite" in c.get("name", "").lower()), None)
+    if fortnite_component:
+        return fortnite_component.get("status")
+    return (payload.get("status") or {}).get("description")
+
+
+@app.get("/api/gaming")
+async def gaming():
+    now = time.time()
+
+    if _gaming_cache["data"] and (now - _gaming_cache["fetched_at"]) < GAMING_CACHE_TTL:
+        return {**_gaming_cache["data"], "cached": True}
+
+    fortnite = {"available": False, "news": [], "shop": [], "status": None}
+    got_any = False
+
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        try:
+            fortnite["news"] = parse_fortnite_news(await fetch_fortnite_news(client))
+            got_any = True
+        except Exception:
+            pass
+
+        try:
+            fortnite["shop"] = parse_fortnite_shop(await fetch_fortnite_shop(client))
+            got_any = True
+        except Exception:
+            pass
+
+        try:
+            fortnite["status"] = parse_epic_status(await fetch_epic_status(client))
+            got_any = True
+        except Exception:
+            pass
+
+    fortnite["available"] = got_any
+
+    # PSN has no supported public API for friends/presence — these stay
+    # permanent placeholders until an official integration exists.
+    result = {
+        "available": True,
+        "fortnite": fortnite,
+        "playstation": {
+            "available": False,
+            "placeholder": "PlayStation status — coming soon (requires an official API)",
+        },
+        "friends_online": {
+            "available": False,
+            "placeholder": "Friends online — coming soon",
+        },
+    }
+
+    _gaming_cache["data"] = result
+    _gaming_cache["fetched_at"] = now
     return {**result, "cached": False}
 
 
