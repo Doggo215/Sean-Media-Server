@@ -1,7 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════
-   Sean Home — TV-First Dashboard
-   Designed for 65" TV at 1920×1080, read from couch distance.
-   Philosophy: Apple TV + PlayStation 5 + ESPN on one screen.
+   Sean Home — Premium TV Dashboard
+   65" display · 1920×1080 · 8–12 ft viewing distance
+   Design language: Apple TV · PlayStation 5 · ESPN
+   Rule: if choosing between MORE info or BIGGER info → always BIGGER
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── Reset ─────────────────────────────────────────────────── */
@@ -9,93 +10,96 @@
 * { scrollbar-width: none; }
 *::-webkit-scrollbar { display: none; }
 
-/* ── Design tokens ──────────────────────────────────────────── */
+/* ── Tokens ─────────────────────────────────────────────────── */
 :root {
-  /* Palette */
-  --bg:           #07070c;
-  --surface:      #0e0e18;
-  --surface-2:    #181828;
-  --surface-3:    #1e1e32;
-  --border:       #1e1e32;
-  --border-light: #2a2a45;
-  --text:         #f0f0fc;
-  --text-dim:     #6868a0;
-  --text-muted:   #3a3a60;
+  /* Surfaces — glass, not flat boxes */
+  --bg:          #05050f;
+  --glass:       rgba(255,255,255,0.035);
+  --glass-hi:    rgba(255,255,255,0.065);
+  --glass-edge:  rgba(255,255,255,0.08);
+  --border:      rgba(255,255,255,0.07);
 
-  /* Accent colors */
-  --accent:       #4f8ef7;
-  --accent-2:     #7c3aed;
-  --green:        #3ddc84;
-  --yellow:       #f5c418;
-  --red:          #ff4558;
-  --red-dim:      rgba(255, 69, 88, 0.15);
+  /* Text */
+  --text:        #f2f2ff;
+  --text-2:      rgba(242,242,255,0.62);
+  --text-3:      rgba(242,242,255,0.28);
 
-  /* Layout */
-  --header-h:     88px;
-  --tonight-h:    128px;
-  --strip-h:      44px;
-  --nav-h:        76px;
-  --h-pad:        48px;
-  --gap:          14px;
-  --radius:       16px;
-  --radius-sm:    10px;
+  /* Accents */
+  --blue:        #4f8ef7;
+  --blue-dim:    rgba(79,142,247,0.14);
+  --purple:      #8b5cf6;
+  --green:       #34d399;
+  --red:         #f43f5e;
+  --red-dim:     rgba(244,63,94,0.14);
+  --yellow:      #fbbf24;
+  --orange:      #fb923c;
+
+  /* Philly team colors */
+  --c-phillies:  #e81828;
+  --c-eagles:    #00b140;
+  --c-sixers:    #006bb6;
+  --c-flyers:    #f74902;
+  --c-worldcup:  #d4af37;
+
+  /* Layout safe zones */
+  --h-pad:       80px;
+  --gap:         18px;
+  --r:           22px;
+  --r-sm:        14px;
 }
 
-/* ── Keyframe animations ────────────────────────────────────── */
-@keyframes ambientDrift {
-  0%   { transform: translate(0, 0) scale(1); }
-  33%  { transform: translate(60px, -40px) scale(1.08); }
-  66%  { transform: translate(-30px, 50px) scale(0.95); }
-  100% { transform: translate(0, 0) scale(1); }
+/* ── Keyframes — all GPU-composited (transform + opacity only) ── */
+
+/* Ambient blobs drift slowly behind everything */
+@keyframes blobA {
+  0%,100% { transform: translate(0,0) scale(1); }
+  40%      { transform: translate(80px,-60px) scale(1.12); }
+  70%      { transform: translate(-40px,80px) scale(0.9); }
+}
+@keyframes blobB {
+  0%,100% { transform: translate(0,0) scale(1); }
+  35%      { transform: translate(-100px,50px) scale(1.08); }
+  65%      { transform: translate(60px,-80px) scale(0.95); }
 }
 
-@keyframes cardEnter {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
+/* Cards enter from below on load */
+@keyframes rise {
+  from { opacity:0; transform: translateY(28px); }
+  to   { opacity:1; transform: translateY(0); }
 }
 
-@keyframes weatherFloat {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-10px); }
+/* Weather icon gentle float */
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-14px); }
 }
 
-@keyframes livePulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.4; transform: scale(0.85); }
+/* Live sports dot pulse */
+@keyframes liveDot {
+  0%,100% { opacity:1; transform:scale(1); }
+  50%      { opacity:0.3; transform:scale(0.7); }
 }
 
-@keyframes scoreFlash {
-  0%, 100% { color: var(--red); }
-  50%       { color: #ff8899; }
+/* Gaming Online badge breathe */
+@keyframes breathe {
+  0%,100% { opacity:0.7; }
+  50%      { opacity:1; }
 }
 
-@keyframes glowPulse {
-  0%, 100% { opacity: 0.5; }
-  50%       { opacity: 1; }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-@keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+/* Live score color pulse */
+@keyframes scorePulse {
+  0%,100% { color: var(--red); }
+  50%      { color: #ff8fa3; }
 }
 
 /* ── Page shell ─────────────────────────────────────────────── */
-html {
-  height: 100%;
-  overflow: hidden;
-  font-size: 18px;
-}
+html { height:100%; overflow:hidden; font-size:18px; }
 
 body {
-  height: 100%;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  height:100%;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
   background: var(--bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
@@ -103,781 +107,817 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── Ambient background ─────────────────────────────────────── */
-/* Slow-moving radial blobs — GPU composited via transform only */
+/* ── Ambient background — slow-moving glow blobs ────────────── */
 .ambient-bg {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-  z-index: 0;
-}
-
-.ambient-bg::before,
-.ambient-bg::after {
-  content: "";
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(120px);
-  opacity: 0.07;
+  position:fixed; inset:0;
+  pointer-events:none;
+  overflow:hidden;
+  z-index:0;
 }
 
 .ambient-bg::before {
-  width: 600px;
-  height: 600px;
-  background: var(--accent);
-  top: -200px;
-  right: 10%;
-  animation: ambientDrift 30s ease-in-out infinite;
+  content:"";
+  position:absolute;
+  width:900px; height:700px;
+  border-radius:50%;
+  background: radial-gradient(ellipse at center, rgba(79,142,247,0.15) 0%, transparent 70%);
+  top:-200px; right:5%;
+  animation: blobA 35s ease-in-out infinite;
 }
 
 .ambient-bg::after {
-  width: 500px;
-  height: 500px;
-  background: var(--accent-2);
-  bottom: -150px;
-  left: 15%;
-  animation: ambientDrift 38s ease-in-out infinite reverse;
+  content:"";
+  position:absolute;
+  width:700px; height:900px;
+  border-radius:50%;
+  background: radial-gradient(ellipse at center, rgba(139,92,246,0.10) 0%, transparent 70%);
+  bottom:-250px; left:10%;
+  animation: blobB 42s ease-in-out infinite;
 }
 
-/* Everything above the ambient layer */
-.tv-header,
-.tonight-hero,
-.tv-content-grid,
-.ms-strip,
-.tv-nav { position: relative; z-index: 1; }
+/* Ensure all layout is above ambient layer */
+.tv-header,.tonight-hero,.tv-content-grid,.ms-strip,.tv-nav {
+  position:relative; z-index:1;
+}
 
-/* ── Header ─────────────────────────────────────────────────── */
+/* ── HEADER ─────────────────────────────────────────────────── */
 .tv-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: var(--header-h);
-  padding: 0 var(--h-pad);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:48px;
+  padding: 18px var(--h-pad) 14px;
   border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-  gap: 32px;
+  flex-shrink:0;
+  animation: rise 0.5s ease both;
 }
 
-/* Clock */
+/* Giant clock — the visual anchor of the whole screen */
 .tv-clock {
-  font-size: 5.6rem;
+  font-size: 8rem;
   font-weight: 100;
-  letter-spacing: -5px;
+  letter-spacing: -8px;
   line-height: 1;
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
 
 .tv-date {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.18em;
+  font-size: 1.1rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--text-dim);
-  margin-top: 4px;
+  color: var(--text-2);
+  margin-top: 6px;
 }
 
-/* Header weather */
+/* Header weather — large and clear */
 .tv-header-weather {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-shrink: 0;
+  display:flex; align-items:center; gap:20px; flex-shrink:0;
 }
 
 .tv-hw-icon {
-  font-size: 3.2rem;
-  line-height: 1;
-  display: inline-block;
+  font-size: 3.6rem;
+  line-height:1;
+  display:inline-block;
 }
 
-.tv-hw-info { display: flex; flex-direction: column; gap: 2px; }
+.tv-hw-info { display:flex; flex-direction:column; gap:4px; }
 
 .tv-hw-temp {
-  font-size: 2.8rem;
+  font-size: 3.8rem;
   font-weight: 200;
-  line-height: 1;
-  letter-spacing: -2px;
+  line-height:1;
+  letter-spacing:-3px;
   color: var(--text);
 }
 
 .tv-hw-desc {
-  font-size: 0.82rem;
-  color: var(--text-dim);
+  font-size: 1.15rem;
+  color: var(--text-2);
 }
 
-/* Brand */
 .tv-brand {
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  flex-shrink: 0;
+  font-size:0.7rem;
+  font-weight:700;
+  letter-spacing:0.28em;
+  text-transform:uppercase;
+  color: var(--text-3);
+  flex-shrink:0;
 }
 
-/* ── Tonight hero ───────────────────────────────────────────── */
+/* ── TONIGHT — HERO STRIP ───────────────────────────────────── */
 .tonight-hero {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  height: var(--tonight-h);
-  padding: 0 var(--h-pad);
+  display:flex;
+  align-items:center;
+  gap:28px;
+  padding: 14px var(--h-pad);
   border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-  animation: cardEnter 0.5s ease 0.05s both;
+  flex-shrink:0;
+  animation: rise 0.5s ease 0.06s both;
 }
 
 .tonight-label {
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight:700;
+  letter-spacing:0.22em;
+  text-transform:uppercase;
+  color: var(--text-3);
   writing-mode: vertical-rl;
   transform: rotate(180deg);
-  flex-shrink: 0;
+  flex-shrink:0;
+  user-select:none;
 }
 
 .tonight-callouts {
-  display: flex;
+  display:flex;
   gap: 16px;
-  flex: 1;
-  align-items: stretch;
-  height: 92px;
-  overflow: hidden;
+  flex:1;
+  align-items:stretch;
+  height: 106px;
+  overflow:hidden;
 }
 
-/* Individual Tonight callout */
+/* Callout — one big idea, instantly scannable */
 .tn-callout {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 0 22px;
-  background: var(--surface);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  animation: fadeIn 0.4s ease both;
+  flex:1;
+  display:flex;
+  align-items:center;
+  gap:20px;
+  padding: 0 24px;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  overflow:hidden;
+  animation: rise 0.45s ease both;
 }
 
 .tn-callout-live {
-  border-color: rgba(255, 69, 88, 0.35);
-  background: linear-gradient(135deg, var(--surface) 0%, rgba(255, 69, 88, 0.06) 100%);
+  border-color: rgba(244,63,94,0.3);
+  background: linear-gradient(110deg, rgba(244,63,94,0.07) 0%, var(--glass) 60%);
 }
 
-.tn-callout-dim {
-  opacity: 0.5;
-}
+.tn-callout-dim { opacity: 0.45; }
 
-.tn-co-icon {
-  font-size: 2.6rem;
-  line-height: 1;
-  flex-shrink: 0;
-}
+.tn-co-icon { font-size:2.8rem; line-height:1; flex-shrink:0; }
 
-.tn-co-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tn-co-body { display:flex; flex-direction:column; gap:3px; min-width:0; }
 
+/* The NUMBER — temperature, score, progress — must dominate */
 .tn-co-value {
-  font-size: 2.4rem;
+  font-size: 3.2rem;
   font-weight: 200;
-  line-height: 1;
-  letter-spacing: -2px;
+  line-height:1;
+  letter-spacing:-2px;
   color: var(--text);
-  white-space: nowrap;
+  white-space:nowrap;
 }
-
-.tn-co-unit { font-size: 1.2rem; font-weight: 400; letter-spacing: 0; }
-
-.tn-co-label {
-  font-size: 1.05rem;
-  color: var(--text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.tn-co-sub {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  margin-top: 1px;
-}
-
+.tn-co-unit { font-size:1.6rem; font-weight:400; letter-spacing:0; }
 .tn-co-win  { color: var(--green); }
 .tn-co-loss { color: var(--red); }
 
-/* Live badge inside Tonight callout */
+/* The descriptor — what is this number? */
+.tn-co-label {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--text);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+/* Context line — small but NOT tiny */
+.tn-co-sub {
+  font-size: 1.1rem;
+  color: var(--text-2);
+}
+
+/* Live badge inside tonight callout */
 .tn-co-live-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  font-size:1.0rem;
+  font-weight:800;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
   color: var(--red);
-  margin-bottom: 4px;
+  margin-bottom:2px;
 }
 
 .tn-live-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
+  width:9px; height:9px;
+  border-radius:50%;
   background: var(--red);
-  flex-shrink: 0;
-  animation: livePulse 1.4s ease-in-out infinite;
+  flex-shrink:0;
+  animation: liveDot 1.4s ease-in-out infinite;
 }
 
-/* ── Content grid ───────────────────────────────────────────── */
+/* ── CONTENT GRID ────────────────────────────────────────────── */
 .tv-content-grid {
-  display: grid;
-  grid-template-columns: 2fr 1.05fr 1.55fr;
+  display:grid;
+  grid-template-columns: 2.1fr 1fr 1.5fr;
   grid-template-rows: 1fr 1fr;
   grid-template-areas:
     "sports weather entertainment"
     "sports weather gaming";
   gap: var(--gap);
   padding: var(--gap) var(--h-pad);
-  flex: 1;
-  min-height: 0;
+  flex:1;
+  min-height:0;
 }
 
-/* ── Card base ──────────────────────────────────────────────── */
+/* ── CARD BASE — glass, not flat ─────────────────────────────── */
 .card {
-  background: var(--surface);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  animation: cardEnter 0.55s ease both;
-  position: relative;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  animation: rise 0.55s ease both;
+  position:relative;
+  /* Depth via shadow, not backdrop-filter (Pi 4 safe) */
+  box-shadow:
+    0 4px 24px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
+/* Subtle top-edge highlight — the "glass" catch light */
+.card::after {
+  content:"";
+  position:absolute;
+  top:0; left:16px; right:16px;
+  height:1px;
+  background: linear-gradient(90deg,
+    transparent, rgba(255,255,255,0.1) 30%, rgba(255,255,255,0.1) 70%, transparent);
+  pointer-events:none;
+}
+
+/* Card section label — small but legible */
 .card-label {
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  padding: 16px 24px 0;
-  flex-shrink: 0;
-  margin-bottom: 8px;
+  font-size: 1.05rem;
+  font-weight:700;
+  letter-spacing:0.16em;
+  text-transform:uppercase;
+  color: var(--text-3);
+  padding: 18px 28px 0;
+  flex-shrink:0;
 }
 
 .card-placeholder {
-  color: var(--text-dim);
-  font-size: 0.9rem;
-  opacity: 0.5;
+  color: var(--text-2);
+  font-size: 1.2rem;
+  opacity:0.5;
+  padding: 8px 0;
 }
 
-/* ── Sports card ────────────────────────────────────────────── */
+/* ── SPORTS — Wide scoreboard ────────────────────────────────── */
 .card-sports {
   grid-area: sports;
-  animation-delay: 0.1s;
+  animation-delay: 0.08s;
 }
 
 .scoreboard {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-evenly;
-  padding: 4px 24px 16px;
-  overflow: hidden;
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-evenly;
+  padding: 8px 28px 20px;
+  overflow:hidden;
 }
 
-/* Scoreboard row */
+/* Each team row */
 .sb-row {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
+  display:flex;
+  align-items:center;
+  gap:16px;
+  padding: 12px 12px 12px 16px;
+  border-radius: var(--r-sm);
+  border-left: 3px solid transparent;
+  transition: background 0.3s ease;
 }
-
-.sb-row:last-child { border-bottom: none; }
 
 .sb-row-live {
-  background: linear-gradient(90deg, rgba(255,69,88,0.06) 0%, transparent 60%);
-  margin: 0 -8px;
-  padding: 10px 8px;
-  border-radius: 8px;
-  border-bottom: none;
+  background: linear-gradient(90deg, rgba(244,63,94,0.1) 0%, transparent 70%);
+  border-left-color: var(--red);
 }
 
+/* Team color left borders (JS adds data-team attribute) */
+.sb-row[data-team="phillies"] { border-left-color: var(--c-phillies); }
+.sb-row[data-team="eagles"]   { border-left-color: var(--c-eagles); }
+.sb-row[data-team="sixers"]   { border-left-color: var(--c-sixers); }
+.sb-row[data-team="flyers"]   { border-left-color: var(--c-flyers); }
+.sb-row[data-team="world_cup"]{ border-left-color: var(--c-worldcup); }
+
+/* Team name — must be readable from the couch */
 .sb-team {
-  font-size: 1.55rem;
+  font-size: 2.4rem;
   font-weight: 800;
   color: var(--text);
   text-transform: uppercase;
   letter-spacing: -0.02em;
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  flex:1;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  line-height:1;
 }
 
+/* Score — the most important number in the card */
 .sb-score {
-  font-size: 2.4rem;
+  font-size: 4.2rem;
   font-weight: 100;
   color: var(--text);
-  letter-spacing: -2px;
-  text-align: right;
-  flex-shrink: 0;
-  min-width: 90px;
+  letter-spacing:-3px;
+  line-height:1;
+  text-align:right;
+  flex-shrink:0;
+  min-width:110px;
 }
 
-.sb-score-live { animation: scoreFlash 2s ease-in-out infinite; }
+.sb-score-live { animation: scorePulse 2s ease-in-out infinite; }
 
+.sb-score-win  { color: var(--green); }
+.sb-score-loss { color: var(--red); }
+
+/* Game time (next game) */
 .sb-time {
-  font-size: 1.8rem;
+  font-size: 2.6rem;
   font-weight: 200;
-  color: var(--accent);
-  letter-spacing: -1px;
-  text-align: right;
-  flex-shrink: 0;
-  min-width: 100px;
+  color: var(--blue);
+  letter-spacing:-2px;
+  line-height:1;
+  text-align:right;
+  flex-shrink:0;
+  min-width:120px;
 }
 
+/* Status badge — LIVE / Win / Loss / Final */
 .sb-badge {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  text-align: right;
-  flex-shrink: 0;
-  min-width: 100px;
-  padding-left: 12px;
+  font-size: 1.1rem;
+  font-weight:700;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  text-align:right;
+  flex-shrink:0;
+  min-width:100px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
 }
 
 .sb-badge-live {
   color: var(--red);
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
+  font-size:1.2rem;
 }
 
 .sb-live-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
+  width:10px; height:10px;
+  border-radius:50%;
   background: var(--red);
-  flex-shrink: 0;
-  animation: livePulse 1.4s ease-in-out infinite;
+  flex-shrink:0;
+  animation: liveDot 1.4s ease-in-out infinite;
 }
 
-.sb-badge-next    { color: var(--accent); }
-.sb-badge-win     { color: var(--green); }
-.sb-badge-loss    { color: var(--red); }
-.sb-badge-final   { color: var(--text-dim); }
+.sb-badge-next  { color: var(--blue); }
+.sb-badge-win   { color: var(--green); }
+.sb-badge-loss  { color: var(--red); }
+.sb-badge-final { color: var(--text-2); }
 
-.sb-score-final.sb-badge-win  { color: var(--green); }
-.sb-score-final.sb-badge-loss { color: var(--red); }
+.sb-placeholder {
+  color: var(--text-2);
+  font-size: 1.3rem;
+  padding: 12px 0;
+  opacity:0.5;
+}
 
-.sb-placeholder { color: var(--text-dim); opacity: 0.5; font-size: 0.9rem; padding: 8px 0; }
-
-/* ── Weather card ───────────────────────────────────────────── */
+/* ── WEATHER — Full visual card ──────────────────────────────── */
 .card-weather {
   grid-area: weather;
-  animation-delay: 0.15s;
+  animation-delay: 0.14s;
+  /* Default: neutral dark sky */
+  background: linear-gradient(175deg, #08091a 0%, #0a0d1e 50%, #060810 100%);
+  border-color: rgba(79,142,247,0.18);
+}
+
+/* Dynamic sky backgrounds — JS adds these classes */
+.card-weather.weather-sunny {
+  background: linear-gradient(175deg, #0f0c00 0%, #1a1400 40%, #0e0a00 100%);
+  border-color: rgba(251,191,36,0.2);
+}
+.card-weather.weather-cloudy {
+  background: linear-gradient(175deg, #08091a 0%, #10121e 100%);
+}
+.card-weather.weather-rainy {
+  background: linear-gradient(175deg, #04060e 0%, #060c18 60%, #080a14 100%);
+  border-color: rgba(79,142,247,0.2);
+}
+.card-weather.weather-snowy {
+  background: linear-gradient(175deg, #08091a 0%, #121828 100%);
+  border-color: rgba(186,230,253,0.15);
+}
+.card-weather.weather-stormy {
+  background: linear-gradient(175deg, #08050f 0%, #0e0818 100%);
+  border-color: rgba(139,92,246,0.2);
 }
 
 .weather-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 16px 24px 24px;
-  gap: 6px;
-  text-align: center;
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding: 20px 20px 28px;
+  gap:10px;
+  text-align:center;
+  overflow:hidden;
 }
 
-.weather-icon-wrap { flex-shrink: 0; }
+/* The weather icon — enormous, floating */
+.weather-icon-wrap { flex-shrink:0; }
 
 .weather-icon {
-  font-size: 6rem;
-  line-height: 1;
-  display: inline-block;
-  animation: weatherFloat 5s ease-in-out infinite;
+  font-size: 8rem;
+  line-height:1;
+  display:inline-block;
+  animation: float 5s ease-in-out infinite;
+  /* Drop shadow gives emoji depth */
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.5));
 }
 
+/* The temperature — this is the ANSWER to "what's the weather" */
 .weather-temp {
-  font-size: 5.2rem;
+  font-size: 7rem;
   font-weight: 100;
-  letter-spacing: -6px;
-  line-height: 1;
+  letter-spacing:-8px;
+  line-height:1;
   color: var(--text);
-  margin-top: 8px;
+  margin-top:4px;
 }
 
 .weather-condition {
-  font-size: 1.15rem;
-  color: var(--text-dim);
-  letter-spacing: 0.02em;
-  margin-top: 6px;
+  font-size: 1.6rem;
+  color: var(--text-2);
+  letter-spacing:0.02em;
+  margin-top:6px;
 }
 
 .weather-hilo {
-  font-size: 1rem;
-  color: var(--text-dim);
-  margin-top: 2px;
+  font-size: 1.4rem;
+  color: var(--text-2);
+  margin-top:2px;
 }
 
 .weather-unavailable {
-  color: var(--text-dim);
-  font-size: 0.9rem;
-  opacity: 0.6;
+  color: var(--text-2);
+  font-size: 1.3rem;
+  opacity:0.55;
 }
 
-/* ── Entertainment card ─────────────────────────────────────── */
+/* ── ENTERTAINMENT — Poster-style ────────────────────────────── */
 .card-entertainment {
   grid-area: entertainment;
   animation-delay: 0.2s;
 }
 
 .jf-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 0 20px 16px;
-  overflow: hidden;
-  gap: 0;
-  min-height: 0;
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  padding: 4px 24px 18px;
+  overflow:hidden;
+  min-height:0;
 }
 
 .jf-section-label {
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: 10px;
-  margin-top: 10px;
-  flex-shrink: 0;
+  font-size: 1.05rem;
+  font-weight:700;
+  letter-spacing:0.16em;
+  text-transform:uppercase;
+  color: var(--text-3);
+  margin: 12px 0 10px;
+  flex-shrink:0;
 }
 
-.jf-section-label:first-child { margin-top: 0; }
+.jf-section-label:first-child { margin-top:0; }
 
-/* Poster-style row */
+/* Poster row — artwork + title */
 .jf-poster-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
+  display:flex;
+  align-items:center;
+  gap:16px;
   padding: 8px 0;
   border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+  flex-shrink:0;
+}
+.jf-poster-row:last-child { border-bottom:none; }
+
+/* Colored poster art placeholder — until real artwork is wired */
+.jf-thumb {
+  width:52px; height:74px;
+  border-radius:8px;
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:1.8rem;
+  font-weight:800;
+  color:rgba(255,255,255,0.45);
+  background: linear-gradient(135deg, #1a2a4a 0%, #2d1b69 100%);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  overflow:hidden;
+  position:relative;
 }
 
-.jf-poster-row:last-child { border-bottom: none; }
-
-/* Colored poster thumbnail */
-.jf-thumb {
-  width: 44px;
-  height: 62px;
-  border-radius: 6px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: rgba(255,255,255,0.5);
-  background: linear-gradient(135deg, #1a2a4a 0%, #2d1b69 100%);
-  overflow: hidden;
+.jf-thumb::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%);
 }
 
 .jf-thumb-sm {
-  width: 38px;
-  height: 52px;
-  font-size: 1.2rem;
-  background: linear-gradient(135deg, #1a3050 0%, #2a1555 100%);
+  width:44px; height:62px; font-size:1.5rem;
+  background: linear-gradient(135deg, #1a3050 0%, #251555 100%);
 }
 
-.jf-poster-info { flex: 1; min-width: 0; }
+.jf-poster-info { flex:1; min-width:0; }
 
 .jf-poster-title {
-  font-size: 1.0rem;
-  font-weight: 600;
+  font-size: 1.3rem;
+  font-weight:600;
   color: var(--text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  line-height: 1.3;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  line-height:1.3;
 }
 
 .jf-poster-meta {
-  font-size: 0.75rem;
-  color: var(--text-dim);
-  margin-top: 3px;
+  font-size: 1.0rem;
+  color: var(--text-2);
+  margin-top:4px;
 }
 
 .jf-progress-bar {
-  height: 3px;
-  background: var(--surface-3);
-  border-radius: 2px;
-  margin-top: 7px;
-  overflow: hidden;
+  height:3px;
+  background: rgba(255,255,255,0.1);
+  border-radius:2px;
+  margin-top:8px;
+  overflow:hidden;
 }
 
 .jf-progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--accent), #a78bfa);
-  border-radius: 2px;
-  transition: width 0.6s ease;
+  height:100%;
+  background: linear-gradient(90deg, var(--blue), var(--purple));
+  border-radius:2px;
+  transition: width 0.8s ease;
 }
 
-/* ── Gaming card ────────────────────────────────────────────── */
+/* ── GAMING — Neon feature card ──────────────────────────────── */
 .card-gaming {
   grid-area: gaming;
-  animation-delay: 0.25s;
-  background: linear-gradient(145deg, #0a0618 0%, #130a28 60%, #0d0820 100%);
-  border-color: rgba(124, 58, 237, 0.3);
+  animation-delay: 0.26s;
+  background: linear-gradient(145deg, #07041a 0%, #100828 55%, #08061a 100%);
+  border-color: rgba(139,92,246,0.3);
+  box-shadow:
+    0 4px 24px rgba(0,0,0,0.4),
+    0 0 40px rgba(139,92,246,0.06),
+    inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
-/* Subtle geometric grid lines in background */
+/* Faint grid lines — gives a "game HUD" feeling */
 .gaming-grid-line {
-  position: absolute;
-  inset: 0;
+  position:absolute;
+  inset:0;
   background-image:
-    repeating-linear-gradient(0deg, rgba(124,58,237,0.04) 0px, rgba(124,58,237,0.04) 1px, transparent 1px, transparent 40px),
-    repeating-linear-gradient(90deg, rgba(124,58,237,0.04) 0px, rgba(124,58,237,0.04) 1px, transparent 1px, transparent 40px);
-  border-radius: inherit;
-  pointer-events: none;
+    repeating-linear-gradient(0deg,   rgba(139,92,246,0.035) 0px, rgba(139,92,246,0.035) 1px, transparent 1px, transparent 44px),
+    repeating-linear-gradient(90deg,  rgba(139,92,246,0.035) 0px, rgba(139,92,246,0.035) 1px, transparent 1px, transparent 44px);
+  border-radius:inherit;
+  pointer-events:none;
 }
 
-.card-label-gaming {
-  color: rgba(139, 92, 246, 0.5);
-}
+.card-label-gaming { color: rgba(139,92,246,0.45); }
 
 .gaming-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 0 20px 16px;
-  overflow: hidden;
-  min-height: 0;
-  gap: 10px;
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  padding: 4px 24px 18px;
+  overflow:hidden;
+  min-height:0;
+  gap:10px;
 }
 
-/* Big hero section at top of gaming card */
+/* Big title — "Fortnite" must dominate the card */
 .gaming-hero {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
-  flex-shrink: 0;
+  display:flex;
+  align-items:baseline;
+  gap:16px;
+  flex-shrink:0;
 }
 
 .gaming-hero-title {
-  font-size: 2rem;
-  font-weight: 800;
-  line-height: 1;
-  background: linear-gradient(135deg, #a78bfa 0%, #818cf8 60%, #60a5fa 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-size: 3rem;
+  font-weight:800;
+  line-height:1;
+  background: linear-gradient(125deg, #a78bfa 0%, #818cf8 50%, #60a5fa 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
 }
 
 .gaming-status-badge {
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: 1.0rem;
+  font-weight:700;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
   color: var(--green);
-  background: rgba(61, 220, 132, 0.12);
-  border: 1px solid rgba(61, 220, 132, 0.25);
-  padding: 3px 10px;
-  border-radius: 100px;
-  animation: glowPulse 3s ease-in-out infinite;
+  background: rgba(52,211,153,0.12);
+  border: 1px solid rgba(52,211,153,0.25);
+  padding: 4px 12px;
+  border-radius:100px;
+  flex-shrink:0;
+  animation: breathe 3s ease-in-out infinite;
 }
 
 .gaming-news-item {
-  font-size: 0.95rem;
-  color: rgba(240,240,252,0.75);
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(124, 58, 237, 0.12);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex-shrink: 0;
+  font-size: 1.2rem;
+  color: rgba(242,242,255,0.72);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  flex-shrink:0;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(139,92,246,0.1);
+  line-height:1.3;
 }
 
-.gaming-news-item:last-of-type { border-bottom: none; }
+.gaming-news-item:last-of-type { border-bottom:none; }
 
 .gaming-shop-hdr {
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(139, 92, 246, 0.6);
-  margin-top: 2px;
-  flex-shrink: 0;
+  font-size: 1.0rem;
+  font-weight:700;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color: rgba(139,92,246,0.6);
+  flex-shrink:0;
+  margin-top:4px;
 }
 
 .gaming-shop-item {
-  font-size: 0.88rem;
-  color: var(--text-dim);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex-shrink: 0;
+  font-size: 1.1rem;
+  color: var(--text-2);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  flex-shrink:0;
 }
 
 .gaming-coming-soon {
-  font-size: 0.8rem;
-  color: rgba(139, 92, 246, 0.4);
-  margin-top: auto;
-  padding-top: 8px;
-  flex-shrink: 0;
+  font-size: 1.0rem;
+  color: rgba(139,92,246,0.35);
+  margin-top:auto;
+  padding-top:8px;
+  flex-shrink:0;
 }
 
-.gaming-coming-icon { margin-right: 6px; }
+.gaming-dim { color: var(--text-3); font-size:1.2rem; }
 
-.gaming-dim { color: var(--text-muted); font-size: 0.9rem; }
-
-/* ── Media Server strip ─────────────────────────────────────── */
+/* ── MEDIA SERVER STRIP — compact health bar ─────────────────── */
 .ms-strip {
-  height: var(--strip-h);
-  display: flex;
-  align-items: center;
+  display:flex;
+  align-items:center;
   padding: 0 var(--h-pad);
+  height:46px;
   border-top: 1px solid var(--border);
-  flex-shrink: 0;
-  position: relative;
-  z-index: 1;
+  flex-shrink:0;
+  position:relative; z-index:1;
 }
 
 .ms-strip-body {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: nowrap;
-  overflow: hidden;
-  width: 100%;
+  display:flex;
+  align-items:center;
+  gap:20px;
+  overflow:hidden;
+  width:100%;
 }
 
 .ms-svc {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 0.78rem;
-  color: var(--text-dim);
-  flex-shrink: 0;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size: 0.9rem;
+  color: var(--text-2);
+  flex-shrink:0;
 }
 
 .svc-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  flex-shrink: 0;
+  width:8px; height:8px;
+  border-radius:50%;
+  flex-shrink:0;
 }
 
-.svc-ok   { background: var(--green); box-shadow: 0 0 6px rgba(61,220,132,0.5); }
+.svc-ok   { background: var(--green); box-shadow: 0 0 8px rgba(52,211,153,0.6); }
 .svc-warn { background: var(--yellow); }
 .svc-err  { background: var(--red); }
 
-.ms-sep {
-  color: var(--text-muted);
-  font-size: 1rem;
-  flex-shrink: 0;
-}
+.ms-sep { color: var(--text-3); font-size:1rem; flex-shrink:0; }
 
 .ms-stat-chip {
-  font-size: 0.75rem;
-  color: var(--text-dim);
-  flex-shrink: 0;
-  white-space: nowrap;
+  font-size: 0.88rem;
+  color: var(--text-2);
+  flex-shrink:0;
+  white-space:nowrap;
 }
+.ms-stat-chip strong { color: var(--text); font-weight:600; }
 
-.ms-stat-chip strong { color: var(--text); font-weight: 600; }
-
-/* Legacy stat classes (hidden system card) */
+/* Legacy stat value classes (hidden #system-card) */
 .stat-value.warn  { color: var(--yellow); }
 .stat-value.alert { color: var(--red); }
 .stat-value.good  { color: var(--green); }
 
-/* ── Navigation ─────────────────────────────────────────────── */
+/* ── NAV — Large pill buttons ────────────────────────────────── */
 .tv-nav {
-  display: flex;
-  gap: 12px;
-  padding: 10px var(--h-pad) 12px;
+  display:flex;
+  gap:14px;
+  padding: 10px var(--h-pad) 14px;
   border-top: 1px solid var(--border);
-  flex-shrink: 0;
-  position: relative;
-  z-index: 1;
+  flex-shrink:0;
+  position:relative; z-index:1;
 }
 
 .tv-nav-btn {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
+  flex:1;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
   padding: 16px 20px;
-  background: var(--surface-2);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-sm);
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
   color: var(--text);
-  font-size: 1.08rem;
-  font-weight: 600;
-  text-decoration: none;
-  letter-spacing: 0.03em;
-  transition: background 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+  font-size: 1.3rem;
+  font-weight:600;
+  text-decoration:none;
+  letter-spacing:0.03em;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06);
+  transition: background 0.2s, border-color 0.2s, transform 0.15s, box-shadow 0.2s;
 }
 
-.tv-nav-btn:hover,
-.tv-nav-btn:focus {
-  background: rgba(79, 142, 247, 0.12);
-  border-color: rgba(79, 142, 247, 0.5);
-  transform: translateY(-2px);
-  outline: none;
+.tv-nav-btn:hover, .tv-nav-btn:focus {
+  background: rgba(79,142,247,0.12);
+  border-color: rgba(79,142,247,0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
+  outline:none;
 }
 
-.tv-nav-icon { font-size: 1.3rem; }
+.tv-nav-icon { font-size:1.6rem; }
 
 .tv-nav-btn-status {
-  flex: 0 0 52px;
-  font-size: 1.2rem;
-  color: var(--text-muted);
-  padding: 16px;
+  flex: 0 0 58px;
+  font-size:1.4rem;
+  color: var(--text-3);
+  padding:16px;
 }
 
-/* ── Responsive fallback — Mac browser ──────────────────────── */
-@media (max-width: 1400px) {
-  :root { --h-pad: 32px; }
-  .tv-clock      { font-size: 4.2rem; }
-  .tv-hw-temp    { font-size: 2.2rem; }
-  .weather-temp  { font-size: 4rem; }
-  .weather-icon  { font-size: 4.5rem; }
+/* ── Responsive — Mac browser fallback ──────────────────────── */
+@media (max-width:1500px) {
+  :root { --h-pad:48px; }
+  .tv-clock        { font-size:6rem; }
+  .tv-hw-temp      { font-size:3rem; }
+  .weather-temp    { font-size:5.5rem; }
+  .weather-icon    { font-size:6rem; }
+  .sb-score        { font-size:3.2rem; }
+  .sb-team         { font-size:2rem; }
+  .tn-co-value     { font-size:2.6rem; }
 }
 
-@media (max-width: 1000px) {
-  :root { --h-pad: 20px; }
+@media (max-width:1100px) {
+  :root { --h-pad:28px; }
+  .tv-clock { font-size:4.5rem; }
+  .tv-hw-temp { font-size:2.4rem; }
   .tv-content-grid {
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto auto;
     grid-template-areas:
       "sports weather"
-      "entertainment gaming"
       "entertainment gaming";
   }
-  .tv-clock    { font-size: 3.2rem; }
-  .tv-hw-temp  { font-size: 1.8rem; }
-  .tonight-hero { height: auto; min-height: 110px; padding: 12px var(--h-pad); }
-  .tonight-callouts { flex-wrap: wrap; height: auto; }
+  .card-sports { grid-row: auto; }
+  .card-weather { grid-row: auto; }
+  .tonight-hero { height:auto; min-height:120px; padding:14px var(--h-pad); }
+  .tonight-callouts { height:auto; flex-wrap:wrap; }
 }
 
-@media (max-width: 700px) {
+@media (max-width:750px) {
   .tv-content-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns:1fr;
     grid-template-areas: "sports" "weather" "entertainment" "gaming";
   }
-  .tv-header { flex-wrap: wrap; gap: 10px; height: auto; padding: 12px var(--h-pad); }
-  .tv-nav-icon { display: none; }
+  .tv-header { flex-wrap:wrap; height:auto; padding:14px var(--h-pad); gap:16px; }
+  .tv-nav-icon { display:none; }
 }

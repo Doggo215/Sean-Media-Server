@@ -1,56 +1,56 @@
-// Sean Home — TV Dashboard client
-// Designed for 65" TV at 1920×1080, couch-distance readability.
+// Sean Home — TV Dashboard
+// 65" display · 8–12 ft viewing distance · Apple TV / PS5 design language
 
 /* ── Clock ──────────────────────────────────────────────────── */
 function tickClock() {
   const el = document.getElementById("clock");
   if (!el) return;
   el.textContent = new Date().toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
+    hour: "numeric", minute: "2-digit",
   });
 }
 
 /* ── Utility ─────────────────────────────────────────────────── */
-function classify(value, warnAt, alertAt) {
-  if (value >= alertAt) return "alert";
-  if (value >= warnAt) return "warn";
-  return "good";
+function classify(v, warnAt, alertAt) {
+  return v >= alertAt ? "alert" : v >= warnAt ? "warn" : "good";
 }
 
 function svcDot(status) {
-  if (status === "active")   return `<span class="svc-dot svc-ok"></span>`;
-  if (status === "inactive") return `<span class="svc-dot svc-warn"></span>`;
-  return `<span class="svc-dot svc-err"></span>`;
+  const cls = status === "active" ? "svc-ok" : status === "inactive" ? "svc-warn" : "svc-err";
+  return `<span class="svc-dot ${cls}"></span>`;
 }
 
-/* ── System status (writes to hidden #system-card IDs) ────── */
+// Map condition text → CSS class for weather card background
+function weatherClass(condition) {
+  const c = (condition || "").toLowerCase();
+  if (c.includes("thunder") || c.includes("storm")) return "weather-stormy";
+  if (c.includes("snow") || c.includes("blizzard") || c.includes("ice")) return "weather-snowy";
+  if (c.includes("rain") || c.includes("drizzle") || c.includes("shower")) return "weather-rainy";
+  if (c.includes("cloud") || c.includes("overcast") || c.includes("fog") || c.includes("mist")) return "weather-cloudy";
+  if (c.includes("sun") || c.includes("clear") || c.includes("fair")) return "weather-sunny";
+  return "";
+}
+
+/* ── System status (writes to hidden #system-card IDs) ──────── */
 async function pollSystemStatus() {
   try {
     const res = await fetch("/api/system");
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) throw new Error();
     const d = await res.json();
-
-    const diskEl  = document.getElementById("disk-pct");
-    const freeEl  = document.getElementById("disk-free");
-    const ramEl   = document.getElementById("ram-pct");
-    const cpuEl   = document.getElementById("cpu-pct");
-    const tempEl  = document.getElementById("cpu-temp");
-
-    if (diskEl)  { diskEl.textContent = `${d.disk.root_pct}%`; diskEl.className = "stat-value " + classify(d.disk.root_pct, 80, 95); }
-    if (freeEl)    freeEl.textContent  = `${d.disk.root_free_gb} GB`;
-    if (ramEl)   { ramEl.textContent  = `${d.ram.used_pct}%`;  ramEl.className  = "stat-value " + classify(d.ram.used_pct, 80, 95); }
-    if (cpuEl)     cpuEl.textContent  = `${d.cpu.used_pct}%`;
-    if (tempEl && d.cpu.temp_c !== null) {
-      tempEl.textContent = `${d.cpu.temp_c}°C`;
-      tempEl.className   = "stat-value " + classify(d.cpu.temp_c, 70, 80);
-    }
-  } catch (err) {
-    console.warn("Sean Home: system status unavailable", err);
-  }
+    const set = (id, text, cls) => {
+      const el = document.getElementById(id);
+      if (el) { el.textContent = text; if (cls) el.className = "stat-value " + cls; }
+    };
+    set("disk-pct",  `${d.disk.root_pct}%`,       classify(d.disk.root_pct,  80, 95));
+    set("disk-free", `${d.disk.root_free_gb} GB`);
+    set("ram-pct",   `${d.ram.used_pct}%`,         classify(d.ram.used_pct,   80, 95));
+    set("cpu-pct",   `${d.cpu.used_pct}%`);
+    if (d.cpu.temp_c !== null)
+      set("cpu-temp", `${d.cpu.temp_c}°C`, classify(d.cpu.temp_c, 70, 80));
+  } catch { /* hidden card — fail silently */ }
 }
 
-/* ── Weather ──────────────────────────────────────────────────── */
+/* ── Weather ─────────────────────────────────────────────────── */
 async function pollWeather() {
   const iconEl = document.getElementById("weather-icon");
   const tempEl = document.getElementById("weather-temp");
@@ -59,24 +59,24 @@ async function pollWeather() {
   const hwIcon = document.getElementById("header-weather-icon");
   const hwTemp = document.getElementById("header-weather-temp");
   const hwDesc = document.getElementById("header-weather-desc");
-
+  const card   = document.getElementById("weather-card");
   if (!iconEl) return;
+
+  const setUnavailable = () => {
+    iconEl.textContent = "⚠️";
+    if (tempEl) tempEl.textContent = "—°";
+    if (condEl) { condEl.textContent = "Unavailable"; condEl.className = "weather-unavailable"; }
+    if (hiloEl) hiloEl.textContent = "";
+    if (hwIcon) hwIcon.textContent = "⚠️";
+    if (hwTemp) hwTemp.textContent = "—°";
+    if (hwDesc) hwDesc.textContent = "Weather unavailable";
+  };
 
   try {
     const res = await fetch("/api/weather");
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) throw new Error();
     const d = await res.json();
-
-    if (!d.available) {
-      iconEl.textContent = "⚠️";
-      if (tempEl)  tempEl.textContent = "—°";
-      if (condEl) { condEl.textContent = "Unavailable"; condEl.className = "weather-unavailable"; }
-      if (hiloEl)  hiloEl.textContent = "";
-      if (hwIcon)  hwIcon.textContent = "⚠️";
-      if (hwTemp)  hwTemp.textContent = "—°";
-      if (hwDesc)  hwDesc.textContent = "Weather unavailable";
-      return;
-    }
+    if (!d.available) { setUnavailable(); return; }
 
     iconEl.textContent = d.icon;
     if (tempEl) tempEl.textContent = `${d.temperature_f}°`;
@@ -86,14 +86,15 @@ async function pollWeather() {
     if (hwIcon) hwIcon.textContent = d.icon;
     if (hwTemp) hwTemp.textContent = `${d.temperature_f}°`;
     if (hwDesc) hwDesc.textContent = `${d.condition}  ·  Low ${d.low_f}°`;
-  } catch (err) {
-    console.warn("Sean Home: weather unavailable", err);
-    iconEl.textContent = "⚠️";
-    if (tempEl)  tempEl.textContent = "—°";
-    if (condEl) { condEl.textContent = "Unavailable"; condEl.className = "weather-unavailable"; }
-    if (hwIcon)  hwIcon.textContent = "⚠️";
-    if (hwTemp)  hwTemp.textContent = "—°";
-    if (hwDesc)  hwDesc.textContent = "Weather unavailable";
+
+    // Apply dynamic sky background to weather card
+    if (card) {
+      const wClass = weatherClass(d.condition);
+      card.className = `card card-weather${wClass ? " " + wClass : ""}`;
+    }
+  } catch {
+    console.warn("Sean Home: weather unavailable");
+    setUnavailable();
   }
 }
 
@@ -102,20 +103,20 @@ async function pollTonight() {
   const bodyEl = document.getElementById("tonight-body");
   if (!bodyEl) return;
 
+  const unavail = () => {
+    bodyEl.innerHTML = `<div class="tn-callout tn-callout-dim"><div class="tn-co-body"><div class="tn-co-label">Tonight unavailable</div></div></div>`;
+    setTimeout(pollTonight, 120000);
+  };
+
   try {
     const res = await fetch("/api/tonight");
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) throw new Error();
     const d = await res.json();
-
-    if (!d.available) {
-      bodyEl.innerHTML = `<div class="tn-callout tn-callout-dim"><div class="tn-co-label">Tonight unavailable</div></div>`;
-      setTimeout(pollTonight, 120000);
-      return;
-    }
+    if (!d.available) { unavail(); return; }
 
     const callouts = [];
 
-    // ── 1. Weather callout ──
+    // ── 1. Weather ──
     if (d.weather && d.weather.available) {
       callouts.push(`
         <div class="tn-callout">
@@ -125,11 +126,10 @@ async function pollTonight() {
             <div class="tn-co-label">${d.weather.condition}</div>
             <div class="tn-co-sub">Low ${d.weather.low_f}° tonight</div>
           </div>
-        </div>
-      `);
+        </div>`);
     }
 
-    // ── 2. Best sports callout ──
+    // ── 2. Best sports item ──
     const live     = d.sports.live     || [];
     const upcoming = d.sports.upcoming || [];
     const finals   = d.sports.finals   || [];
@@ -144,8 +144,7 @@ async function pollTonight() {
             <div class="tn-co-label">${g.team} vs ${g.opponent}</div>
             <div class="tn-co-sub">${g.period || ""}</div>
           </div>
-        </div>
-      `);
+        </div>`);
     } else if (upcoming.length) {
       const g = upcoming[0];
       callouts.push(`
@@ -154,10 +153,9 @@ async function pollTonight() {
           <div class="tn-co-body">
             <div class="tn-co-value">${g.time || "TBD"}</div>
             <div class="tn-co-label">${g.team} vs ${g.opponent}</div>
-            <div class="tn-co-sub">Game tonight</div>
+            <div class="tn-co-sub">Tonight</div>
           </div>
-        </div>
-      `);
+        </div>`);
     } else if (finals.length) {
       const g = finals[0];
       const rClass = g.result === "W" ? "tn-co-win" : g.result === "L" ? "tn-co-loss" : "";
@@ -170,20 +168,18 @@ async function pollTonight() {
             <div class="tn-co-label">${g.team} · ${rWord}</div>
             <div class="tn-co-sub">vs ${g.opponent}</div>
           </div>
-        </div>
-      `);
+        </div>`);
     } else {
       callouts.push(`
         <div class="tn-callout tn-callout-dim">
           <div class="tn-co-icon">🏟️</div>
           <div class="tn-co-body">
-            <div class="tn-co-label">No tracked games tonight</div>
+            <div class="tn-co-label">No games tonight</div>
           </div>
-        </div>
-      `);
+        </div>`);
     }
 
-    // ── 3. Media callout ──
+    // ── 3. Media ──
     if (d.media && d.media.available) {
       const cw = (d.media.continue_watching || [])[0];
       const ra = (d.media.recently_added   || [])[0];
@@ -196,8 +192,7 @@ async function pollTonight() {
               <div class="tn-co-label">${cw.label}</div>
               <div class="tn-co-sub">Continue watching</div>
             </div>
-          </div>
-        `);
+          </div>`);
       } else if (ra) {
         callouts.push(`
           <div class="tn-callout">
@@ -206,31 +201,32 @@ async function pollTonight() {
               <div class="tn-co-label">${ra.label}</div>
               <div class="tn-co-sub">New in library</div>
             </div>
-          </div>
-        `);
+          </div>`);
       }
     }
 
     bodyEl.innerHTML = callouts.join("");
-  } catch (err) {
-    console.warn("Sean Home: tonight unavailable", err);
-    bodyEl.innerHTML = `<div class="tn-callout tn-callout-dim"><div class="tn-co-label">Tonight unavailable</div></div>`;
+  } catch {
+    console.warn("Sean Home: tonight unavailable");
+    unavail();
   }
 
   setTimeout(pollTonight, 120000);
 }
 
-/* ── Sports — scoreboard style ────────────────────────────────── */
+/* ── Sports — scoreboard, team colors ────────────────────────── */
 const SPORTS_ORDER = ["phillies", "eagles", "sixers", "flyers", "world_cup"];
 
-function renderSportsRow(team) {
+function renderSportsRow(team, key) {
   if (!team || team.available === false) return "";
 
+  const teamAttr = `data-team="${key}"`;
+
   if (team.live) {
-    const score = team.live.score || `${team.live.my_score ?? "—"}-${team.live.opp_score ?? "—"}`;
+    const score  = team.live.score || `${team.live.my_score ?? "—"}-${team.live.opp_score ?? "—"}`;
     const period = team.live.period ? ` · ${team.live.period}` : "";
     return `
-      <div class="sb-row sb-row-live">
+      <div class="sb-row sb-row-live" ${teamAttr}>
         <div class="sb-team">${team.label}</div>
         <div class="sb-score sb-score-live">${score}</div>
         <div class="sb-badge sb-badge-live"><span class="sb-live-dot"></span>LIVE${period}</div>
@@ -238,10 +234,9 @@ function renderSportsRow(team) {
   }
 
   if (team.next) {
-    const opp  = team.next.opponent ? `vs ${team.next.opponent}` : (team.next.matchup || "");
-    const when = `${team.next.date || ""} ${team.next.time || ""}`.trim();
+    const opp = team.next.opponent ? `vs ${team.next.opponent}` : (team.next.matchup || "");
     return `
-      <div class="sb-row">
+      <div class="sb-row" ${teamAttr}>
         <div class="sb-team">${team.label}</div>
         <div class="sb-time">${team.next.time || "TBD"}</div>
         <div class="sb-badge sb-badge-next">${opp}</div>
@@ -252,11 +247,11 @@ function renderSportsRow(team) {
     const score  = team.last.score || `${team.last.my_score ?? "—"}-${team.last.opp_score ?? "—"}`;
     const result = team.last.result || "";
     const rClass = result === "W" ? "sb-badge-win" : result === "L" ? "sb-badge-loss" : "sb-badge-final";
-    const scoreClass = result === "W" ? "sb-badge-win" : result === "L" ? "sb-badge-loss" : "";
+    const sClass = result === "W" ? "sb-score-win" : result === "L" ? "sb-score-loss" : "";
     return `
-      <div class="sb-row">
+      <div class="sb-row" ${teamAttr}>
         <div class="sb-team">${team.label}</div>
-        <div class="sb-score sb-score-final ${scoreClass}">${score}</div>
+        <div class="sb-score sb-score-final ${sClass}">${score}</div>
         <div class="sb-badge ${rClass}">${result || "Final"}</div>
       </div>`;
   }
@@ -271,7 +266,7 @@ async function pollSports() {
 
   try {
     const res = await fetch("/api/sports");
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) throw new Error();
     const d = await res.json();
 
     if (!d.available) {
@@ -279,14 +274,14 @@ async function pollSports() {
     } else {
       const rows = SPORTS_ORDER
         .filter(k => d.teams[k])
-        .map(k => renderSportsRow(d.teams[k]))
+        .map(k => renderSportsRow(d.teams[k], k))
         .filter(Boolean)
         .join("");
-      listEl.innerHTML = rows || `<div class="sb-placeholder">No data</div>`;
+      listEl.innerHTML = rows || `<div class="sb-placeholder">No games data</div>`;
       nextDelay = d.live_active ? 60000 : 600000;
     }
-  } catch (err) {
-    console.warn("Sean Home: sports unavailable", err);
+  } catch {
+    console.warn("Sean Home: sports unavailable");
     listEl.innerHTML = `<div class="sb-placeholder">Sports unavailable</div>`;
   }
 
@@ -299,14 +294,10 @@ function renderGaming(data) {
   const parts = [];
 
   if (fn && fn.available) {
-    const badge = fn.status
-      ? `<span class="gaming-status-badge">${fn.status}</span>`
-      : `<span class="gaming-status-badge">Online</span>`;
-
+    const badge = `<span class="gaming-status-badge">${fn.status || "Online"}</span>`;
     parts.push(`<div class="gaming-hero"><div class="gaming-hero-title">Fortnite</div>${badge}</div>`);
 
-    const news = (fn.news || []).slice(0, 2);
-    for (const n of news) {
+    for (const n of (fn.news || []).slice(0, 2)) {
       parts.push(`<div class="gaming-news-item">📰 ${n.title}</div>`);
     }
 
@@ -314,8 +305,7 @@ function renderGaming(data) {
     if (shop.length) {
       parts.push(`<div class="gaming-shop-hdr">Today's Shop</div>`);
       for (const s of shop) {
-        const vb = s.price ? ` · ${s.price} V-Bucks` : "";
-        parts.push(`<div class="gaming-shop-item">🛒 ${s.name}${vb}</div>`);
+        parts.push(`<div class="gaming-shop-item">🛒 ${s.name}${s.price ? ` · ${s.price} V-Bucks` : ""}</div>`);
       }
     }
   } else {
@@ -323,8 +313,7 @@ function renderGaming(data) {
     parts.push(`<div class="gaming-dim">Fortnite data unavailable</div>`);
   }
 
-  parts.push(`<div class="gaming-coming-soon"><span class="gaming-coming-icon">🎮</span>PS5 integration coming soon</div>`);
-
+  parts.push(`<div class="gaming-coming-soon">🎮 PS5 integration coming soon</div>`);
   return parts.join("");
 }
 
@@ -333,13 +322,12 @@ async function pollGaming() {
   if (!bodyEl) return;
   try {
     const res = await fetch("/api/gaming");
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) throw new Error();
     const d = await res.json();
-    bodyEl.innerHTML = d.available
-      ? renderGaming(d)
+    bodyEl.innerHTML = d.available ? renderGaming(d)
       : `<div class="gaming-hero"><div class="gaming-hero-title">Gaming</div></div><div class="gaming-dim">Unavailable</div>`;
-  } catch (err) {
-    console.warn("Sean Home: gaming unavailable", err);
+  } catch {
+    console.warn("Sean Home: gaming unavailable");
     bodyEl.innerHTML = `<div class="gaming-hero"><div class="gaming-hero-title">Gaming</div></div><div class="gaming-dim">Unavailable</div>`;
   }
 }
@@ -351,7 +339,7 @@ async function pollJellyfin() {
 
   try {
     const res = await fetch("/api/jellyfin");
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) throw new Error();
     const d = await res.json();
 
     if (!d.available) {
@@ -366,13 +354,12 @@ async function pollJellyfin() {
       sections.push(`<div class="jf-section-label">Continue Watching</div>`);
       for (const item of d.continue_watching.slice(0, 1)) {
         const initial = (item.label || "?").charAt(0).toUpperCase();
-        const bar = `<div class="jf-progress-bar"><div class="jf-progress-fill" style="width:${item.progress}%"></div></div>`;
         sections.push(`
           <div class="jf-poster-row">
             <div class="jf-thumb">${initial}</div>
             <div class="jf-poster-info">
               <div class="jf-poster-title">${item.label}</div>
-              ${bar}
+              <div class="jf-progress-bar"><div class="jf-progress-fill" style="width:${item.progress}%"></div></div>
               <div class="jf-poster-meta">${item.progress}% watched</div>
             </div>
           </div>`);
@@ -380,17 +367,15 @@ async function pollJellyfin() {
     }
 
     if (d.recently_added && d.recently_added.length) {
-      const hasCW = d.continue_watching && d.continue_watching.length;
-      sections.push(`<div class="jf-section-label${hasCW ? "" : ""}">Recently Added</div>`);
+      sections.push(`<div class="jf-section-label">Recently Added</div>`);
       for (const item of d.recently_added.slice(0, 3)) {
         const initial = (item.label || "?").charAt(0).toUpperCase();
-        const meta = item.runtime || item.type || "";
         sections.push(`
           <div class="jf-poster-row">
             <div class="jf-thumb jf-thumb-sm">${initial}</div>
             <div class="jf-poster-info">
               <div class="jf-poster-title">${item.label}</div>
-              <div class="jf-poster-meta">${meta}</div>
+              <div class="jf-poster-meta">${item.runtime || item.type || ""}</div>
             </div>
           </div>`);
       }
@@ -400,8 +385,8 @@ async function pollJellyfin() {
       ? sections.join("")
       : `<p class="card-placeholder">Library is empty</p>`;
 
-  } catch (err) {
-    console.warn("Sean Home: Jellyfin unavailable", err);
+  } catch {
+    console.warn("Sean Home: Jellyfin unavailable");
     bodyEl.innerHTML = `<p class="card-placeholder">Entertainment unavailable</p>`;
   }
 
@@ -415,30 +400,29 @@ async function pollMediaServer() {
 
   try {
     const res = await fetch("/api/media-server");
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) throw new Error();
     const d = await res.json();
 
     if (!d.available) {
       bodyEl.innerHTML = `<span class="card-placeholder">Media Server unavailable</span>`;
     } else {
-      const svcs     = Object.values(d.services).map(s => `<span class="ms-svc">${svcDot(s.status)}${s.label}</span>`).join("");
-      const tempStr  = d.cpu.temp_c !== null ? `${d.cpu.temp_c}°C` : "—";
-      const importRow = d.last_import.available
+      const svcs    = Object.values(d.services).map(s => `<span class="ms-svc">${svcDot(s.status)}${s.label}</span>`).join("");
+      const temp    = d.cpu.temp_c !== null ? `${d.cpu.temp_c}°C` : "—";
+      const imp     = d.last_import.available
         ? `<span class="ms-sep">·</span><span class="ms-stat-chip">Last import <strong>${d.last_import.folder} · ${d.last_import.date}</strong></span>`
         : "";
-
       bodyEl.innerHTML =
         svcs +
         `<span class="ms-sep">·</span>` +
         `<span class="ms-stat-chip">Disk <strong>${d.disk.pct}%</strong></span>` +
         `<span class="ms-stat-chip">Free <strong>${d.disk.free_gb} GB</strong></span>` +
         `<span class="ms-stat-chip">RAM <strong>${d.ram.used_pct}%</strong></span>` +
-        `<span class="ms-stat-chip">Temp <strong>${tempStr}</strong></span>` +
+        `<span class="ms-stat-chip">Temp <strong>${temp}</strong></span>` +
         `<span class="ms-stat-chip">Up <strong>${d.uptime}</strong></span>` +
-        importRow;
+        imp;
     }
-  } catch (err) {
-    console.warn("Sean Home: media server status unavailable", err);
+  } catch {
+    console.warn("Sean Home: media server status unavailable");
     bodyEl.innerHTML = `<span class="card-placeholder">Media Server unavailable</span>`;
   }
 
