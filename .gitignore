@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Backups
+backups/
+
+# Exports
+exports/
+
+# Secrets
+*.env
+*.key
+*.pem
+secrets/
+
+# Editor
+.vscode/
+*.swp

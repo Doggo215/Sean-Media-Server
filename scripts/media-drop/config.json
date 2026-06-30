@@ -1,0 +1,31 @@
+{
+  "media_drop_path": "~/Desktop/Media Drop",
+  "smb_mount_base": "/Volumes",
+  "smb_server": "10.0.0.225",
+  "smb_user": "sean",
+  "smb_shares": {
+    "media": "media",
+    "incoming": "incoming"
+  },
+  "jellyfin": {
+    "url": "http://10.0.0.225:8096",
+    "api_key": "a0e84b3d673346a39bef121fedb15512"
+  },
+  "stability_wait_seconds": 3,
+  "stability_checks": 3,
+  "scan_wait_seconds": 30,
+  "log_path": "~/Library/Logs/MediaDrop/media_drop.log",
+  "folder_map": {
+    "Movies":        "movies",
+    "TV Shows":      "tv",
+    "Kids":          "kids",
+    "Documentaries": "documentaries",
+    "Sports":        "sports",
+    "Home Videos":   "home-videos",
+    "Family Photos": "family-photos",
+    "Christmas":     "christmas",
+    "Music":         "music",
+    "Audiobooks":    "audiobooks",
+    "Unknown":       "home-videos"
+  }
+}
