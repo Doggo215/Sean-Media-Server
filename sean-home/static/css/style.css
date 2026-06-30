@@ -100,6 +100,42 @@ html, body {
   margin-top: auto;
 }
 
+/* ── Weather ───────────────────────────────────────────── */
+
+.weather-body {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.weather-icon {
+  font-size: 3.2rem;
+  line-height: 1;
+}
+
+.weather-temp {
+  font-size: 2.4rem;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.weather-condition {
+  font-size: 1rem;
+  color: var(--text-dim);
+  margin-top: 6px;
+}
+
+.weather-hilo {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+.weather-unavailable {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
 /* ── System stats ──────────────────────────────────────── */
 
 .stat-grid {

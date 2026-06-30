@@ -49,8 +49,47 @@ async function pollSystemStatus() {
   }
 }
 
+async function pollWeather() {
+  const iconEl = document.getElementById("weather-icon");
+  const tempEl = document.getElementById("weather-temp");
+  const condEl = document.getElementById("weather-condition");
+  const hiloEl = document.getElementById("weather-hilo");
+  if (!iconEl) return;
+
+  try {
+    const res = await fetch("/api/weather");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    if (!data.available) {
+      condEl.textContent = "Weather unavailable";
+      condEl.className = "weather-unavailable";
+      tempEl.textContent = "—";
+      hiloEl.textContent = "";
+      iconEl.textContent = "⚠️";
+      return;
+    }
+
+    iconEl.textContent = data.icon;
+    tempEl.textContent = `${data.temperature_f}°F`;
+    condEl.className = "weather-condition";
+    condEl.textContent = data.condition + (data.stale ? " (cached)" : "");
+    hiloEl.textContent = `H: ${data.high_f}°  L: ${data.low_f}°`;
+  } catch (err) {
+    console.warn("Sean Home: weather unavailable", err);
+    condEl.textContent = "Weather unavailable";
+    condEl.className = "weather-unavailable";
+    tempEl.textContent = "—";
+    hiloEl.textContent = "";
+    iconEl.textContent = "⚠️";
+  }
+}
+
 tickClock();
 setInterval(tickClock, 1000);
 
 pollSystemStatus();
 setInterval(pollSystemStatus, 30000);
+
+pollWeather();
+setInterval(pollWeather, 600000); // 10 min — matches server-side cache TTL
