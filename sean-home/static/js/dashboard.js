@@ -75,6 +75,14 @@ async function pollWeather() {
     condEl.className = "weather-condition";
     condEl.textContent = data.condition + (data.stale ? " (cached)" : "");
     hiloEl.textContent = `H: ${data.high_f}°  L: ${data.low_f}°`;
+
+    // Populate header weather summary
+    const hwIcon = document.getElementById("header-weather-icon");
+    const hwTemp = document.getElementById("header-weather-temp");
+    const hwDesc = document.getElementById("header-weather-desc");
+    if (hwIcon) hwIcon.textContent = data.icon;
+    if (hwTemp) hwTemp.textContent = `${data.temperature_f}°F`;
+    if (hwDesc) hwDesc.textContent = `${data.condition} · Low ${data.low_f}°F`;
   } catch (err) {
     console.warn("Sean Home: weather unavailable", err);
     condEl.textContent = "Weather unavailable";
@@ -82,6 +90,13 @@ async function pollWeather() {
     tempEl.textContent = "—";
     hiloEl.textContent = "";
     iconEl.textContent = "⚠️";
+
+    const hwIcon = document.getElementById("header-weather-icon");
+    const hwTemp = document.getElementById("header-weather-temp");
+    const hwDesc = document.getElementById("header-weather-desc");
+    if (hwIcon) hwIcon.textContent = "⚠️";
+    if (hwTemp) hwTemp.textContent = "—";
+    if (hwDesc) hwDesc.textContent = "Weather unavailable";
   }
 }
 
@@ -411,20 +426,19 @@ async function pollMediaServer() {
         .join("");
 
       const tempStr = d.cpu.temp_c !== null ? `${d.cpu.temp_c}°C` : "—";
-      const importStr = d.last_import.available
-        ? `${d.last_import.folder} · ${d.last_import.date}`
-        : "—";
+      const importRow = d.last_import.available
+        ? `<span class="ms-sep">·</span><span class="ms-stat-chip">Last import <strong>${d.last_import.folder} · ${d.last_import.date}</strong></span>`
+        : "";
 
-      bodyEl.innerHTML = `
-        <div class="ms-services">${svcs}</div>
-        <div class="ms-stats">
-          <div class="stat"><span class="stat-label">Disk</span><span class="stat-value ${classify(d.disk.pct, 80, 95)}">${d.disk.pct}%</span></div>
-          <div class="stat"><span class="stat-label">Free</span><span class="stat-value">${d.disk.free_gb} GB</span></div>
-          <div class="stat"><span class="stat-label">RAM</span><span class="stat-value ${classify(d.ram.used_pct, 80, 95)}">${d.ram.used_pct}%</span></div>
-          <div class="stat"><span class="stat-label">Temp</span><span class="stat-value ${classify(d.cpu.temp_c ?? 0, 70, 80)}">${tempStr}</span></div>
-          <div class="stat"><span class="stat-label">Up</span><span class="stat-value">${d.uptime}</span></div>
-        </div>
-        <div class="ms-import"><span class="ms-import-label">Last import</span><span class="ms-import-val">${importStr}</span></div>`;
+      bodyEl.innerHTML =
+        svcs +
+        `<span class="ms-sep">·</span>` +
+        `<span class="ms-stat-chip">Disk <strong>${d.disk.pct}%</strong></span>` +
+        `<span class="ms-stat-chip">Free <strong>${d.disk.free_gb} GB</strong></span>` +
+        `<span class="ms-stat-chip">RAM <strong>${d.ram.used_pct}%</strong></span>` +
+        `<span class="ms-stat-chip">Temp <strong>${tempStr}</strong></span>` +
+        `<span class="ms-stat-chip">Up <strong>${d.uptime}</strong></span>` +
+        importRow;
     }
   } catch (err) {
     console.warn("Sean Home: media server status unavailable", err);

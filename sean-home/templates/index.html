@@ -3,121 +3,101 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="refresh" content="60">
   <title>Sean Home</title>
   <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
 
-  <!-- ── Header ─────────────────────────────────────────── -->
-  <header class="header">
-    <div class="header-left">
-      <div class="clock" id="clock">{{ time }}</div>
-      <div class="date" id="date">{{ date }}</div>
+  <!-- ── Header ───────────────────────────────────────────── -->
+  <header class="tv-header">
+    <div class="tv-header-time">
+      <div class="tv-clock" id="clock">{{ time }}</div>
+      <div class="tv-date" id="date">{{ date }}</div>
     </div>
-    <div class="header-right">
-      <div class="brand">Sean Home</div>
+
+    <div class="tv-header-weather" id="header-weather">
+      <span class="tv-hw-icon" id="header-weather-icon">—</span>
+      <div class="tv-hw-info">
+        <span class="tv-hw-temp" id="header-weather-temp">—</span>
+        <span class="tv-hw-desc" id="header-weather-desc">Loading…</span>
+      </div>
     </div>
+
+    <div class="tv-brand">Sean Home</div>
   </header>
 
-  <!-- ── Main grid ──────────────────────────────────────── -->
-  <main class="grid">
+  <!-- ── Main ─────────────────────────────────────────────── -->
+  <main class="tv-main">
 
-    <!-- Tonight -->
+    <!-- Tonight — full width summary strip -->
     <section class="card card-tonight" id="tonight-card">
       <h2 class="card-title">Tonight</h2>
-      <div id="tonight-body">
+      <div id="tonight-body" class="tn-body">
         <p class="placeholder-text">Loading…</p>
       </div>
     </section>
 
-    <!-- System Status -->
-    <section class="card" id="system-card">
-      <h2 class="card-title">System</h2>
-      <div class="stat-grid" id="system-stats">
-        <div class="stat">
-          <span class="stat-label">Disk</span>
-          <span class="stat-value" id="disk-pct">—</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">Free</span>
-          <span class="stat-value" id="disk-free">—</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">RAM</span>
-          <span class="stat-value" id="ram-pct">—</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">CPU</span>
-          <span class="stat-value" id="cpu-pct">—</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">Temp</span>
-          <span class="stat-value" id="cpu-temp">—</span>
-        </div>
-      </div>
-    </section>
+    <!-- 2 × 2 content grid -->
+    <div class="tv-grid">
 
-    <!-- Weather -->
-    <section class="card" id="weather-card">
-      <h2 class="card-title">Weather — Arvada, CO</h2>
-      <div class="weather-body" id="weather-body">
-        <span class="weather-icon" id="weather-icon">—</span>
-        <div class="weather-info">
-          <div class="weather-temp" id="weather-temp">—</div>
-          <div class="weather-condition" id="weather-condition">Loading…</div>
-          <div class="weather-hilo" id="weather-hilo">—</div>
+      <section class="card" id="sports-card">
+        <h2 class="card-title">Sports</h2>
+        <div class="sports-list" id="sports-list">
+          <p class="placeholder-text">Loading…</p>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Entertainment (Jellyfin) -->
-    <section class="card" id="jellyfin-card">
-      <h2 class="card-title">Entertainment</h2>
-      <div id="jellyfin-body">
-        <p class="placeholder-text">Loading…</p>
-      </div>
-    </section>
+      <section class="card" id="jellyfin-card">
+        <h2 class="card-title">Entertainment</h2>
+        <div id="jellyfin-body">
+          <p class="placeholder-text">Loading…</p>
+        </div>
+      </section>
 
-    <!-- Sports -->
-    <section class="card" id="sports-card">
-      <h2 class="card-title">Sports</h2>
-      <div class="sports-list" id="sports-list">
-        <p class="placeholder-text">Loading…</p>
-      </div>
-    </section>
+      <section class="card" id="weather-card">
+        <h2 class="card-title">Weather — Arvada, CO</h2>
+        <div class="weather-body" id="weather-body">
+          <span class="weather-icon" id="weather-icon">—</span>
+          <div class="weather-info">
+            <div class="weather-temp" id="weather-temp">—</div>
+            <div class="weather-condition" id="weather-condition">Loading…</div>
+            <div class="weather-hilo" id="weather-hilo">—</div>
+          </div>
+        </div>
+      </section>
 
-    <!-- Media Server Status -->
-    <section class="card" id="media-server-card">
-      <h2 class="card-title">Media Server</h2>
-      <div id="media-server-body">
-        <p class="placeholder-text">Loading…</p>
-      </div>
-    </section>
+      <section class="card" id="gaming-card">
+        <h2 class="card-title">Gaming</h2>
+        <div class="gaming-body" id="gaming-body">
+          <p class="placeholder-text">Loading…</p>
+        </div>
+      </section>
 
-    <section class="card card-placeholder">
-      <h2 class="card-title">Calendar</h2>
-      <p class="placeholder-text">Coming soon</p>
-    </section>
+    </div>
 
-    <!-- Gaming -->
-    <section class="card" id="gaming-card">
-      <h2 class="card-title">Gaming</h2>
-      <div class="gaming-body" id="gaming-body">
-        <p class="placeholder-text">Loading…</p>
+    <!-- Media Server — compact strip -->
+    <div class="ms-strip" id="media-server-card">
+      <div id="media-server-body" class="ms-strip-body">
+        <span class="placeholder-text">Loading system status…</span>
       </div>
-    </section>
+    </div>
 
   </main>
 
-  <!-- ── Nav buttons ────────────────────────────────────── -->
-  <nav class="nav">
-    <a class="nav-btn" href="http://10.0.0.226:8096/web/index.html#!/movies.html">Movies</a>
-    <a class="nav-btn" href="http://10.0.0.226:8096/web/index.html#!/tv.html">TV Shows</a>
-    <a class="nav-btn" href="http://10.0.0.226:8096/web/index.html#!/movies.html?genreId=home-videos">Home Videos</a>
-    <a class="nav-btn" href="http://10.0.0.226:8096/web/index.html#!/music.html">Music</a>
-    <a class="nav-btn nav-btn-secondary" href="/health">Status</a>
+  <!-- ── Nav ──────────────────────────────────────────────── -->
+  <nav class="tv-nav">
+    <a class="tv-nav-btn" href="http://10.0.0.226:8096/web/index.html#!/movies.html">Movies</a>
+    <a class="tv-nav-btn" href="http://10.0.0.226:8096/web/index.html#!/tv.html">TV Shows</a>
+    <a class="tv-nav-btn" href="http://10.0.0.226:8096/web/index.html#!/movies.html?genreId=home-videos">Home Videos</a>
+    <a class="tv-nav-btn" href="http://10.0.0.226:8096/web/index.html#!/music.html">Music</a>
+    <a class="tv-nav-btn tv-nav-btn-dim" href="/health" title="Status">●</a>
   </nav>
+
+  <!-- System card — hidden; JS still polls and writes these IDs -->
+  <div style="display:none" id="system-card">
+    <span id="disk-pct"></span><span id="disk-free"></span>
+    <span id="ram-pct"></span><span id="cpu-pct"></span><span id="cpu-temp"></span>
+  </div>
 
   <script src="/static/js/dashboard.js"></script>
 </body>
