@@ -22,8 +22,8 @@ df -h /
 
 1. Confirm Jellyfin is running: `systemctl is-active jellyfin`
 2. Confirm it's listening: `ss -tlnp | grep 8096`
-3. Confirm Pi is reachable: `ping 10.0.0.225` from Mac
-4. Try direct IP if hostname doesn't resolve: `http://10.0.0.225:8096`
+3. Confirm Pi is reachable: `ping 10.0.0.226` from Mac
+4. Try direct IP if hostname doesn't resolve: `http://10.0.0.226:8096`
 
 ---
 
@@ -56,7 +56,7 @@ df -h /
 ## Android TV Can't Find Server
 
 1. Confirm TV and Pi are on the same network (`10.0.0.x`)
-2. Open Jellyfin app → Add Server → manually enter `http://10.0.0.225:8096`
+2. Open Jellyfin app → Add Server → manually enter `http://10.0.0.226:8096`
 3. Confirm Jellyfin is running and port 8096 is listening
 
 ---
@@ -81,5 +81,5 @@ sudo systemctl start stadium-os.service
 
 Quick server health check:
 ```bash
-ssh sean@10.0.0.225 "hostname && systemctl is-active jellyfin && df -h / | tail -1 && free -h | grep Mem && uptime"
+ssh sean@10.0.0.226 "hostname && systemctl is-active jellyfin && df -h / | tail -1 && free -h | grep Mem && uptime"
 ```

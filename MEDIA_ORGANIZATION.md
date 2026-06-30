@@ -204,7 +204,7 @@ Use only when Finder is unavailable or for bulk imports.
 
 **Copy to staging via SCP:**
 ```bash
-scp "/path/to/Movie Title (Year).mkv" sean@10.0.0.225:/srv/media/staging/
+scp "/path/to/Movie Title (Year).mkv" sean@10.0.0.226:/srv/media/staging/
 ```
 
 **Create folder and move to library (on Pi):**

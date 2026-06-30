@@ -11,7 +11,7 @@
 
 set -euo pipefail
 
-PI="sean@10.0.0.225"
+PI="sean@10.0.0.226"
 BACKUP_BASE="$HOME/Backups/MediaServer-Backups"
 DATE=$(date +%Y-%m-%d_%H%M)
 MODE="${1:-daily}"

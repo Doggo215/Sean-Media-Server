@@ -91,7 +91,7 @@ Avoid free VPNs from unknown publishers — many log and sell traffic data, whic
 
 ### VPN and your Media Server
 
-Your Media Server runs on the local network (`10.0.0.0/24`). When a VPN is active, local network access (Jellyfin at `10.0.0.225:8096`, Samba shares) may be blocked depending on the VPN's settings.
+Your Media Server runs on the local network (`10.0.0.0/24`). When a VPN is active, local network access (Jellyfin at `10.0.0.226:8096`, Samba shares) may be blocked depending on the VPN's settings.
 
 If Jellyfin or the Samba shares become unreachable while on VPN:
 - Use your VPN's **split tunneling** feature to exclude local network traffic
@@ -154,7 +154,7 @@ Drop a file into `~/Desktop/Media Drop/`. Media Drop detects it, waits for the c
 
 Check in this order:
 
-1. **Correct folder** — confirm the file landed in the right `/srv/media/` subfolder via `ssh sean@10.0.0.225 "ls /srv/media/movies/"` (or the relevant folder)
+1. **Correct folder** — confirm the file landed in the right `/srv/media/` subfolder via `ssh sean@10.0.0.226 "ls /srv/media/movies/"` (or the relevant folder)
 2. **Jellyfin scan** — open the Jellyfin web UI → Dashboard → Libraries → Scan All Libraries, then wait a minute and refresh
 3. **Failed folder** — check `~/Desktop/Media Drop/Failed/` for the file and review the Media Drop log at `~/Library/Logs/MediaDrop/media_drop.log` for the reason
 
@@ -169,4 +169,4 @@ Check in this order:
 | Public Wi-Fi | Enable VPN before connecting |
 | ISP DNS | Switch to 1.1.1.1 or 9.9.9.9 in System Settings |
 | Add media to library | Drop into `~/Desktop/Media Drop/` |
-| Jellyfin web UI | http://10.0.0.225:8096 |
+| Jellyfin web UI | http://10.0.0.226:8096 |

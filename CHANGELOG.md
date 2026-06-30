@@ -19,7 +19,7 @@
 ### Added
 - Jellyfin 10.11.11 installed from official Debian repository
 - Jellyfin service enabled and running on boot
-- Web UI confirmed accessible at `http://10.0.0.225:8096`
+- Web UI confirmed accessible at `http://10.0.0.226:8096`
 - Official Jellyfin apt repository configured
 
 ### Changed

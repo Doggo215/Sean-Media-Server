@@ -158,7 +158,7 @@ Sean Home exposes clean internal APIs so Sean OS can consume or enhance it in th
 
 ```
 Browser / TV
-     ↓  http://10.0.0.225:8088
+     ↓  http://10.0.0.226:8088
 Sean Home (Python FastAPI, port 8088)
      ↓ reads from
 Jellyfin REST API (port 8096)     — media data, status, libraries

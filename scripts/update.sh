@@ -3,7 +3,7 @@
 # Run from Mac: bash scripts/update.sh
 # Or run directly on Pi as: sudo bash update.sh
 
-PI="sean@10.0.0.225"
+PI="sean@10.0.0.226"
 
 echo "=============================="
 echo "  Sean Media Server — Update"

@@ -7,7 +7,7 @@
 ```
 Local Network (10.0.0.x)
 │
-├── Raspberry Pi 4 — media-server (10.0.0.225)
+├── Raspberry Pi 4 — media-server (10.0.0.226)
 │   └── Jellyfin Media Server (port 8096)
 │       └── /srv/media/ (movies, tv, music, etc.)
 │
@@ -43,9 +43,9 @@ Local Network (10.0.0.x)
 | Storage (boot) | 64GB microSD |
 | Storage (future) | 4TB USB hard drive |
 | Network | Wired Ethernet (preferred) |
-| IP | 10.0.0.225 (DHCP — static IP pending) |
+| IP | 10.0.0.226 (DHCP — static IP pending) |
 | Hostname | media-server |
-| SSH | `ssh sean@10.0.0.225` |
+| SSH | `ssh sean@10.0.0.226` |
 
 ---
 
@@ -55,7 +55,7 @@ Local Network (10.0.0.x)
 |---|---|
 | Version | 10.11.11 |
 | Port | 8096 (HTTP, local only) |
-| Web UI | http://10.0.0.225:8096 |
+| Web UI | http://10.0.0.226:8096 |
 | Admin user | doggo |
 | Service | `jellyfin.service` (systemd, enabled) |
 | Config | `/etc/jellyfin/` |

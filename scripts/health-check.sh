@@ -4,8 +4,8 @@
 #
 # Usage: bash health-check.sh
 
-PI="sean@10.0.0.225"
-JELLYFIN_URL="http://10.0.0.225:8096"
+PI="sean@10.0.0.226"
+JELLYFIN_URL="http://10.0.0.226:8096"
 DISK_WARN=80   # % used before WARNING
 DISK_FAIL=95   # % used before FAIL
 TEMP_WARN=70   # °C before WARNING
@@ -92,7 +92,7 @@ for svc in smbd nmbd; do
   fi
 done
 
-SMB_PORT=$(nc -z -w2 10.0.0.225 445 2>/dev/null && echo "open" || echo "closed")
+SMB_PORT=$(nc -z -w2 10.0.0.226 445 2>/dev/null && echo "open" || echo "closed")
 if [ "$SMB_PORT" = "open" ]; then
   ok "SMB port 445"
 else

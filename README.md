@@ -23,11 +23,11 @@ The Media Server must remain fully functional even if Sean OS is offline.
 | Item | Value |
 |---|---|
 | Hostname | `media-server` |
-| IP Address | `10.0.0.225` (DHCP reserved) |
+| IP Address | `10.0.0.226` (DHCP reserved) |
 | OS | Debian GNU/Linux 13 (Trixie) |
 | Jellyfin | 10.11.11 |
-| Web UI | http://10.0.0.225:8096 |
-| SSH | `ssh sean@10.0.0.225` |
+| Web UI | http://10.0.0.226:8096 |
+| SSH | `ssh sean@10.0.0.226` |
 | Media Root | `/srv/media/` |
 | GitHub | https://github.com/Doggo215/Sean-Media-Server |
 
@@ -91,7 +91,7 @@ The Media Server must remain fully functional even if Sean OS is offline.
 
 ## Network
 
-The Pi's IP address `10.0.0.225` is reserved via DHCP at the router (10.0.0.1).
+The Pi's IP address `10.0.0.226` is reserved via DHCP at the router (10.0.0.1).
 The IP is not hardcoded on the Pi — networking is centrally managed by the router.
 
 To update the reservation: log into http://10.0.0.1 → DHCP → Static Leases → `media-server`.
@@ -111,7 +111,7 @@ bash ~/Desktop/Sean-Media-Server/scripts/backup.sh manual
 bash ~/Desktop/Sean-Media-Server/scripts/verify-backup.sh ~/Backups/MediaServer-Backups/Daily/<date>
 
 # Check Jellyfin
-ssh sean@10.0.0.225 "systemctl status jellyfin --no-pager | head -5"
+ssh sean@10.0.0.226 "systemctl status jellyfin --no-pager | head -5"
 ```
 
 ---

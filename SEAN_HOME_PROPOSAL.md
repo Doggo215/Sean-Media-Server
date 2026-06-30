@@ -2,7 +2,7 @@
 
 **Date:** June 30, 2026
 **Status:** Proposed
-**Host:** Raspberry Pi 4 — `media-server` (10.0.0.225)
+**Host:** Raspberry Pi 4 — `media-server` (10.0.0.226)
 
 ---
 
@@ -24,7 +24,7 @@ The Pi 4 is already always-on, always-connected, and running Jellyfin. Adding a 
 
 ```
 Browser / TV / Phone
-        ↓  http://10.0.0.225:8097
+        ↓  http://10.0.0.226:8097
   Sean Home (Python + FastAPI)
         ↓ reads from
   Jellyfin REST API (port 8096)      ← existing, no changes
@@ -149,7 +149,7 @@ Auto-starts on boot alongside `jellyfin.service`.
 
 ## Success Criteria
 
-- [ ] Dashboard loads at `http://10.0.0.225:8097` from any device on the network
+- [ ] Dashboard loads at `http://10.0.0.226:8097` from any device on the network
 - [ ] All 7 Phase 1 widgets display correct live data
 - [ ] Jellyfin is not modified — zero changes to its config, database, or web UI
 - [ ] Dashboard is legible on a TV at normal viewing distance

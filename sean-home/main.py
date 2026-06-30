@@ -206,6 +206,126 @@ async def weather():
         )
 
 
+# ─── Media Server Status ─────────────────────────────────────────────────────
+
+import os
+
+MEDIA_SERVER_SERVICES = {
+    "jellyfin": "Jellyfin",
+    "smbd": "Samba",
+    "sean-home": "Sean Home",
+}
+MEDIA_ROOT = "/srv/media"
+
+_media_server_cache = {"data": None, "fetched_at": 0}
+MEDIA_SERVER_CACHE_TTL = 60  # refresh every minute — services can change state
+
+
+def _service_status(name: str) -> str:
+    """Return 'active', 'inactive', or 'unknown' for a systemd service."""
+    try:
+        result = subprocess.run(
+            ["systemctl", "is-active", name],
+            capture_output=True, text=True, timeout=3
+        )
+        return result.stdout.strip() or "unknown"
+    except Exception:
+        return "unknown"
+
+
+def _last_media_import() -> dict:
+    """Find the most recently modified item inside /srv/media."""
+    try:
+        entries = []
+        for entry in os.scandir(MEDIA_ROOT):
+            entries.append((entry.stat().st_mtime, entry.name))
+        if not entries:
+            return {"available": False}
+        entries.sort(reverse=True)
+        mtime, name = entries[0]
+        dt = datetime.fromtimestamp(mtime, tz=DENVER)
+        return {
+            "available": True,
+            "folder": name,
+            "date": dt.strftime("%a %b %-d, %Y"),
+            "time": dt.strftime("%-I:%M %p MT"),
+        }
+    except Exception:
+        return {"available": False}
+
+
+@app.get("/api/media-server")
+def media_server():
+    now = time.time()
+    if _media_server_cache["data"] and (now - _media_server_cache["fetched_at"]) < MEDIA_SERVER_CACHE_TTL:
+        return {**_media_server_cache["data"], "cached": True}
+
+    try:
+        services = {key: _service_status(key) for key in MEDIA_SERVER_SERVICES}
+
+        disk = shutil.disk_usage("/")
+        disk_pct = round(disk.used / disk.total * 100, 1)
+        disk_free_gb = round(disk.free / 1024 ** 3, 1)
+        disk_total_gb = round(disk.total / 1024 ** 3, 1)
+
+        ram = psutil.virtual_memory()
+
+        try:
+            tmp = subprocess.run(
+                ["vcgencmd", "measure_temp"],
+                capture_output=True, text=True, timeout=3
+            )
+            cpu_temp = float(tmp.stdout.strip().split("=")[1].replace("'C", ""))
+        except Exception:
+            cpu_temp = None
+
+        uptime_seconds = int(time.time() - psutil.boot_time())
+        hours, remainder = divmod(uptime_seconds, 3600)
+        minutes = remainder // 60
+        uptime_str = f"{hours}h {minutes}m" if hours else f"{minutes}m"
+
+        data = {
+            "available": True,
+            "services": {
+                key: {
+                    "label": MEDIA_SERVER_SERVICES[key],
+                    "status": services[key],
+                }
+                for key in MEDIA_SERVER_SERVICES
+            },
+            "disk": {
+                "pct": disk_pct,
+                "free_gb": disk_free_gb,
+                "total_gb": disk_total_gb,
+            },
+            "ram": {
+                "used_pct": ram.percent,
+                "available_mb": round(ram.available / 1024 ** 2),
+            },
+            "cpu": {
+                "temp_c": cpu_temp,
+            },
+            "uptime": uptime_str,
+            "last_import": _last_media_import(),
+            "backup": {
+                "available": False,
+                "note": "Backups run from Mac — not tracked from Pi",
+            },
+            "media_drop": {
+                "available": False,
+                "note": "Media Drop runs on Mac — not tracked from Pi",
+            },
+        }
+        _media_server_cache["data"] = data
+        _media_server_cache["fetched_at"] = now
+        return {**data, "cached": False}
+
+    except Exception:
+        if _media_server_cache["data"]:
+            return {**_media_server_cache["data"], "cached": True, "stale": True}
+        return JSONResponse(status_code=200, content={"available": False})
+
+
 # ─── Sports ──────────────────────────────────────────────────────────────────
 
 async def fetch_team_schedule(client, sport, league, team):

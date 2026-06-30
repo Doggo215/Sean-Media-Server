@@ -8,7 +8,7 @@ Chronological record of every change made to the Media Server.
 
 ### Infrastructure Inspection
 
-- Pi 4 located at `10.0.0.225` (hostname was `panel-os`)
+- Pi 4 located at `10.0.0.226` (hostname was `panel-os`)
 - OS confirmed: Debian GNU/Linux 13 (Trixie), kernel 6.18.34
 - Pi was previously running Panel OS and Stadium OS (Sean OS projects)
 - SSH confirmed working as user `sean`
@@ -74,7 +74,7 @@ Installed packages:
 | libjemalloc2 | 5.3.0-3 |
 
 Jellyfin service: enabled and running on boot.
-Web UI: HTTP 200 at `http://10.0.0.225:8096` — confirmed from Mac.
+Web UI: HTTP 200 at `http://10.0.0.226:8096` — confirmed from Mac.
 
 ### Media Directory Structure
 

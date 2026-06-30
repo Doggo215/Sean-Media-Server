@@ -11,7 +11,7 @@
 - [x] Reboot and verify persistence
 - [x] Install Jellyfin from official repository
 - [x] Verify Jellyfin service running and enabled on boot
-- [x] Verify web UI loads from browser (`http://10.0.0.225:8096`)
+- [x] Verify web UI loads from browser (`http://10.0.0.226:8096`)
 - [x] Complete Jellyfin first-run wizard
 
 ---

@@ -205,6 +205,52 @@ async function pollGaming() {
   }
 }
 
+function svcDot(status) {
+  if (status === "active")   return `<span class="svc-dot svc-ok"></span>`;
+  if (status === "inactive") return `<span class="svc-dot svc-warn"></span>`;
+  return `<span class="svc-dot svc-err"></span>`;
+}
+
+async function pollMediaServer() {
+  const bodyEl = document.getElementById("media-server-body");
+  if (!bodyEl) return;
+
+  try {
+    const res = await fetch("/api/media-server");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const d = await res.json();
+
+    if (!d.available) {
+      bodyEl.innerHTML = `<p class="placeholder-text">Media Server unavailable</p>`;
+    } else {
+      const svcs = Object.values(d.services)
+        .map(s => `<span class="ms-svc">${svcDot(s.status)}${s.label}</span>`)
+        .join("");
+
+      const tempStr = d.cpu.temp_c !== null ? `${d.cpu.temp_c}°C` : "—";
+      const importStr = d.last_import.available
+        ? `${d.last_import.folder} · ${d.last_import.date}`
+        : "—";
+
+      bodyEl.innerHTML = `
+        <div class="ms-services">${svcs}</div>
+        <div class="ms-stats">
+          <div class="stat"><span class="stat-label">Disk</span><span class="stat-value ${classify(d.disk.pct, 80, 95)}">${d.disk.pct}%</span></div>
+          <div class="stat"><span class="stat-label">Free</span><span class="stat-value">${d.disk.free_gb} GB</span></div>
+          <div class="stat"><span class="stat-label">RAM</span><span class="stat-value ${classify(d.ram.used_pct, 80, 95)}">${d.ram.used_pct}%</span></div>
+          <div class="stat"><span class="stat-label">Temp</span><span class="stat-value ${classify(d.cpu.temp_c ?? 0, 70, 80)}">${tempStr}</span></div>
+          <div class="stat"><span class="stat-label">Up</span><span class="stat-value">${d.uptime}</span></div>
+        </div>
+        <div class="ms-import"><span class="ms-import-label">Last import</span><span class="ms-import-val">${importStr}</span></div>`;
+    }
+  } catch (err) {
+    console.warn("Sean Home: media server status unavailable", err);
+    bodyEl.innerHTML = `<p class="placeholder-text">Media Server unavailable</p>`;
+  }
+
+  setTimeout(pollMediaServer, 60000);
+}
+
 tickClock();
 setInterval(tickClock, 1000);
 
@@ -215,6 +261,7 @@ pollWeather();
 setInterval(pollWeather, 600000); // 10 min — matches server-side cache TTL
 
 pollSports(); // self-scheduling — interval adapts to live-game state
+pollMediaServer(); // self-scheduling via setTimeout, 60s refresh
 
 pollGaming();
 setInterval(pollGaming, 1800000); // 30 min — matches server-side cache TTL

@@ -5,7 +5,7 @@
 ## Immediate
 
 - [ ] Fix Family Photos library type in Jellyfin web UI (Dashboard → Libraries → edit pencil → set type to Photos)
-- [ ] Assign static IP to Pi (via router DHCP reservation for `10.0.0.225`)
+- [ ] Assign static IP to Pi (via router DHCP reservation for `10.0.0.226`)
 - [ ] Transfer Interstellar (2014), Top Gun Maverick (2022), Toy Story (1995) to staging
 - [ ] Complete first media import verification (Phase 3A)
 - [ ] Verify Android TV discovery and playback

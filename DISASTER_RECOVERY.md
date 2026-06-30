@@ -80,7 +80,7 @@ ping -c 3 media-server.local
 Once you have the IP, verify SSH:
 
 ```bash
-ssh sean@10.0.0.225   # substitute actual IP if different
+ssh sean@10.0.0.226   # substitute actual IP if different
 ```
 
 ---
@@ -122,7 +122,7 @@ After the restore script completes:
 
 **Jellyfin Web UI**
 ```
-http://10.0.0.225:8096
+http://10.0.0.226:8096
 ```
 - [ ] Can log in as `doggo`
 - [ ] Libraries appear (Movies, TV Shows, etc.)
@@ -155,19 +155,19 @@ If the Pi's SD card was replaced and media files are on an external 4TB drive:
 # Reconnect the 4TB drive to the Pi
 # It should remount automatically via /etc/fstab
 
-ssh sean@10.0.0.225 "df -h | grep srv"
+ssh sean@10.0.0.226 "df -h | grep srv"
 ```
 
 If the drive is not auto-mounted:
 
 ```bash
-ssh sean@10.0.0.225 "sudo mount -a && df -h | grep srv"
+ssh sean@10.0.0.226 "sudo mount -a && df -h | grep srv"
 ```
 
 Trigger a Jellyfin library scan after mounting:
 
 ```
-http://10.0.0.225:8096 → Dashboard → Libraries → Scan All Libraries
+http://10.0.0.226:8096 → Dashboard → Libraries → Scan All Libraries
 ```
 
 ---
@@ -221,10 +221,10 @@ bash ~/Desktop/Sean-Media-Server/scripts/restore.sh \
   ~/Backups/MediaServer-Backups/Weekly/media-server-backup-YYYY-MM-DD.tar.gz
 
 # Check Jellyfin on Pi
-ssh sean@10.0.0.225 "systemctl status jellyfin --no-pager | head -5"
+ssh sean@10.0.0.226 "systemctl status jellyfin --no-pager | head -5"
 
 # Check Samba on Pi
-ssh sean@10.0.0.225 "systemctl is-active smbd nmbd"
+ssh sean@10.0.0.226 "systemctl is-active smbd nmbd"
 
 # Re-enable Media Drop service
 launchctl load ~/Library/LaunchAgents/com.sean.mediadrop.plist

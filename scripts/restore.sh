@@ -12,7 +12,7 @@
 
 set -euo pipefail
 
-PI_HOST="${PI_HOST:-10.0.0.225}"
+PI_HOST="${PI_HOST:-10.0.0.226}"
 PI_USER="${PI_USER:-sean}"
 PI="$PI_USER@$PI_HOST"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

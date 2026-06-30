@@ -136,6 +136,60 @@ html, body {
   font-size: 0.9rem;
 }
 
+/* ── Media Server ──────────────────────────────────────── */
+
+.ms-services {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin-bottom: 18px;
+}
+
+.ms-svc {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.svc-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.svc-ok   { background: var(--green); }
+.svc-warn { background: var(--yellow); }
+.svc-err  { background: var(--red); }
+
+.ms-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 28px;
+  margin-bottom: 18px;
+}
+
+.ms-import {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ms-import-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+}
+
+.ms-import-val {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
 /* ── Sports ────────────────────────────────────────────── */
 
 .sports-list {
