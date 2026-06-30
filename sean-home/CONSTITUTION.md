@@ -2,6 +2,14 @@
 
 Sean Media Server v1.0 is now considered complete and operational.
 
+## Naming & Vision
+
+**Sean Home** is the application — the actual FastAPI codebase running on the Raspberry Pi 4 at `sean-home/`, port 8088.
+
+**Sean Hub** is not a separate app or project. It is the long-term product vision and design direction that Sean Home is evolving toward — the "what this becomes" brand under which new modules (sports, gaming, expanded weather, media status, idle mode, etc.) are designed.
+
+All code, commits, and deployment continue under the name **Sean Home**, in this directory, on this port, as one FastAPI service. "Sean Hub" only appears in vision/design documents, never in the codebase, repo name, or service name, unless explicitly approved otherwise in the future.
+
 Sean Home is a new project that will run on the Raspberry Pi 4 alongside Jellyfin.
 
 Its purpose is to become the default home screen for my TVs whenever I am not actively watching media.
@@ -72,11 +80,17 @@ The dashboard consumes data from existing services only. All data sources must b
 ---
 
 ### Sports
-- Current Phillies game status or next game
-- Current Eagles season information
-- Current World Cup status (when active)
-- Upcoming favorite team games
+- Teams tracked: Phillies, Eagles, Sixers, Flyers, World Cup (when active)
+- Upcoming games for each tracked team
+- Recent scores for each tracked team
 - Live scores when a game is in progress
+
+---
+
+### Gaming
+- Fortnite: public news, item shop, and server status only (official public endpoints)
+- No PlayStation Network scraping or unsupported/undocumented data sources
+- PSN integration remains research-only until a reliable official API is confirmed (see PlayStation section below)
 
 ---
 
@@ -144,13 +158,14 @@ Sean Home exposes clean internal APIs so Sean OS can consume or enhance it in th
 
 ```
 Browser / TV
-     ↓  http://10.0.0.225:8097
-Sean Home (Python FastAPI, port 8097)
+     ↓  http://10.0.0.225:8088
+Sean Home (Python FastAPI, port 8088)
      ↓ reads from
 Jellyfin REST API (port 8096)     — media data, status, libraries
 Open-Meteo API                    — weather, no API key required
 ESPN API or similar               — sports scores and schedules
-Google Calendar API               — calendar events
+Google Calendar API                — calendar events
+Fortnite public API (news/shop/status only) — gaming card
 PlayStation API (if available)    — PSN status and trophies
 Pi system metrics                 — disk, CPU, RAM, temp
 ```
