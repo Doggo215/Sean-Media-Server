@@ -58,6 +58,7 @@ The Media Server must remain fully functional even if Sean OS is offline.
 | [SOFTWARE.md](SOFTWARE.md) | Installed packages and services |
 | [BACKUP.md](BACKUP.md) | Backup procedures and recovery |
 | [DISASTER_RECOVERY.md](DISASTER_RECOVERY.md) | Complete rebuild guide — target 52 minutes |
+| [PRIVACY_AND_SAFE_DOWNLOADS.md](PRIVACY_AND_SAFE_DOWNLOADS.md) | Browser setup, safe downloads, VPN, DNS, import workflow |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Known issues and solutions |
 | [NOTES.md](NOTES.md) | Scratch pad and working notes |
 | [TODO.md](TODO.md) | Outstanding tasks |
