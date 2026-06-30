@@ -205,6 +205,109 @@ async function pollGaming() {
   }
 }
 
+async function pollTonight() {
+  const bodyEl = document.getElementById("tonight-body");
+  if (!bodyEl) return;
+
+  try {
+    const res = await fetch("/api/tonight");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const d = await res.json();
+
+    if (!d.available) {
+      bodyEl.innerHTML = `<p class="placeholder-text">Tonight unavailable</p>`;
+      setTimeout(pollTonight, 120000);
+      return;
+    }
+
+    const rows = [];
+
+    // Weather row
+    if (d.weather && d.weather.available) {
+      rows.push(
+        `<div class="tn-row tn-weather">` +
+        `<span class="tn-icon">${d.weather.icon}</span>` +
+        `<span class="tn-detail">${d.weather.condition} · ${d.weather.temp_f}°F &rarr; Low ${d.weather.low_f}°F</span>` +
+        `</div>`
+      );
+    }
+
+    // Live games
+    for (const g of (d.sports.live || [])) {
+      rows.push(
+        `<div class="tn-row tn-live">` +
+        `<span class="tn-icon">🔴</span>` +
+        `<span class="tn-detail"><strong>LIVE</strong> ${g.team} vs ${g.opponent} · ${g.score}${g.period ? " · " + g.period : ""}</span>` +
+        `</div>`
+      );
+    }
+
+    // Upcoming games tonight
+    for (const g of (d.sports.upcoming || [])) {
+      rows.push(
+        `<div class="tn-row tn-upcoming">` +
+        `<span class="tn-icon">🏟</span>` +
+        `<span class="tn-detail">${g.team} vs ${g.opponent} · ${g.time}</span>` +
+        `</div>`
+      );
+    }
+
+    // Final scores from today
+    for (const g of (d.sports.finals || [])) {
+      const resultClass = g.result === "W" ? "tn-win" : g.result === "L" ? "tn-loss" : "";
+      const badge = g.result ? `<span class="tn-result ${resultClass}">${g.result}</span>` : "";
+      rows.push(
+        `<div class="tn-row tn-final">` +
+        `<span class="tn-icon">📊</span>` +
+        `<span class="tn-detail">${g.team} vs ${g.opponent} · ${g.score} ${badge}</span>` +
+        `</div>`
+      );
+    }
+
+    // No sports data tonight
+    if (!d.sports.live.length && !d.sports.upcoming.length && !d.sports.finals.length) {
+      rows.push(
+        `<div class="tn-row tn-dim">` +
+        `<span class="tn-icon">🏟</span>` +
+        `<span class="tn-detail">No tracked games tonight</span>` +
+        `</div>`
+      );
+    }
+
+    // Gaming
+    if (d.gaming && d.gaming.available) {
+      const statusText = d.gaming.fortnite_status
+        ? `Fortnite: ${d.gaming.fortnite_status}`
+        : d.gaming.headline || "Fortnite";
+      rows.push(
+        `<div class="tn-row tn-dim">` +
+        `<span class="tn-icon">🎮</span>` +
+        `<span class="tn-detail">${statusText}</span>` +
+        `</div>`
+      );
+    }
+
+    // Placeholders
+    rows.push(
+      `<div class="tn-row tn-placeholder">` +
+      `<span class="tn-icon">📺</span>` +
+      `<span class="tn-detail">Recently Added — coming soon</span>` +
+      `</div>`,
+      `<div class="tn-row tn-placeholder">` +
+      `<span class="tn-icon">📅</span>` +
+      `<span class="tn-detail">Calendar — coming soon</span>` +
+      `</div>`
+    );
+
+    bodyEl.innerHTML = rows.join("");
+  } catch (err) {
+    console.warn("Sean Home: tonight unavailable", err);
+    bodyEl.innerHTML = `<p class="placeholder-text">Tonight unavailable</p>`;
+  }
+
+  setTimeout(pollTonight, 120000); // refresh every 2 min
+}
+
 function svcDot(status) {
   if (status === "active")   return `<span class="svc-dot svc-ok"></span>`;
   if (status === "inactive") return `<span class="svc-dot svc-warn"></span>`;
@@ -260,6 +363,7 @@ setInterval(pollSystemStatus, 30000);
 pollWeather();
 setInterval(pollWeather, 600000); // 10 min — matches server-side cache TTL
 
+pollTonight(); // self-scheduling, 2 min refresh — reads from warm caches
 pollSports(); // self-scheduling — interval adapts to live-game state
 pollMediaServer(); // self-scheduling via setTimeout, 60s refresh
 

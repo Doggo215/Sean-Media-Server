@@ -584,6 +584,137 @@ async def gaming():
     return {**result, "cached": False}
 
 
+# ─── Tonight ─────────────────────────────────────────────────────────────────
+
+@app.get("/api/tonight")
+async def tonight():
+    """
+    Read-only aggregator — draws from existing caches, no new external calls
+    except a cold-start weather fetch. Answer: "What should I know tonight?"
+    """
+    now_mt = datetime.now(DENVER)
+    today_str = now_mt.strftime("%a %b %-d")  # e.g. "Tue Jun 30"
+
+    result: dict = {
+        "available": True,
+        "as_of": now_mt.strftime("%-I:%M %p MT"),
+    }
+
+    # ── Weather ──────────────────────────────────────────────────────────────
+    try:
+        wd = _weather_cache["data"]
+        if not wd:
+            # Cache is cold on first load — trigger a fresh pull
+            try:
+                raw = await fetch_weather()
+                code = raw["current"]["weather_code"]
+                condition, icon = WEATHER_CODES.get(code, ("Unknown", "🌡️"))
+                wd = {
+                    "available": True,
+                    "temperature_f": round(raw["current"]["temperature_2m"]),
+                    "high_f": round(raw["daily"]["temperature_2m_max"][0]),
+                    "low_f": round(raw["daily"]["temperature_2m_min"][0]),
+                    "condition": condition,
+                    "icon": icon,
+                    "location": "Arvada, CO",
+                }
+                _weather_cache["data"] = wd
+                _weather_cache["fetched_at"] = time.time()
+            except Exception:
+                wd = None
+
+        if wd and wd.get("available"):
+            result["weather"] = {
+                "available": True,
+                "temp_f": wd["temperature_f"],
+                "low_f": wd["low_f"],
+                "condition": wd["condition"],
+                "icon": wd["icon"],
+            }
+        else:
+            result["weather"] = {"available": False}
+    except Exception:
+        result["weather"] = {"available": False}
+
+    # ── Sports ───────────────────────────────────────────────────────────────
+    try:
+        sd = _sports_cache["data"]
+        live_games: list = []
+        upcoming_games: list = []
+        final_games: list = []
+
+        if sd and sd.get("available"):
+            for key, team in sd.get("teams", {}).items():
+                if not team.get("available", True):
+                    continue
+                label = team.get("label", key)
+
+                if team.get("live"):
+                    g = team["live"]
+                    score = g.get("score") or f"{g.get('my_score', '—')}-{g.get('opp_score', '—')}"
+                    live_games.append({
+                        "team": label,
+                        "opponent": g.get("opponent") or g.get("matchup", ""),
+                        "score": score,
+                        "period": g.get("period"),
+                    })
+
+                if team.get("next") and team["next"].get("date") == today_str:
+                    g = team["next"]
+                    upcoming_games.append({
+                        "team": label,
+                        "opponent": g.get("opponent") or g.get("matchup", ""),
+                        "time": g.get("time"),
+                    })
+
+                if team.get("last") and team["last"].get("date") == today_str:
+                    g = team["last"]
+                    score = g.get("score") or f"{g.get('my_score', '—')}-{g.get('opp_score', '—')}"
+                    final_games.append({
+                        "team": label,
+                        "opponent": g.get("opponent") or g.get("matchup", ""),
+                        "score": score,
+                        "result": g.get("result"),
+                    })
+
+        result["sports"] = {
+            "available": True,
+            "live": live_games,
+            "upcoming": upcoming_games,
+            "finals": final_games,
+        }
+    except Exception:
+        result["sports"] = {"available": False}
+
+    # ── Gaming ───────────────────────────────────────────────────────────────
+    try:
+        gd = _gaming_cache["data"]
+        if gd and gd.get("available"):
+            fn = gd.get("fortnite", {})
+            news = fn.get("news") or []
+            result["gaming"] = {
+                "available": True,
+                "fortnite_status": fn.get("status"),
+                "headline": news[0]["title"] if news else None,
+            }
+        else:
+            result["gaming"] = {"available": False}
+    except Exception:
+        result["gaming"] = {"available": False}
+
+    # ── Placeholders ─────────────────────────────────────────────────────────
+    result["media"] = {
+        "available": False,
+        "note": "Recently Added — coming in Phase 1G",
+    }
+    result["calendar"] = {
+        "available": False,
+        "note": "Calendar — coming soon",
+    }
+
+    return result
+
+
 # ─── Dashboard ───────────────────────────────────────────────────────────────
 
 @app.get("/", response_class=HTMLResponse)

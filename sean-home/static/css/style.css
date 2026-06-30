@@ -136,6 +136,55 @@ html, body {
   font-size: 0.9rem;
 }
 
+/* ── Tonight ───────────────────────────────────────────── */
+
+.card-tonight {
+  grid-column: 1 / -1; /* full width — it's the headline card */
+}
+
+.tn-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.95rem;
+}
+
+.tn-row:last-child {
+  border-bottom: none;
+}
+
+.tn-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  width: 1.6rem;
+  text-align: center;
+}
+
+.tn-detail {
+  color: var(--text);
+  flex: 1;
+  line-height: 1.4;
+}
+
+.tn-live .tn-detail   { color: var(--red); }
+.tn-win               { color: var(--green); font-weight: 700; }
+.tn-loss              { color: var(--red); font-weight: 700; }
+.tn-dim .tn-detail,
+.tn-placeholder .tn-detail,
+.tn-final .tn-detail  { color: var(--text-dim); }
+
+.tn-result {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
 /* ── Media Server ──────────────────────────────────────── */
 
 .ms-services {
