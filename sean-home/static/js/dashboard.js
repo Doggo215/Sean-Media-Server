@@ -85,6 +85,60 @@ async function pollWeather() {
   }
 }
 
+const SPORTS_ORDER = ["phillies", "eagles", "sixers", "flyers", "world_cup"];
+
+function renderSportsRow(team) {
+  if (!team || team.available === false) {
+    return `<div class="sports-row"><span class="sports-team">${team ? team.label : ""}</span><span class="sports-unavailable">Unavailable</span></div>`;
+  }
+
+  let detail;
+  if (team.live) {
+    const score = team.live.score || `${team.live.my_score ?? "—"}-${team.live.opp_score ?? "—"}`;
+    detail = `<span class="sports-live">LIVE ${score} · ${team.live.period || ""}</span>`;
+  } else if (team.next) {
+    const who = team.next.opponent ? `vs ${team.next.opponent}` : team.next.matchup;
+    detail = `<span class="sports-next">Next: ${who} · ${team.next.date} ${team.next.time}</span>`;
+  } else if (team.last) {
+    const score = team.last.score || `${team.last.my_score ?? "—"}-${team.last.opp_score ?? "—"}`;
+    const result = team.last.result ? `${team.last.result} ` : "";
+    detail = `<span class="sports-last">Last: ${result}${score}</span>`;
+  } else {
+    detail = `<span class="sports-unavailable">No data</span>`;
+  }
+
+  return `<div class="sports-row"><span class="sports-team">${team.label}</span>${detail}</div>`;
+}
+
+async function pollSports() {
+  const listEl = document.getElementById("sports-list");
+  if (!listEl) return;
+
+  let nextDelay = 600000; // 10 min default
+
+  try {
+    const res = await fetch("/api/sports");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    if (!data.available) {
+      listEl.innerHTML = `<p class="placeholder-text">Sports unavailable</p>`;
+    } else {
+      listEl.innerHTML = SPORTS_ORDER
+        .filter((key) => data.teams[key])
+        .map((key) => renderSportsRow(data.teams[key]))
+        .join("");
+      nextDelay = data.live_active ? 60000 : 600000; // poll faster only while a game is live
+    }
+  } catch (err) {
+    // Fail gracefully — never crash the dashboard over a sports data outage
+    console.warn("Sean Home: sports unavailable", err);
+    listEl.innerHTML = `<p class="placeholder-text">Sports unavailable</p>`;
+  }
+
+  setTimeout(pollSports, nextDelay);
+}
+
 tickClock();
 setInterval(tickClock, 1000);
 
@@ -93,3 +147,5 @@ setInterval(pollSystemStatus, 30000);
 
 pollWeather();
 setInterval(pollWeather, 600000); // 10 min — matches server-side cache TTL
+
+pollSports(); // self-scheduling — interval adapts to live-game state

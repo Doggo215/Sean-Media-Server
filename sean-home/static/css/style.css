@@ -136,6 +136,44 @@ html, body {
   font-size: 0.9rem;
 }
 
+/* ── Sports ────────────────────────────────────────────── */
+
+.sports-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sports-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 0.95rem;
+}
+
+.sports-team {
+  font-weight: 600;
+  color: var(--text);
+  min-width: 70px;
+}
+
+.sports-live {
+  color: var(--red);
+  font-weight: 600;
+}
+
+.sports-next,
+.sports-last {
+  color: var(--text-dim);
+  text-align: right;
+}
+
+.sports-unavailable {
+  color: var(--text-dim);
+  font-style: italic;
+}
+
 /* ── System stats ──────────────────────────────────────── */
 
 .stat-grid {
