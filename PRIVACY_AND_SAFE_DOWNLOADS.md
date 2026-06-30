@@ -135,38 +135,28 @@ Local hostname resolution (`media-server.local`) uses mDNS/Bonjour, not external
 
 ## 5. Media Server Import Workflow
 
-The complete workflow for getting media from your Mac into Jellyfin:
+```
+file → ~/Desktop/Media Drop/ → /srv/media/ on Pi → Jellyfin scan → TV
+```
 
-```
-Legally acquired media file
-        ↓
-  ~/Desktop/Media Drop/
-        ↓ (Media Drop service detects and processes automatically)
-  /srv/media/ on the Pi
-        ↓ (Jellyfin library scan triggered automatically)
-  Jellyfin library
-        ↓
-  TV / Phone / Browser
-```
+Drop a file into `~/Desktop/Media Drop/`. Media Drop detects it, waits for the copy to finish, routes it to the correct library folder on the Pi, triggers a Jellyfin scan, and sends a macOS notification when done.
 
 ### Folder routing (automatic)
 
-| File naming pattern | Destination folder |
+| File naming pattern | Destination |
 |---|---|
 | `Movie Title (Year).mkv` | `/srv/media/movies/Movie Title (Year)/` |
 | `Show Name S01E01.mkv` | `/srv/media/tv/Show Name/Season 01/` |
 | Drop into `Kids/` subfolder | `/srv/media/kids/` |
 | Drop into `Home Videos/` subfolder | `/srv/media/home-videos/` |
 
-### Steps
+### If a file does not appear in Jellyfin
 
-1. Obtain the media file (purchase, rip from physical media you own, or download from a service that provides file downloads)
-2. Drop the file into `~/Desktop/Media Drop/` or a named subfolder within it
-3. Media Drop detects the file, waits for it to finish copying, routes it to the correct library, and triggers a Jellyfin scan
-4. A macOS notification confirms the import
-5. Open Jellyfin on your TV or browser — the file appears in the library
+Check in this order:
 
-If a file fails to import, it moves to `~/Desktop/Media Drop/Failed/` with a log entry explaining the reason.
+1. **Correct folder** — confirm the file landed in the right `/srv/media/` subfolder via `ssh sean@10.0.0.225 "ls /srv/media/movies/"` (or the relevant folder)
+2. **Jellyfin scan** — open the Jellyfin web UI → Dashboard → Libraries → Scan All Libraries, then wait a minute and refresh
+3. **Failed folder** — check `~/Desktop/Media Drop/Failed/` for the file and review the Media Drop log at `~/Library/Logs/MediaDrop/media_drop.log` for the reason
 
 ---
 
