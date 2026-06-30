@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="refresh" content="60">
+  <title>Sean Home</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <!-- ── Header ─────────────────────────────────────────── -->
+  <header class="header">
+    <div class="header-left">
+      <div class="clock" id="clock">{{ time }}</div>
+      <div class="date" id="date">{{ date }}</div>
+    </div>
+    <div class="header-right">
+      <div class="brand">Sean Home</div>
+    </div>
+  </header>
+
+  <!-- ── Main grid ──────────────────────────────────────── -->
+  <main class="grid">
+
+    <!-- System Status -->
+    <section class="card" id="system-card">
+      <h2 class="card-title">System</h2>
+      <div class="stat-grid" id="system-stats">
+        <div class="stat">
+          <span class="stat-label">Disk</span>
+          <span class="stat-value" id="disk-pct">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Free</span>
+          <span class="stat-value" id="disk-free">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">RAM</span>
+          <span class="stat-value" id="ram-pct">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">CPU</span>
+          <span class="stat-value" id="cpu-pct">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Temp</span>
+          <span class="stat-value" id="cpu-temp">—</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Coming soon placeholders -->
+    <section class="card card-placeholder">
+      <h2 class="card-title">Weather</h2>
+      <p class="placeholder-text">Coming in Phase 1B</p>
+    </section>
+
+    <section class="card card-placeholder">
+      <h2 class="card-title">Jellyfin</h2>
+      <p class="placeholder-text">Coming in Phase 1C</p>
+    </section>
+
+    <section class="card card-placeholder">
+      <h2 class="card-title">Sports</h2>
+      <p class="placeholder-text">Coming soon</p>
+    </section>
+
+    <section class="card card-placeholder">
+      <h2 class="card-title">Calendar</h2>
+      <p class="placeholder-text">Coming soon</p>
+    </section>
+
+  </main>
+
+  <!-- ── Nav buttons ────────────────────────────────────── -->
+  <nav class="nav">
+    <a class="nav-btn" href="http://10.0.0.225:8096/web/index.html#!/movies.html">Movies</a>
+    <a class="nav-btn" href="http://10.0.0.225:8096/web/index.html#!/tv.html">TV Shows</a>
+    <a class="nav-btn" href="http://10.0.0.225:8096/web/index.html#!/movies.html?genreId=home-videos">Home Videos</a>
+    <a class="nav-btn" href="http://10.0.0.225:8096/web/index.html#!/music.html">Music</a>
+    <a class="nav-btn nav-btn-secondary" href="/health">Status</a>
+  </nav>
+
+  <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
