@@ -123,6 +123,24 @@ Phase 2 (Media Library) — Complete
 Phase 3 (Import + Samba + Media Drop + Backup) — Complete
 
 **v1.0 — Production Ready**
-This server is in maintenance mode. Future work focuses on media library expansion,
-reliability improvements, and storage expansion to the planned 4TB drive.
-Sean OS integration will not begin until the Media Server has proven stable in production.
+
+---
+
+## Project Status
+
+**Version:** 1.0
+**Status:** Production Ready
+**Current Phase:** Operational
+
+**Development Policy:**
+Feature development paused while the server is used in everyday operation.
+
+**Focus:**
+- Normal media usage
+- Library expansion
+- Reliability monitoring
+- Bug fixes only
+- Documentation updates
+
+**Future major development:**
+Sean OS integration (planned)
