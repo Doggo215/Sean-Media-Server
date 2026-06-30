@@ -584,6 +584,127 @@ async def gaming():
     return {**result, "cached": False}
 
 
+# ─── Jellyfin ────────────────────────────────────────────────────────────────
+
+JELLYFIN_BASE = os.environ.get("JELLYFIN_URL", "http://127.0.0.1:8096")
+JELLYFIN_KEY  = os.environ.get("JELLYFIN_API_KEY", "")
+JELLYFIN_USER = os.environ.get("JELLYFIN_USER_ID", "")
+JELLYFIN_CACHE_TTL = 300  # 5 min — library doesn't change by the minute
+
+_jellyfin_cache = {"data": None, "fetched_at": 0}
+
+
+def _jf_headers() -> dict:
+    return {"Authorization": f'MediaBrowser Token="{JELLYFIN_KEY}"'}
+
+
+def _format_runtime(ticks) -> str | None:
+    """Convert Jellyfin runtime ticks (100-nanosecond units) to h:mm."""
+    if not ticks:
+        return None
+    minutes = ticks // 600_000_000
+    h, m = divmod(minutes, 60)
+    return f"{h}h {m:02d}m" if h else f"{m}m"
+
+
+def _item_label(item: dict) -> str:
+    """Build a human-readable label: Series S01E02, or Movie (2024)."""
+    itype = item.get("Type", "")
+    name  = item.get("Name", "Unknown")
+    if itype == "Episode":
+        series  = item.get("SeriesName", "")
+        season  = item.get("ParentIndexNumber")
+        episode = item.get("IndexNumber")
+        ep_str  = f"S{season:02d}E{episode:02d}" if season and episode else ""
+        return f"{series} {ep_str} — {name}".strip() if series else name
+    year = item.get("ProductionYear")
+    return f"{name} ({year})" if year else name
+
+
+async def fetch_jellyfin(client: httpx.AsyncClient) -> dict:
+    if not JELLYFIN_KEY or not JELLYFIN_USER:
+        return {"available": False, "reason": "not configured"}
+
+    headers = _jf_headers()
+
+    # Recently Added — up to 8 items across all libraries
+    recently_added: list = []
+    try:
+        resp = await client.get(
+            f"{JELLYFIN_BASE}/Users/{JELLYFIN_USER}/Items/Latest",
+            headers=headers,
+            params={
+                "Limit": 8,
+                "Fields": "ProductionYear,SeriesName,ParentIndexNumber,IndexNumber,RunTimeTicks",
+                "EnableImageTypes": "Primary",
+            },
+        )
+        resp.raise_for_status()
+        for item in resp.json():
+            recently_added.append({
+                "id":      item.get("Id"),
+                "label":   _item_label(item),
+                "type":    item.get("Type"),
+                "runtime": _format_runtime(item.get("RunTimeTicks")),
+            })
+    except Exception:
+        pass  # recently_added stays empty — partial failure is fine
+
+    # Continue Watching — resumable items
+    continue_watching: list = []
+    try:
+        resp = await client.get(
+            f"{JELLYFIN_BASE}/Users/{JELLYFIN_USER}/Items",
+            headers=headers,
+            params={
+                "SortBy": "DatePlayed",
+                "SortOrder": "Descending",
+                "Filters": "IsResumable",
+                "Limit": 5,
+                "Fields": "ProductionYear,SeriesName,ParentIndexNumber,IndexNumber,RunTimeTicks,UserData",
+                "Recursive": "true",
+            },
+        )
+        resp.raise_for_status()
+        for item in (resp.json().get("Items") or []):
+            ud = item.get("UserData") or {}
+            pct = round(ud.get("PlayedPercentage") or 0)
+            continue_watching.append({
+                "id":       item.get("Id"),
+                "label":    _item_label(item),
+                "type":     item.get("Type"),
+                "progress": pct,
+            })
+    except Exception:
+        pass  # continue_watching stays empty
+
+    available = bool(recently_added or continue_watching)
+    return {
+        "available": available,
+        "recently_added": recently_added,
+        "continue_watching": continue_watching,
+    }
+
+
+@app.get("/api/jellyfin")
+async def jellyfin():
+    now = time.time()
+    if _jellyfin_cache["data"] and (now - _jellyfin_cache["fetched_at"]) < JELLYFIN_CACHE_TTL:
+        return {**_jellyfin_cache["data"], "cached": True}
+
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            data = await fetch_jellyfin(client)
+    except Exception:
+        if _jellyfin_cache["data"]:
+            return {**_jellyfin_cache["data"], "cached": True, "stale": True}
+        return JSONResponse(status_code=200, content={"available": False})
+
+    _jellyfin_cache["data"] = data
+    _jellyfin_cache["fetched_at"] = now
+    return {**data, "cached": False}
+
+
 # ─── Tonight ─────────────────────────────────────────────────────────────────
 
 @app.get("/api/tonight")
@@ -702,11 +823,20 @@ async def tonight():
     except Exception:
         result["gaming"] = {"available": False}
 
-    # ── Placeholders ─────────────────────────────────────────────────────────
-    result["media"] = {
-        "available": False,
-        "note": "Recently Added — coming in Phase 1G",
-    }
+    # ── Jellyfin / Media ─────────────────────────────────────────────────────
+    try:
+        jd = _jellyfin_cache["data"]
+        if jd and jd.get("available"):
+            result["media"] = {
+                "available": True,
+                "recently_added": (jd.get("recently_added") or [])[:3],
+                "continue_watching": (jd.get("continue_watching") or [])[:2],
+            }
+        else:
+            result["media"] = {"available": False}
+    except Exception:
+        result["media"] = {"available": False}
+
     result["calendar"] = {
         "available": False,
         "note": "Calendar — coming soon",

@@ -205,6 +205,62 @@ async function pollGaming() {
   }
 }
 
+async function pollJellyfin() {
+  const bodyEl = document.getElementById("jellyfin-body");
+  if (!bodyEl) return;
+
+  try {
+    const res = await fetch("/api/jellyfin");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const d = await res.json();
+
+    if (!d.available) {
+      bodyEl.innerHTML = `<p class="placeholder-text">Entertainment unavailable</p>`;
+      setTimeout(pollJellyfin, 300000);
+      return;
+    }
+
+    const sections = [];
+
+    if (d.continue_watching && d.continue_watching.length) {
+      sections.push(`<div class="jf-section-label">Continue Watching</div>`);
+      for (const item of d.continue_watching) {
+        const bar = `<div class="jf-progress-bar"><div class="jf-progress-fill" style="width:${item.progress}%"></div></div>`;
+        sections.push(
+          `<div class="jf-row">` +
+          `<span class="jf-title">${item.label}</span>` +
+          `<span class="jf-meta">${item.progress}%</span>` +
+          `</div>${bar}`
+        );
+      }
+    }
+
+    if (d.recently_added && d.recently_added.length) {
+      sections.push(`<div class="jf-section-label${d.continue_watching && d.continue_watching.length ? " jf-section-gap" : ""}">Recently Added</div>`);
+      for (const item of d.recently_added) {
+        const meta = item.runtime || item.type || "";
+        sections.push(
+          `<div class="jf-row">` +
+          `<span class="jf-title">${item.label}</span>` +
+          `<span class="jf-meta">${meta}</span>` +
+          `</div>`
+        );
+      }
+    }
+
+    if (!sections.length) {
+      bodyEl.innerHTML = `<p class="placeholder-text">Library is empty</p>`;
+    } else {
+      bodyEl.innerHTML = sections.join("");
+    }
+  } catch (err) {
+    console.warn("Sean Home: Jellyfin unavailable", err);
+    bodyEl.innerHTML = `<p class="placeholder-text">Entertainment unavailable</p>`;
+  }
+
+  setTimeout(pollJellyfin, 300000); // 5 min — matches server cache TTL
+}
+
 async function pollTonight() {
   const bodyEl = document.getElementById("tonight-body");
   if (!bodyEl) return;
@@ -287,12 +343,36 @@ async function pollTonight() {
       );
     }
 
-    // Placeholders
+    // Media / Recently Added
+    if (d.media && d.media.available && d.media.recently_added && d.media.recently_added.length) {
+      for (const item of d.media.recently_added.slice(0, 2)) {
+        rows.push(
+          `<div class="tn-row tn-dim">` +
+          `<span class="tn-icon">📺</span>` +
+          `<span class="tn-detail">New: ${item.label}</span>` +
+          `</div>`
+        );
+      }
+      if (d.media.continue_watching && d.media.continue_watching.length) {
+        const cw = d.media.continue_watching[0];
+        rows.push(
+          `<div class="tn-row tn-dim">` +
+          `<span class="tn-icon">▶️</span>` +
+          `<span class="tn-detail">Continue: ${cw.label} · ${cw.progress}%</span>` +
+          `</div>`
+        );
+      }
+    } else {
+      rows.push(
+        `<div class="tn-row tn-placeholder">` +
+        `<span class="tn-icon">📺</span>` +
+        `<span class="tn-detail">Recently Added — loading</span>` +
+        `</div>`
+      );
+    }
+
+    // Calendar placeholder
     rows.push(
-      `<div class="tn-row tn-placeholder">` +
-      `<span class="tn-icon">📺</span>` +
-      `<span class="tn-detail">Recently Added — coming soon</span>` +
-      `</div>`,
       `<div class="tn-row tn-placeholder">` +
       `<span class="tn-icon">📅</span>` +
       `<span class="tn-detail">Calendar — coming soon</span>` +
@@ -363,6 +443,7 @@ setInterval(pollSystemStatus, 30000);
 pollWeather();
 setInterval(pollWeather, 600000); // 10 min — matches server-side cache TTL
 
+pollJellyfin(); // self-scheduling, 5 min refresh
 pollTonight(); // self-scheduling, 2 min refresh — reads from warm caches
 pollSports(); // self-scheduling — interval adapts to live-game state
 pollMediaServer(); // self-scheduling via setTimeout, 60s refresh
