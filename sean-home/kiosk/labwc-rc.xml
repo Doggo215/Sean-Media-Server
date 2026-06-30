@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!--
+  Sean Home — labwc seat configuration
+  Deployed to ~/.config/labwc/rc.xml by install-kiosk.sh
+  Hides the mouse cursor after 1 second of inactivity (kiosk TV use).
+-->
+<labwc_config>
+  <seat>
+    <cursor>
+      <hide-timeout>1000</hide-timeout>
+    </cursor>
+  </seat>
+</labwc_config>
