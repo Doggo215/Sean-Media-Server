@@ -1,7 +1,21 @@
 // Sean Home — TV Dashboard
-// 65" display · 8–12 ft viewing distance · Apple TV / PS5 design language
+// 65" display · 10 ft viewing distance · Apple TV / PS5 design language
+// Phase K: one coherent scene. Favor recognition over reading.
 
-/* ── Clock ──────────────────────────────────────────────────── */
+/* ── Time-of-day scene ───────────────────────────────────────── */
+function setTimeOfDayScene() {
+  const h = new Date().getHours();
+  const scene =
+    h >= 5  && h < 12 ? "morning"    :
+    h >= 12 && h < 17 ? "afternoon"  :
+    h >= 17 && h < 22 ? "evening"    : "late-night";
+  document.body.classList.remove(
+    "scene-morning","scene-afternoon","scene-evening","scene-late-night"
+  );
+  document.body.classList.add("scene-" + scene);
+}
+
+/* ── Clock ───────────────────────────────────────────────────── */
 function tickClock() {
   const el = document.getElementById("clock");
   if (!el) return;
@@ -14,13 +28,10 @@ function tickClock() {
 function classify(v, warnAt, alertAt) {
   return v >= alertAt ? "alert" : v >= warnAt ? "warn" : "good";
 }
-
 function svcDot(status) {
   const cls = status === "active" ? "svc-ok" : status === "inactive" ? "svc-warn" : "svc-err";
   return `<span class="svc-dot ${cls}"></span>`;
 }
-
-// Map condition text → CSS class for weather card background
 function weatherClass(condition) {
   const c = (condition || "").toLowerCase();
   if (c.includes("thunder") || c.includes("storm")) return "weather-stormy";
@@ -31,7 +42,7 @@ function weatherClass(condition) {
   return "";
 }
 
-/* ── System status (writes to hidden #system-card IDs) ──────── */
+/* ── System (hidden status card) ────────────────────────────── */
 async function pollSystemStatus() {
   try {
     const res = await fetch("/api/system");
@@ -41,13 +52,13 @@ async function pollSystemStatus() {
       const el = document.getElementById(id);
       if (el) { el.textContent = text; if (cls) el.className = "stat-value " + cls; }
     };
-    set("disk-pct",  `${d.disk.root_pct}%`,       classify(d.disk.root_pct,  80, 95));
+    set("disk-pct",  `${d.disk.root_pct}%`,      classify(d.disk.root_pct,  80, 95));
     set("disk-free", `${d.disk.root_free_gb} GB`);
-    set("ram-pct",   `${d.ram.used_pct}%`,         classify(d.ram.used_pct,   80, 95));
+    set("ram-pct",   `${d.ram.used_pct}%`,        classify(d.ram.used_pct,   80, 95));
     set("cpu-pct",   `${d.cpu.used_pct}%`);
     if (d.cpu.temp_c !== null)
       set("cpu-temp", `${d.cpu.temp_c}°C`, classify(d.cpu.temp_c, 70, 80));
-  } catch { /* hidden card — fail silently */ }
+  } catch { /* hidden — fail silently */ }
 }
 
 /* ── Weather ─────────────────────────────────────────────────── */
@@ -78,7 +89,6 @@ async function pollWeather() {
     const d = await res.json();
     if (!d.available) { setUnavailable(); return; }
 
-    // SVG animated icon in the weather card; emoji fallback in header (smaller, less critical)
     if (typeof getWeatherIcon === "function") {
       iconEl.innerHTML = getWeatherIcon(d.condition);
     } else {
@@ -93,7 +103,6 @@ async function pollWeather() {
     if (hwTemp) hwTemp.textContent = `${d.temperature_f}°`;
     if (hwDesc) hwDesc.textContent = `${d.condition}  ·  Low ${d.low_f}°`;
 
-    // Apply dynamic sky background to weather card
     if (card) {
       const wClass = weatherClass(d.condition);
       card.className = `card card-weather${wClass ? " " + wClass : ""}`;
@@ -104,7 +113,7 @@ async function pollWeather() {
   }
 }
 
-/* ── Tonight — 3 large hero callouts ─────────────────────────── */
+/* ── Tonight ─────────────────────────────────────────────────── */
 async function pollTonight() {
   const bodyEl = document.getElementById("tonight-body");
   if (!bodyEl) return;
@@ -122,7 +131,7 @@ async function pollTonight() {
 
     const callouts = [];
 
-    // ── 1. Weather ──
+    // Weather
     if (d.weather && d.weather.available) {
       callouts.push(`
         <div class="tn-callout">
@@ -135,7 +144,7 @@ async function pollTonight() {
         </div>`);
     }
 
-    // ── 2. Best sports item ──
+    // Sports — best available
     const live     = d.sports.live     || [];
     const upcoming = d.sports.upcoming || [];
     const finals   = d.sports.finals   || [];
@@ -179,13 +188,11 @@ async function pollTonight() {
       callouts.push(`
         <div class="tn-callout tn-callout-dim">
           <div class="tn-co-icon">🏟️</div>
-          <div class="tn-co-body">
-            <div class="tn-co-label">No games tonight</div>
-          </div>
+          <div class="tn-co-body"><div class="tn-co-label">No games tonight</div></div>
         </div>`);
     }
 
-    // ── 3. Media ──
+    // Media
     if (d.media && d.media.available) {
       const cw = (d.media.continue_watching || [])[0];
       const ra = (d.media.recently_added   || [])[0];
@@ -220,7 +227,7 @@ async function pollTonight() {
   setTimeout(pollTonight, 120000);
 }
 
-/* ── Sports — scoreboard, team colors, logos ─────────────────── */
+/* ── Sports ──────────────────────────────────────────────────── */
 const SPORTS_ORDER = ["phillies", "eagles", "sixers", "flyers", "world_cup"];
 
 const TEAM_LOGOS = {
@@ -245,38 +252,57 @@ function renderSportsRow(team, key) {
 
   if (team.live) {
     const score  = team.live.score || `${team.live.my_score ?? "—"}-${team.live.opp_score ?? "—"}`;
-    const period = team.live.period ? ` · ${team.live.period}` : "";
+    const period = team.live.period || "Live";
     return `
       <div class="sb-row sb-row-live" ${teamAttr}>
         ${logo}
-        <div class="sb-team">${team.label}</div>
+        <div class="sb-team-wrap">
+          <div class="sb-team">${team.label}</div>
+          <div class="sb-sub sb-sub-live"><span class="sb-live-dot"></span>LIVE · ${period}</div>
+        </div>
         <div class="sb-score sb-score-live">${score}</div>
-        <div class="sb-badge sb-badge-live"><span class="sb-live-dot"></span>LIVE${period}</div>
       </div>`;
   }
 
   if (team.next) {
-    const opp = team.next.opponent ? `vs ${team.next.opponent}` : (team.next.matchup || "");
+    // World Cup shows full matchup; other teams show opponent
+    const display = (key === "world_cup" && team.next.matchup)
+      ? team.next.matchup
+      : team.label;
+    const sub = (key === "world_cup" && team.next.matchup)
+      ? "World Cup"
+      : (team.next.opponent ? `vs ${team.next.opponent}` : team.next.matchup || "");
     return `
       <div class="sb-row" ${teamAttr}>
         ${logo}
-        <div class="sb-team">${team.label}</div>
+        <div class="sb-team-wrap">
+          <div class="sb-team">${display}</div>
+          ${sub ? `<div class="sb-sub">${sub}</div>` : ""}
+        </div>
         <div class="sb-time">${team.next.time || "TBD"}</div>
-        <div class="sb-badge sb-badge-next">${opp}</div>
       </div>`;
   }
 
   if (team.last) {
     const score  = team.last.score || `${team.last.my_score ?? "—"}-${team.last.opp_score ?? "—"}`;
     const result = team.last.result || "";
-    const rClass = result === "W" ? "sb-badge-win" : result === "L" ? "sb-badge-loss" : "sb-badge-final";
-    const sClass = result === "W" ? "sb-score-win" : result === "L" ? "sb-score-loss" : "";
+    // World Cup shows full matchup in the name slot
+    const display = (key === "world_cup" && team.last.matchup)
+      ? team.last.matchup
+      : team.label;
+    const sub = (key === "world_cup" && team.last.matchup)
+      ? "World Cup · Final"
+      : (result === "W" ? "Win" : result === "L" ? "Loss" : "Final");
+    const subCls = result === "W" ? "sb-sub-win" : result === "L" ? "sb-sub-loss" : "";
+    const scoreCls = result === "W" ? "sb-score-win" : result === "L" ? "sb-score-loss" : "";
     return `
       <div class="sb-row" ${teamAttr}>
         ${logo}
-        <div class="sb-team">${team.label}</div>
-        <div class="sb-score sb-score-final ${sClass}">${score}</div>
-        <div class="sb-badge ${rClass}">${result || "Final"}</div>
+        <div class="sb-team-wrap">
+          <div class="sb-team">${display}</div>
+          <div class="sb-sub ${subCls}">${sub}</div>
+        </div>
+        <div class="sb-score ${scoreCls}">${score}</div>
       </div>`;
   }
 
@@ -284,7 +310,8 @@ function renderSportsRow(team, key) {
 }
 
 async function pollSports() {
-  const listEl = document.getElementById("sports-list");
+  const listEl  = document.getElementById("sports-list");
+  const sportsCard = document.getElementById("sports-card");
   if (!listEl) return;
   let nextDelay = 600000;
 
@@ -303,6 +330,12 @@ async function pollSports() {
         .join("");
       listEl.innerHTML = rows || `<div class="sb-placeholder">No games data</div>`;
       nextDelay = d.live_active ? 60000 : 600000;
+
+      // Live aura on the sports card
+      if (sportsCard) {
+        const hasLive = SPORTS_ORDER.some(k => d.teams[k] && d.teams[k].live);
+        sportsCard.classList.toggle("has-live", hasLive);
+      }
     }
   } catch {
     console.warn("Sean Home: sports unavailable");
@@ -312,33 +345,45 @@ async function pollSports() {
   setTimeout(pollSports, nextDelay);
 }
 
-/* ── Gaming — neon card ──────────────────────────────────────── */
+/* ── Gaming — hero layout, one featured item ─────────────────── */
 function renderGaming(data) {
   const fn = data.fortnite;
-  const parts = [];
 
-  if (fn && fn.available) {
-    const badge = `<span class="gaming-status-badge">${fn.status || "Online"}</span>`;
-    parts.push(`<div class="gaming-hero"><div class="gaming-hero-title">Fortnite</div>${badge}</div>`);
-
-    for (const n of (fn.news || []).slice(0, 2)) {
-      parts.push(`<div class="gaming-news-item">📰 ${n.title}</div>`);
-    }
-
-    const shop = (fn.shop || []).slice(0, 2);
-    if (shop.length) {
-      parts.push(`<div class="gaming-shop-hdr">Today's Shop</div>`);
-      for (const s of shop) {
-        parts.push(`<div class="gaming-shop-item">🛒 ${s.name}${s.price ? ` · ${s.price} V-Bucks` : ""}</div>`);
-      }
-    }
-  } else {
-    parts.push(`<div class="gaming-hero"><div class="gaming-hero-title">Gaming</div></div>`);
-    parts.push(`<div class="gaming-dim">Fortnite data unavailable</div>`);
+  if (!fn || !fn.available) {
+    return `
+      <div class="gaming-hero">
+        <div class="gaming-hero-title">Gaming</div>
+      </div>
+      <div class="gaming-dim">Fortnite unavailable</div>`;
   }
 
-  parts.push(`<div class="gaming-coming-soon">🎮 PS5 integration coming soon</div>`);
-  return parts.join("");
+  const badge = `<span class="gaming-status-badge">${fn.status || "Online"}</span>`;
+  let feature = "";
+
+  // Show the first shop item as the hero feature
+  const topShop = (fn.shop || [])[0];
+  if (topShop) {
+    const price = topShop.price ? `${topShop.price} V-Bucks` : "Shop";
+    feature = `
+      <div class="gaming-feature">
+        <div class="gaming-feature-name">${topShop.name}</div>
+        <div class="gaming-feature-meta">${price}</div>
+      </div>`;
+  } else if ((fn.news || [])[0]) {
+    // Fall back to top news item if no shop
+    feature = `
+      <div class="gaming-feature">
+        <div class="gaming-feature-name">${fn.news[0].title}</div>
+        <div class="gaming-feature-meta">News</div>
+      </div>`;
+  }
+
+  return `
+    <div class="gaming-hero">
+      <div class="gaming-hero-title">Fortnite</div>
+      ${badge}
+    </div>
+    ${feature}`;
 }
 
 async function pollGaming() {
@@ -367,7 +412,7 @@ function jfPoster(item, large) {
   const cls = large ? "jf-thumb" : "jf-thumb jf-thumb-sm";
   if (item.id) {
     const jfBase = `http://${window.location.hostname}:8096`;
-    const h = large ? 148 : 124;
+    const h = large ? 204 : 160;
     const src = `${jfBase}/Items/${item.id}/Images/Primary?maxHeight=${h}&quality=85`;
     return `<div class="${cls}" data-initial="${initial}">` +
            `<img src="${src}" alt="" loading="lazy" onerror="jfThumbFail(this)">` +
@@ -410,7 +455,8 @@ async function pollJellyfin() {
 
     if (d.recently_added && d.recently_added.length) {
       sections.push(`<div class="jf-section-label">Recently Added</div>`);
-      for (const item of d.recently_added.slice(0, 3)) {
+      // Limit to 2 items — bigger posters need more height
+      for (const item of d.recently_added.slice(0, 2)) {
         sections.push(`
           <div class="jf-poster-row">
             ${jfPoster(item, false)}
@@ -447,9 +493,10 @@ async function pollMediaServer() {
     if (!d.available) {
       bodyEl.innerHTML = `<span class="card-placeholder">Media Server unavailable</span>`;
     } else {
-      const svcs    = Object.values(d.services).map(s => `<span class="ms-svc">${svcDot(s.status)}${s.label}</span>`).join("");
-      const temp    = d.cpu.temp_c !== null ? `${d.cpu.temp_c}°C` : "—";
-      const imp     = d.last_import.available
+      const svcs = Object.values(d.services)
+        .map(s => `<span class="ms-svc">${svcDot(s.status)}${s.label}</span>`).join("");
+      const temp = d.cpu.temp_c !== null ? `${d.cpu.temp_c}°C` : "—";
+      const imp  = d.last_import.available
         ? `<span class="ms-sep">·</span><span class="ms-stat-chip">Last import <strong>${d.last_import.folder} · ${d.last_import.date}</strong></span>`
         : "";
       bodyEl.innerHTML =
@@ -470,7 +517,10 @@ async function pollMediaServer() {
   setTimeout(pollMediaServer, 60000);
 }
 
-/* ── Boot ───────────────────────────────────────────────────── */
+/* ── Boot ────────────────────────────────────────────────────── */
+setTimeOfDayScene();
+setInterval(setTimeOfDayScene, 3600000); // update scene each hour
+
 tickClock();
 setInterval(tickClock, 1000);
 
