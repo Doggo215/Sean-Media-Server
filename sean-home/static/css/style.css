@@ -835,6 +835,115 @@ body {
   padding:16px;
 }
 
+/* ── WORLD CUP HERO WIDGET ───────────────────────────────────── */
+/* Horizontal matchup layout — away team : score : home team      */
+.sb-row-wc {
+  flex-direction: column;
+  align-items: stretch;
+  padding: 12px 14px;
+  gap: 6px;
+}
+.sb-row-wc-live {
+  background: linear-gradient(110deg, rgba(212,175,55,0.14) 0%, rgba(212,175,55,0.03) 100%);
+  border-left-color: var(--c-worldcup);
+}
+.sb-row-wc-next {
+  background: linear-gradient(110deg, rgba(212,175,55,0.06) 0%, transparent 100%);
+  border-left-color: var(--c-worldcup);
+}
+.sb-row-wc-last {
+  border-left-color: rgba(212,175,55,0.3);
+}
+
+.wc-matchup-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.wc-team-away, .wc-team-home {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+.wc-team-home {
+  flex-direction: row-reverse;
+}
+.wc-flag {
+  font-size: 2.6rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.wc-name {
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1;
+}
+.wc-score-center {
+  flex-shrink: 0;
+  text-align: center;
+  min-width: 96px;
+}
+.wc-score-num {
+  font-size: 4rem;
+  font-weight: 100;
+  letter-spacing: -3px;
+  color: var(--text);
+  line-height: 1;
+}
+.wc-score-num-live {
+  color: var(--red);
+  animation: scorePulse 3s ease-in-out infinite;
+}
+.wc-score-time {
+  font-size: 2rem;
+  font-weight: 200;
+  color: var(--blue);
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.wc-status-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: 1.0rem;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+.wc-status-live  { color: var(--red); }
+.wc-status-next  { color: var(--text-3); }
+.wc-status-final { color: var(--text-2); }
+
+/* ── LIVE SPORTS HERO ────────────────────────────────────────── */
+/* When a Philly team goes live, their row expands               */
+.sb-row-hero { padding: 14px 14px 14px 12px; }
+.sb-row-hero .sb-logo  { width: 88px; height: 88px; }
+.sb-row-hero .sb-team  { font-size: 3.2rem; }
+.sb-row-hero .sb-score { font-size: 6rem; min-width: 140px; }
+
+/* Compress other rows when a hero is displayed */
+.scoreboard.has-hero .sb-row:not(.sb-row-hero):not(.sb-row-wc) {
+  padding: 5px 14px 5px 12px;
+}
+.scoreboard.has-hero .sb-row:not(.sb-row-hero):not(.sb-row-wc) .sb-logo  { width: 50px; height: 50px; }
+.scoreboard.has-hero .sb-row:not(.sb-row-hero):not(.sb-row-wc) .sb-team  { font-size: 1.8rem; }
+.scoreboard.has-hero .sb-row:not(.sb-row-hero):not(.sb-row-wc) .sb-sub   { font-size: 1.0rem; }
+.scoreboard.has-hero .sb-row:not(.sb-row-hero):not(.sb-row-wc) .sb-score { font-size: 3rem; min-width: 76px; }
+.scoreboard.has-hero .sb-row:not(.sb-row-hero):not(.sb-row-wc) .sb-time  { font-size: 2.4rem; min-width: 88px; }
+
+/* Grid expands sports column when any live game is active */
+.tv-content-grid.sports-hero {
+  grid-template-columns: 2.8fr 0.95fr 1.45fr;
+}
+
 /* ── Responsive — Mac browser / narrower screens ────────────── */
 @media (max-width:1500px) {
   :root { --h-pad:48px; }

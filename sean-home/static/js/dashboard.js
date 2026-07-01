@@ -230,6 +230,109 @@ async function pollTonight() {
 /* ── Sports ──────────────────────────────────────────────────── */
 const SPORTS_ORDER = ["phillies", "eagles", "sixers", "flyers", "world_cup"];
 
+/* Country flag emoji lookup for World Cup matchups */
+const COUNTRY_FLAGS = {
+  "argentina":"🇦🇷","australia":"🇦🇺","austria":"🇦🇹","belgium":"🇧🇪",
+  "bolivia":"🇧🇴","brazil":"🇧🇷","cameroon":"🇨🇲","canada":"🇨🇦",
+  "chile":"🇨🇱","china":"🇨🇳","colombia":"🇨🇴","costa rica":"🇨🇷",
+  "croatia":"🇭🇷","cuba":"🇨🇺","denmark":"🇩🇰","ecuador":"🇪🇨",
+  "egypt":"🇪🇬","el salvador":"🇸🇻","england":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","fiji":"🇫🇯",
+  "france":"🇫🇷","germany":"🇩🇪","ghana":"🇬🇭","guatemala":"🇬🇹",
+  "haiti":"🇭🇹","honduras":"🇭🇳","hungary":"🇭🇺","indonesia":"🇮🇩",
+  "iran":"🇮🇷","ireland":"🇮🇪","ivory coast":"🇨🇮","côte d'ivoire":"🇨🇮",
+  "jamaica":"🇯🇲","japan":"🇯🇵","kenya":"🇰🇪","korea republic":"🇰🇷",
+  "mexico":"🇲🇽","morocco":"🇲🇦","netherlands":"🇳🇱","new zealand":"🇳🇿",
+  "nigeria":"🇳🇬","norway":"🇳🇴","panama":"🇵🇦","paraguay":"🇵🇾",
+  "peru":"🇵🇪","poland":"🇵🇱","portugal":"🇵🇹","qatar":"🇶🇦",
+  "romania":"🇷🇴","saudi arabia":"🇸🇦","scotland":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","senegal":"🇸🇳",
+  "serbia":"🇷🇸","slovakia":"🇸🇰","south africa":"🇿🇦","south korea":"🇰🇷",
+  "spain":"🇪🇸","sweden":"🇸🇪","switzerland":"🇨🇭","trinidad and tobago":"🇹🇹",
+  "turkey":"🇹🇷","ukraine":"🇺🇦","united states":"🇺🇸","usa":"🇺🇸",
+  "uruguay":"🇺🇾","venezuela":"🇻🇪","wales":"🏴󠁧󠁢󠁷󠁬󠁳󠁿",
+};
+
+function getFlag(name) {
+  if (!name) return "🌍";
+  return COUNTRY_FLAGS[(name || "").toLowerCase()] || "🌍";
+}
+
+/* "Ecuador @ Mexico" → { away: "Ecuador", home: "Mexico" } */
+function parseMatchup(str) {
+  if (!str) return { away: "", home: "" };
+  const parts = str.split(" @ ");
+  return { away: (parts[0] || "").trim(), home: (parts[1] || "").trim() };
+}
+
+/* World Cup dedicated renderer — always shows both teams + flags */
+function renderWCRow(team) {
+  if (team.live) {
+    const m = parseMatchup(team.live.matchup);
+    const score  = team.live.score || "–";
+    const period = team.live.period || "Live";
+    return `
+      <div class="sb-row sb-row-wc sb-row-wc-live" data-team="world_cup">
+        <div class="wc-matchup-line">
+          <div class="wc-team-away">
+            <span class="wc-flag">${getFlag(m.away)}</span>
+            <span class="wc-name">${m.away}</span>
+          </div>
+          <div class="wc-score-center">
+            <div class="wc-score-num wc-score-num-live">${score}</div>
+          </div>
+          <div class="wc-team-home">
+            <span class="wc-name">${m.home}</span>
+            <span class="wc-flag">${getFlag(m.home)}</span>
+          </div>
+        </div>
+        <div class="wc-status-line wc-status-live">
+          <span class="sb-live-dot"></span>LIVE · ${period}
+        </div>
+      </div>`;
+  }
+  if (team.next) {
+    const m = parseMatchup(team.next.matchup);
+    return `
+      <div class="sb-row sb-row-wc sb-row-wc-next" data-team="world_cup">
+        <div class="wc-matchup-line">
+          <div class="wc-team-away">
+            <span class="wc-flag">${getFlag(m.away)}</span>
+            <span class="wc-name">${m.away}</span>
+          </div>
+          <div class="wc-score-center">
+            <div class="wc-score-time">${team.next.time || "TBD"}</div>
+          </div>
+          <div class="wc-team-home">
+            <span class="wc-name">${m.home}</span>
+            <span class="wc-flag">${getFlag(m.home)}</span>
+          </div>
+        </div>
+        <div class="wc-status-line wc-status-next">World Cup</div>
+      </div>`;
+  }
+  if (team.last) {
+    const m = parseMatchup(team.last.matchup);
+    const score = team.last.score || "–";
+    return `
+      <div class="sb-row sb-row-wc sb-row-wc-last" data-team="world_cup">
+        <div class="wc-matchup-line">
+          <div class="wc-team-away">
+            <span class="wc-flag">${getFlag(m.away)}</span>
+            <span class="wc-name">${m.away}</span>
+          </div>
+          <div class="wc-score-center">
+            <div class="wc-score-num">${score}</div>
+          </div>
+          <div class="wc-team-home">
+            <span class="wc-name">${m.home}</span>
+            <span class="wc-flag">${getFlag(m.home)}</span>
+          </div>
+        </div>
+        <div class="wc-status-line wc-status-final">Final · World Cup</div>
+      </div>`;
+  }
+  return "";
+}
+
 const TEAM_LOGOS = {
   phillies:  "https://a.espncdn.com/i/teamlogos/mlb/500/phi.png",
   eagles:    "https://a.espncdn.com/i/teamlogos/nfl/500/phi.png",
@@ -247,6 +350,9 @@ function teamLogo(key) {
 function renderSportsRow(team, key) {
   if (!team || team.available === false) return "";
 
+  // World Cup always uses its own horizontal matchup renderer
+  if (key === "world_cup") return renderWCRow(team);
+
   const teamAttr = `data-team="${key}"`;
   const logo = teamLogo(key);
 
@@ -254,7 +360,7 @@ function renderSportsRow(team, key) {
     const score  = team.live.score || `${team.live.my_score ?? "—"}-${team.live.opp_score ?? "—"}`;
     const period = team.live.period || "Live";
     return `
-      <div class="sb-row sb-row-live" ${teamAttr}>
+      <div class="sb-row sb-row-live sb-row-hero" ${teamAttr}>
         ${logo}
         <div class="sb-team-wrap">
           <div class="sb-team">${team.label}</div>
@@ -265,18 +371,12 @@ function renderSportsRow(team, key) {
   }
 
   if (team.next) {
-    // World Cup shows full matchup; other teams show opponent
-    const display = (key === "world_cup" && team.next.matchup)
-      ? team.next.matchup
-      : team.label;
-    const sub = (key === "world_cup" && team.next.matchup)
-      ? "World Cup"
-      : (team.next.opponent ? `vs ${team.next.opponent}` : team.next.matchup || "");
+    const sub = team.next.opponent ? `vs ${team.next.opponent}` : "";
     return `
       <div class="sb-row" ${teamAttr}>
         ${logo}
         <div class="sb-team-wrap">
-          <div class="sb-team">${display}</div>
+          <div class="sb-team">${team.label}</div>
           ${sub ? `<div class="sb-sub">${sub}</div>` : ""}
         </div>
         <div class="sb-time">${team.next.time || "TBD"}</div>
@@ -284,22 +384,16 @@ function renderSportsRow(team, key) {
   }
 
   if (team.last) {
-    const score  = team.last.score || `${team.last.my_score ?? "—"}-${team.last.opp_score ?? "—"}`;
-    const result = team.last.result || "";
-    // World Cup shows full matchup in the name slot
-    const display = (key === "world_cup" && team.last.matchup)
-      ? team.last.matchup
-      : team.label;
-    const sub = (key === "world_cup" && team.last.matchup)
-      ? "World Cup · Final"
-      : (result === "W" ? "Win" : result === "L" ? "Loss" : "Final");
-    const subCls = result === "W" ? "sb-sub-win" : result === "L" ? "sb-sub-loss" : "";
+    const score    = team.last.score || `${team.last.my_score ?? "—"}-${team.last.opp_score ?? "—"}`;
+    const result   = team.last.result || "";
+    const sub      = result === "W" ? "Win" : result === "L" ? "Loss" : "Final";
+    const subCls   = result === "W" ? "sb-sub-win" : result === "L" ? "sb-sub-loss" : "";
     const scoreCls = result === "W" ? "sb-score-win" : result === "L" ? "sb-score-loss" : "";
     return `
       <div class="sb-row" ${teamAttr}>
         ${logo}
         <div class="sb-team-wrap">
-          <div class="sb-team">${display}</div>
+          <div class="sb-team">${team.label}</div>
           <div class="sb-sub ${subCls}">${sub}</div>
         </div>
         <div class="sb-score ${scoreCls}">${score}</div>
@@ -331,11 +425,20 @@ async function pollSports() {
       listEl.innerHTML = rows || `<div class="sb-placeholder">No games data</div>`;
       nextDelay = d.live_active ? 60000 : 600000;
 
-      // Live aura on the sports card
-      if (sportsCard) {
-        const hasLive = SPORTS_ORDER.some(k => d.teams[k] && d.teams[k].live);
-        sportsCard.classList.toggle("has-live", hasLive);
-      }
+      // Live state classes
+      const hasWcLive   = !!(d.teams.world_cup && d.teams.world_cup.live);
+      const hasTeamLive = SPORTS_ORDER.filter(k => k !== "world_cup")
+                            .some(k => d.teams[k] && d.teams[k].live);
+      const hasAnyLive  = hasWcLive || hasTeamLive;
+
+      if (sportsCard) sportsCard.classList.toggle("has-live", hasAnyLive);
+
+      // Scoreboard hero compresses non-hero rows when a Philly team is live
+      listEl.classList.toggle("has-hero", hasTeamLive);
+
+      // Grid expands sports column when any live game is active
+      const gridEl = document.querySelector(".tv-content-grid");
+      if (gridEl) gridEl.classList.toggle("sports-hero", hasAnyLive);
     }
   } catch {
     console.warn("Sean Home: sports unavailable");
