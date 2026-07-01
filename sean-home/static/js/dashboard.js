@@ -64,7 +64,6 @@ async function pollSystemStatus() {
 /* ── Weather ─────────────────────────────────────────────────── */
 async function pollWeather() {
   const iconEl = document.getElementById("weather-icon");
-  const tempEl = document.getElementById("weather-temp");
   const condEl = document.getElementById("weather-condition");
   const hiloEl = document.getElementById("weather-hilo");
   const hwIcon = document.getElementById("header-weather-icon");
@@ -75,7 +74,6 @@ async function pollWeather() {
 
   const setUnavailable = () => {
     iconEl.innerHTML = "⚠️";
-    if (tempEl) tempEl.textContent = "—°";
     if (condEl) { condEl.textContent = "Unavailable"; condEl.className = "weather-unavailable"; }
     if (hiloEl) hiloEl.textContent = "";
     if (hwIcon) hwIcon.textContent = "⚠️";
@@ -95,7 +93,6 @@ async function pollWeather() {
       iconEl.innerHTML = d.icon;
     }
 
-    if (tempEl) tempEl.textContent = `${d.temperature_f}°`;
     if (condEl) { condEl.textContent = d.condition + (d.stale ? " (cached)" : ""); condEl.className = "weather-condition"; }
     if (hiloEl) hiloEl.textContent  = `H: ${d.high_f}°  ·  L: ${d.low_f}°`;
 
@@ -113,118 +110,182 @@ async function pollWeather() {
   }
 }
 
-/* ── Tonight ─────────────────────────────────────────────────── */
-async function pollTonight() {
-  const bodyEl = document.getElementById("tonight-body");
-  if (!bodyEl) return;
-
-  const unavail = () => {
-    bodyEl.innerHTML = `<div class="tn-callout tn-callout-dim"><div class="tn-co-body"><div class="tn-co-label">Tonight unavailable</div></div></div>`;
-    setTimeout(pollTonight, 120000);
-  };
+/* ── Live Strip — single most important live event ───────────── */
+async function pollLiveStrip() {
+  const stripEl = document.getElementById("live-strip");
+  if (!stripEl) return;
 
   try {
     const res = await fetch("/api/tonight");
     if (!res.ok) throw new Error();
     const d = await res.json();
-    if (!d.available) { unavail(); return; }
 
-    const callouts = [];
+    const live = (d.available && d.sports && d.sports.live) ? d.sports.live : [];
 
-    // Weather
-    if (d.weather && d.weather.available) {
-      callouts.push(`
-        <div class="tn-callout">
-          <div class="tn-co-icon">${d.weather.icon}</div>
-          <div class="tn-co-body">
-            <div class="tn-co-value">${d.weather.temp_f}°<span class="tn-co-unit">F</span></div>
-            <div class="tn-co-label">${d.weather.condition}</div>
-            <div class="tn-co-sub">Low ${d.weather.low_f}° tonight</div>
-          </div>
-        </div>`);
+    if (!live.length) {
+      stripEl.classList.remove("is-live");
+      stripEl.innerHTML = "";
+      stripEl.setAttribute("aria-hidden", "true");
+      setTimeout(pollLiveStrip, 120000);
+      return;
     }
 
-    // Sports — best available
-    const live     = d.sports.live     || [];
-    const upcoming = d.sports.upcoming || [];
-    const finals   = d.sports.finals   || [];
+    // Show only the first (most important) live event
+    const g = live[0];
+    const isWC = (g.team === "World Cup" || (g.opponent || "").includes("@"));
+    let html = "";
 
-    if (live.length) {
-      const g = live[0];
-      callouts.push(`
-        <div class="tn-callout tn-callout-live">
-          <div class="tn-co-body">
-            <div class="tn-co-live-badge"><span class="tn-live-dot"></span>LIVE</div>
-            <div class="tn-co-value">${g.score || "—"}</div>
-            <div class="tn-co-label">${g.team} vs ${g.opponent}</div>
-            <div class="tn-co-sub">${g.period || ""}</div>
+    if (isWC) {
+      const m     = parseMatchup(g.opponent);
+      const score  = g.score  || "–";
+      const period = g.period || "Live";
+      html = `
+        <div class="ls-badge"><span class="ls-live-dot"></span>LIVE</div>
+        <div class="ls-wc-matchup">
+          <div class="ls-team-side">
+            <span class="ls-flag">${getFlag(m.away)}</span>
+            <span class="ls-team-name">${m.away}</span>
           </div>
-        </div>`);
-    } else if (upcoming.length) {
-      const g = upcoming[0];
-      callouts.push(`
-        <div class="tn-callout">
-          <div class="tn-co-icon">🏟️</div>
-          <div class="tn-co-body">
-            <div class="tn-co-value">${g.time || "TBD"}</div>
-            <div class="tn-co-label">${g.team} vs ${g.opponent}</div>
-            <div class="tn-co-sub">Tonight</div>
+          <div class="ls-score">${score}</div>
+          <div class="ls-period">${period}</div>
+          <div class="ls-team-side ls-home">
+            <span class="ls-team-name">${m.home}</span>
+            <span class="ls-flag">${getFlag(m.home)}</span>
           </div>
-        </div>`);
-    } else if (finals.length) {
-      const g = finals[0];
-      const rClass = g.result === "W" ? "tn-co-win" : g.result === "L" ? "tn-co-loss" : "";
-      const rWord  = g.result === "W" ? "Win" : g.result === "L" ? "Loss" : "Final";
-      callouts.push(`
-        <div class="tn-callout">
-          <div class="tn-co-icon">📊</div>
-          <div class="tn-co-body">
-            <div class="tn-co-value ${rClass}">${g.score || "—"}</div>
-            <div class="tn-co-label">${g.team} · ${rWord}</div>
-            <div class="tn-co-sub">vs ${g.opponent}</div>
-          </div>
-        </div>`);
+        </div>
+        <div class="ls-sport-label">World Cup</div>`;
     } else {
-      callouts.push(`
-        <div class="tn-callout tn-callout-dim">
-          <div class="tn-co-icon">🏟️</div>
-          <div class="tn-co-body"><div class="tn-co-label">No games tonight</div></div>
-        </div>`);
+      const score  = g.score  || "–";
+      const period = g.period || "Live";
+      html = `
+        <div class="ls-badge"><span class="ls-live-dot"></span>LIVE</div>
+        <div class="ls-regular-matchup">
+          <span class="ls-regular-team">${g.team}</span>
+          <span class="ls-period">vs ${g.opponent || ""}</span>
+        </div>
+        <div class="ls-regular-score">${score}</div>
+        <div class="ls-period">${period}</div>`;
     }
 
-    // Media
-    if (d.media && d.media.available) {
-      const cw = (d.media.continue_watching || [])[0];
-      const ra = (d.media.recently_added   || [])[0];
-      if (cw) {
-        callouts.push(`
-          <div class="tn-callout">
-            <div class="tn-co-icon">▶️</div>
-            <div class="tn-co-body">
-              <div class="tn-co-value">${cw.progress}%</div>
-              <div class="tn-co-label">${cw.label}</div>
-              <div class="tn-co-sub">Continue watching</div>
-            </div>
-          </div>`);
-      } else if (ra) {
-        callouts.push(`
-          <div class="tn-callout">
-            <div class="tn-co-icon">✨</div>
-            <div class="tn-co-body">
-              <div class="tn-co-label">${ra.label}</div>
-              <div class="tn-co-sub">New in library</div>
-            </div>
-          </div>`);
-      }
-    }
+    stripEl.innerHTML = html;
+    stripEl.classList.add("is-live");
+    stripEl.removeAttribute("aria-hidden");
 
-    bodyEl.innerHTML = callouts.join("");
   } catch {
-    console.warn("Sean Home: tonight unavailable");
-    unavail();
+    console.warn("Sean Home: live strip unavailable");
+    stripEl.classList.remove("is-live");
   }
 
-  setTimeout(pollTonight, 120000);
+  const isActive = stripEl.classList.contains("is-live");
+  setTimeout(pollLiveStrip, isActive ? 60000 : 120000);
+}
+
+/* ── TODAY card — "what matters today?" ─────────────────────── */
+async function pollToday() {
+  const bodyEl = document.getElementById("today-body");
+  if (!bodyEl) return;
+
+  try {
+    const res = await fetch("/api/tonight");
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+
+    const upcoming = (d.available && d.sports?.upcoming) ? d.sports.upcoming : [];
+    const finals   = (d.available && d.sports?.finals)   ? d.sports.finals   : [];
+    const gaming   = d.gaming || null;
+
+    const parts = [];
+
+    // ── Tonight's schedule ──────────────────────────────────────
+    const SPORT_ICONS = {
+      Phillies: "⚾", Eagles: "🏈", Sixers: "🏀",
+      Flyers: "🏒", "World Cup": "⚽",
+    };
+
+    const events = [];
+    for (const g of upcoming.slice(0, 3)) {
+      const icon = SPORT_ICONS[g.team] || "🏟️";
+      const isWC = g.team === "World Cup" && (g.opponent || "").includes("@");
+      let opp = "";
+      if (isWC) {
+        const m = parseMatchup(g.opponent);
+        opp = `${getFlag(m.away)} ${m.away} vs ${m.home} ${getFlag(m.home)}`;
+      } else if (g.opponent) {
+        opp = `vs ${g.opponent}`;
+      }
+      events.push(`
+        <div class="td-event">
+          <div class="td-event-icon">${icon}</div>
+          <div class="td-event-body">
+            <div class="td-event-team">${g.team}</div>
+            ${opp ? `<div class="td-event-opp">${opp}</div>` : ""}
+          </div>
+          <div class="td-event-time">${g.time || "TBD"}</div>
+        </div>`);
+    }
+
+    // If no upcoming, show most recent final
+    if (!events.length && finals.length) {
+      const g = finals[0];
+      const icon = SPORT_ICONS[g.team] || "📊";
+      const rCls = g.result === "W" ? "td-result-win" : g.result === "L" ? "td-result-loss" : "";
+      events.push(`
+        <div class="td-event">
+          <div class="td-event-icon">${icon}</div>
+          <div class="td-event-body">
+            <div class="td-event-team ${rCls}">${g.team}</div>
+            <div class="td-event-opp">vs ${g.opponent}</div>
+          </div>
+          <div class="td-event-time td-event-score ${rCls}">${g.score || "–"}</div>
+        </div>`);
+    }
+
+    if (events.length) {
+      parts.push(`
+        <div class="td-section">
+          <div class="td-section-label">Tonight</div>
+          ${events.join("")}
+        </div>`);
+    } else {
+      parts.push(`
+        <div class="td-section">
+          <div class="td-section-label">Tonight</div>
+          <div class="td-empty">No games tonight</div>
+        </div>`);
+    }
+
+    // ── Calendar ────────────────────────────────────────────────
+    parts.push(`
+      <div class="td-divider"></div>
+      <div class="td-section">
+        <div class="td-section-label">Calendar</div>
+        <div class="td-calendar-note">Coming soon</div>
+      </div>`);
+
+    // ── Gaming ──────────────────────────────────────────────────
+    if (gaming && gaming.available) {
+      const status   = gaming.fortnite_status || "Online";
+      const headline = gaming.headline || "";
+      parts.push(`
+        <div class="td-divider"></div>
+        <div class="td-section">
+          <div class="td-section-label">Gaming</div>
+          <div class="td-gaming">
+            <span class="td-gaming-name">Fortnite</span>
+            <span class="td-gaming-badge">${status}</span>
+          </div>
+          ${headline ? `<div class="td-gaming-headline">${headline}</div>` : ""}
+        </div>`);
+    }
+
+    bodyEl.innerHTML = parts.join("");
+
+  } catch {
+    console.warn("Sean Home: today unavailable");
+    bodyEl.innerHTML = `<div class="td-empty">Unavailable</div>`;
+  }
+
+  setTimeout(pollToday, 120000);
 }
 
 /* ── Sports ──────────────────────────────────────────────────── */
@@ -448,61 +509,7 @@ async function pollSports() {
   setTimeout(pollSports, nextDelay);
 }
 
-/* ── Gaming — hero layout, one featured item ─────────────────── */
-function renderGaming(data) {
-  const fn = data.fortnite;
-
-  if (!fn || !fn.available) {
-    return `
-      <div class="gaming-hero">
-        <div class="gaming-hero-title">Gaming</div>
-      </div>
-      <div class="gaming-dim">Fortnite unavailable</div>`;
-  }
-
-  const badge = `<span class="gaming-status-badge">${fn.status || "Online"}</span>`;
-  let feature = "";
-
-  // Show the first shop item as the hero feature
-  const topShop = (fn.shop || [])[0];
-  if (topShop) {
-    const price = topShop.price ? `${topShop.price} V-Bucks` : "Shop";
-    feature = `
-      <div class="gaming-feature">
-        <div class="gaming-feature-name">${topShop.name}</div>
-        <div class="gaming-feature-meta">${price}</div>
-      </div>`;
-  } else if ((fn.news || [])[0]) {
-    // Fall back to top news item if no shop
-    feature = `
-      <div class="gaming-feature">
-        <div class="gaming-feature-name">${fn.news[0].title}</div>
-        <div class="gaming-feature-meta">News</div>
-      </div>`;
-  }
-
-  return `
-    <div class="gaming-hero">
-      <div class="gaming-hero-title">Fortnite</div>
-      ${badge}
-    </div>
-    ${feature}`;
-}
-
-async function pollGaming() {
-  const bodyEl = document.getElementById("gaming-body");
-  if (!bodyEl) return;
-  try {
-    const res = await fetch("/api/gaming");
-    if (!res.ok) throw new Error();
-    const d = await res.json();
-    bodyEl.innerHTML = d.available ? renderGaming(d)
-      : `<div class="gaming-hero"><div class="gaming-hero-title">Gaming</div></div><div class="gaming-dim">Unavailable</div>`;
-  } catch {
-    console.warn("Sean Home: gaming unavailable");
-    bodyEl.innerHTML = `<div class="gaming-hero"><div class="gaming-hero-title">Gaming</div></div><div class="gaming-dim">Unavailable</div>`;
-  }
-}
+/* Gaming is now rendered inside pollToday() via the tonight API */
 
 /* ── Entertainment — poster artwork ──────────────────────────── */
 function jfThumbFail(img) {
@@ -622,7 +629,7 @@ async function pollMediaServer() {
 
 /* ── Boot ────────────────────────────────────────────────────── */
 setTimeOfDayScene();
-setInterval(setTimeOfDayScene, 3600000); // update scene each hour
+setInterval(setTimeOfDayScene, 3600000);
 
 tickClock();
 setInterval(tickClock, 1000);
@@ -633,10 +640,8 @@ setInterval(pollSystemStatus, 30000);
 pollWeather();
 setInterval(pollWeather, 600000);
 
-pollTonight();
+pollLiveStrip();
+pollToday();
 pollSports();
 pollJellyfin();
 pollMediaServer();
-
-pollGaming();
-setInterval(pollGaming, 1800000);

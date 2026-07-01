@@ -217,102 +217,125 @@ body {
   flex-shrink:0;
 }
 
-/* ── TONIGHT — HERO STRIP ────────────────────────────────────── */
-.tonight-hero {
-  display:flex;
-  align-items:center;
-  gap:28px;
-  padding: 14px var(--h-pad);
-  border-bottom: 1px solid var(--border);
-  flex-shrink:0;
-  animation: rise 0.5s var(--ease-out) 0.06s both;
+/* ── LIVE STRIP — single live event, hidden when nothing active ─ */
+.live-strip {
+  display: none;
+  align-items: center;
+  gap: 24px;
+  padding: 0 var(--h-pad);
+  height: 72px;
+  border-bottom: 1px solid rgba(244,63,94,0.20);
+  background: linear-gradient(90deg, rgba(244,63,94,0.09) 0%, transparent 55%);
+  flex-shrink: 0;
+  position: relative; z-index: 1;
+  overflow: hidden;
+  animation: rise 0.4s var(--ease-out) both;
 }
-.tonight-label {
-  font-size: 0.75rem;
-  font-weight:700;
-  letter-spacing:0.22em;
-  text-transform:uppercase;
-  color: var(--text-3);
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  flex-shrink:0;
-  user-select:none;
-}
-.tonight-callouts {
-  display:flex;
-  gap: 16px;
-  flex:1;
-  align-items:stretch;
-  height: 106px;
-  overflow:hidden;
-}
-.tn-callout {
-  flex:1;
-  display:flex;
-  align-items:center;
-  gap:20px;
-  padding: 0 24px;
-  background: var(--glass);
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm);
-  overflow:hidden;
-  animation: rise 0.45s var(--ease-out) both;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07);
-}
-.tn-callout-live {
-  border-color: rgba(244,63,94,0.3);
-  background: linear-gradient(110deg, rgba(244,63,94,0.08) 0%, var(--glass) 60%);
-}
-.tn-callout-dim { opacity: 0.4; }
-.tn-co-icon { font-size:2.8rem; line-height:1; flex-shrink:0; }
-.tn-co-body { display:flex; flex-direction:column; gap:3px; min-width:0; }
-.tn-co-value {
-  font-size: 3.2rem;
-  font-weight: 200;
-  line-height:1;
-  letter-spacing:-2px;
-  color: var(--text);
-  white-space:nowrap;
-}
-.tn-co-unit { font-size:1.6rem; font-weight:400; letter-spacing:0; }
-.tn-co-win  { color: var(--green); }
-.tn-co-loss { color: var(--red); }
-.tn-co-label {
-  font-size: 1.5rem;
-  font-weight: 500;
-  color: var(--text);
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-.tn-co-sub { font-size: 1.1rem; color: var(--text-2); }
-.tn-co-live-badge {
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  font-size:1.0rem;
-  font-weight:800;
-  letter-spacing:0.1em;
-  text-transform:uppercase;
+.live-strip.is-live { display: flex; }
+
+/* LIVE badge */
+.ls-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.0rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--red);
-  margin-bottom:2px;
+  flex-shrink: 0;
 }
-.tn-live-dot {
-  width:9px; height:9px;
-  border-radius:50%;
+.ls-live-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
   background: var(--red);
-  flex-shrink:0;
+  flex-shrink: 0;
   animation: liveDot 1.4s ease-in-out infinite;
+}
+
+/* World Cup horizontal matchup in strip */
+.ls-wc-matchup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.ls-team-side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+.ls-team-side.ls-home { flex-direction: row-reverse; }
+.ls-flag { font-size: 2.4rem; line-height: 1; flex-shrink: 0; }
+.ls-team-name {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1;
+}
+.ls-score {
+  font-size: 3.2rem;
+  font-weight: 100;
+  color: var(--red);
+  letter-spacing: -2px;
+  line-height: 1;
+  flex-shrink: 0;
+  animation: scorePulse 3s ease-in-out infinite;
+}
+.ls-period {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.ls-sport-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
+/* Non-WC live (Phillies, Eagles etc) */
+.ls-regular-matchup {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex: 1;
+}
+.ls-regular-team {
+  font-size: 2.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+.ls-regular-score {
+  font-size: 3.2rem;
+  font-weight: 100;
+  color: var(--red);
+  letter-spacing: -2px;
+  animation: scorePulse 3s ease-in-out infinite;
 }
 
 /* ── CONTENT GRID ────────────────────────────────────────────── */
 .tv-content-grid {
   display:grid;
-  grid-template-columns: 2.1fr 1fr 1.5fr;
+  grid-template-columns: 1.3fr 2.0fr 1.4fr;
   grid-template-rows: 1fr 1fr;
   grid-template-areas:
-    "sports weather entertainment"
-    "sports weather gaming";
+    "today sports entertainment"
+    "today sports weather";
   gap: var(--gap);
   padding: var(--gap) var(--h-pad);
   flex:1;
@@ -357,6 +380,146 @@ body {
   font-size: 1.2rem;
   opacity:0.5;
   padding: 8px 0;
+}
+
+/* ── TODAY CARD ──────────────────────────────────────────────── */
+.card-today {
+  grid-area: today;
+  animation:
+    rise 0.55s var(--ease-out) 0.06s both,
+    cardBreathe 22s ease-in-out 3s infinite;
+}
+
+.today-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 4px 24px 20px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.td-section { flex-shrink: 0; margin-top: 14px; }
+
+.td-section-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 8px;
+}
+
+/* A single tonight event row */
+.td-event {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.td-event:last-child { border-bottom: none; }
+
+.td-event-icon {
+  font-size: 2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.td-event-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.td-event-team {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.td-event-opp {
+  font-size: 1.2rem;
+  color: var(--text-2);
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.td-event-time {
+  font-size: 1.8rem;
+  font-weight: 200;
+  color: var(--blue);
+  letter-spacing: -1px;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.td-event-score {
+  font-size: 2rem;
+  font-weight: 200;
+  letter-spacing: -1px;
+}
+.td-result-win  { color: var(--green); }
+.td-result-loss { color: var(--red); }
+
+.td-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 14px 0 0;
+  flex-shrink: 0;
+}
+
+/* Gaming status within TODAY */
+.td-gaming {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.td-gaming-name {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.td-gaming-badge {
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--green);
+  background: rgba(52,211,153,0.12);
+  border: 1px solid rgba(52,211,153,0.22);
+  padding: 4px 12px;
+  border-radius: 100px;
+  animation: breathe 3s ease-in-out infinite;
+}
+.td-gaming-headline {
+  font-size: 1.1rem;
+  color: var(--text-2);
+  margin-top: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.td-calendar-note {
+  font-size: 1.15rem;
+  color: var(--text-3);
+  font-style: italic;
+}
+
+.td-empty {
+  font-size: 1.3rem;
+  color: var(--text-2);
+  opacity: 0.5;
+  padding: 4px 0;
 }
 
 /* ── SPORTS CARD ─────────────────────────────────────────────── */
@@ -500,70 +663,63 @@ body {
   opacity:0.5;
 }
 
-/* ── WEATHER CARD ────────────────────────────────────────────── */
+/* ── WEATHER DETAIL CARD (right bottom — header has current temp) */
 .card-weather {
   grid-area: weather;
   animation:
-    rise 0.55s var(--ease-out) 0.14s both,
+    rise 0.55s var(--ease-out) 0.26s both,
     cardBreathe 24s ease-in-out 6s infinite;
   background: linear-gradient(175deg, #08091a 0%, #0a0d1e 50%, #060810 100%);
   border-color: rgba(79,142,247,0.18);
 }
 
-/* Dynamic sky backgrounds */
-.card-weather.weather-sunny   { background: linear-gradient(175deg, #0f0c00 0%, #1a1400 40%, #0e0a00 100%); border-color: rgba(251,191,36,0.22); }
-.card-weather.weather-cloudy  { background: linear-gradient(175deg, #08091a 0%, #10121e 100%); }
-.card-weather.weather-rainy   { background: linear-gradient(175deg, #04060e 0%, #060c18 60%, #080a14 100%); border-color: rgba(79,142,247,0.20); }
-.card-weather.weather-snowy   { background: linear-gradient(175deg, #08091a 0%, #121828 100%); border-color: rgba(186,230,253,0.15); }
-.card-weather.weather-stormy  { background: linear-gradient(175deg, #08050f 0%, #0e0818 100%); border-color: rgba(139,92,246,0.22); }
+/* Dynamic sky tints — subtle, not full bleed */
+.card-weather.weather-sunny  { background: linear-gradient(175deg, #0f0c00 0%, #1a1400 40%, #0e0a00 100%); border-color: rgba(251,191,36,0.22); }
+.card-weather.weather-cloudy { background: linear-gradient(175deg, #08091a 0%, #10121e 100%); }
+.card-weather.weather-rainy  { background: linear-gradient(175deg, #04060e 0%, #060c18 60%, #080a14 100%); border-color: rgba(79,142,247,0.20); }
+.card-weather.weather-snowy  { background: linear-gradient(175deg, #08091a 0%, #121828 100%); border-color: rgba(186,230,253,0.15); }
+.card-weather.weather-stormy { background: linear-gradient(175deg, #08050f 0%, #0e0818 100%); border-color: rgba(139,92,246,0.22); }
 
+/* Slim layout — no giant temp (header handles that) */
 .weather-body {
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  padding: 16px 20px 24px;
-  gap:14px;
-  text-align:center;
-  overflow:hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 20px 16px;
+  gap: 10px;
+  text-align: center;
+  overflow: hidden;
 }
 
-/* Icon — as large as the card allows */
-.weather-icon-wrap { flex-shrink:0; }
+.weather-icon-wrap { flex-shrink: 0; }
 .weather-icon {
-  font-size: 9rem;
-  line-height:1;
-  display:block;
+  font-size: 5rem;
+  line-height: 1;
+  display: block;
   animation: float 5s ease-in-out infinite;
 }
-.weather-icon svg { display:block; }
+.weather-icon svg { display: block; }
 
-/* Temperature — the answer to "what's the weather" */
-.weather-temp {
-  font-size: 7rem;
-  font-weight: 100;
-  letter-spacing:-8px;
-  line-height:1;
-  color: var(--text);
-}
 .weather-condition {
-  font-size: 1.8rem;
-  color: var(--text-2);
-  letter-spacing:0.02em;
+  font-size: 1.7rem;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: 0.02em;
 }
 .weather-hilo {
-  font-size: 1.55rem;
+  font-size: 1.45rem;
   color: var(--text-2);
-  letter-spacing:0.02em;
+  letter-spacing: 0.02em;
 }
-.weather-unavailable { color: var(--text-2); font-size:1.3rem; opacity:0.55; }
+.weather-unavailable { color: var(--text-2); font-size: 1.2rem; opacity: 0.55; }
 
 /* ── ENTERTAINMENT CARD ──────────────────────────────────────── */
 .card-entertainment {
   grid-area: entertainment;
   animation:
-    rise 0.55s var(--ease-out) 0.20s both,
+    rise 0.55s var(--ease-out) 0.18s both,
     cardBreathe 22s ease-in-out 2s infinite;
 }
 
@@ -663,99 +819,8 @@ body {
   transition: width 0.8s var(--ease);
 }
 
-/* ── GAMING CARD ─────────────────────────────────────────────── */
-.card-gaming {
-  grid-area: gaming;
-  animation:
-    rise 0.55s var(--ease-out) 0.26s both,
-    cardBreathe 18s ease-in-out 8s infinite;
-  background: linear-gradient(145deg, #07041a 0%, #100828 55%, #08061a 100%);
-  border-color: rgba(139,92,246,0.30);
-  box-shadow:
-    0 2px 4px  rgba(0,0,0,0.12),
-    0 10px 36px rgba(0,0,0,0.55),
-    0 28px 80px rgba(0,0,0,0.30),
-    0 0 60px rgba(139,92,246,0.08),
-    inset 0 1px 0  rgba(255,255,255,0.09),
-    inset 1px 0 0  rgba(255,255,255,0.04),
-    inset -1px 0 0 rgba(255,255,255,0.04),
-    inset 0 -1px 0 rgba(0,0,0,0.18);
-}
-
-/* Faint grid — "game HUD" texture */
-.gaming-grid-line {
-  position:absolute; inset:0;
-  background-image:
-    repeating-linear-gradient(0deg,  rgba(139,92,246,0.03) 0px, rgba(139,92,246,0.03) 1px, transparent 1px, transparent 44px),
-    repeating-linear-gradient(90deg, rgba(139,92,246,0.03) 0px, rgba(139,92,246,0.03) 1px, transparent 1px, transparent 44px);
-  border-radius:inherit;
-  pointer-events:none;
-}
-.card-label-gaming { color: rgba(139,92,246,0.40); }
-
-.gaming-body {
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  padding: 0 24px 20px;
-  overflow:hidden;
-  min-height:0;
-  justify-content:center;
-  gap:16px;
-}
-
-/* Hero — one big game title, full-width */
-.gaming-hero {
-  display:flex;
-  align-items:center;
-  gap:18px;
-  flex-shrink:0;
-}
-.gaming-hero-title {
-  font-size: 3.8rem;
-  font-weight:800;
-  line-height:1;
-  background: linear-gradient(125deg, #a78bfa 0%, #818cf8 50%, #60a5fa 100%);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-  background-clip:text;
-}
-.gaming-status-badge {
-  font-size: 1.1rem;
-  font-weight:700;
-  letter-spacing:0.1em;
-  text-transform:uppercase;
-  color: var(--green);
-  background: rgba(52,211,153,0.12);
-  border: 1px solid rgba(52,211,153,0.25);
-  padding: 5px 14px;
-  border-radius:100px;
-  flex-shrink:0;
-  animation: breathe 3s ease-in-out infinite;
-}
-
-/* Featured shop item — one thing, big and clear */
-.gaming-feature {
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  flex-shrink:0;
-}
-.gaming-feature-name {
-  font-size: 1.9rem;
-  font-weight:600;
-  color: var(--text);
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-.gaming-feature-meta {
-  font-size: 1.3rem;
-  color: rgba(139,92,246,0.7);
-  font-weight:500;
-}
-
-.gaming-dim { color: var(--text-3); font-size:1.4rem; }
+/* ── GAMING CARD — folded into TODAY, kept for future use ───── */
+.card-gaming { display: none; }
 
 /* ── MEDIA SERVER STRIP ──────────────────────────────────────── */
 .ms-strip {
@@ -939,27 +1004,30 @@ body {
 .scoreboard.has-hero .sb-row:not(.sb-row-hero):not(.sb-row-wc) .sb-score { font-size: 3rem; min-width: 76px; }
 .scoreboard.has-hero .sb-row:not(.sb-row-hero):not(.sb-row-wc) .sb-time  { font-size: 2.4rem; min-width: 88px; }
 
-/* Grid expands sports column when any live game is active */
+/* Grid widens sports column when any live game is active */
 .tv-content-grid.sports-hero {
-  grid-template-columns: 2.8fr 0.95fr 1.45fr;
+  grid-template-columns: 1.2fr 2.2fr 1.35fr;
 }
 
 /* ── Responsive — Mac browser / narrower screens ────────────── */
 @media (max-width:1500px) {
   :root { --h-pad:48px; }
-  .tv-clock        { font-size:6rem; }
-  .tv-hw-temp      { font-size:3rem; }
-  .weather-temp    { font-size:5.5rem; }
-  .weather-icon    { font-size:7rem; }
-  .sb-score        { font-size:3.8rem; min-width:100px; }
-  .sb-time         { font-size:3rem; min-width:110px; }
-  .sb-team         { font-size:2.1rem; }
-  .sb-sub          { font-size:1.2rem; }
-  .tn-co-value     { font-size:2.6rem; }
-  .sb-logo         { width:58px; height:58px; }
-  .jf-thumb        { width:60px; height:86px; }
-  .jf-thumb-sm     { width:48px; height:68px; }
-  .gaming-hero-title { font-size:3rem; }
+  .tv-clock          { font-size:6rem; }
+  .tv-hw-temp        { font-size:3rem; }
+  .weather-icon      { font-size:4rem; }
+  .weather-condition { font-size:1.5rem; }
+  .weather-hilo      { font-size:1.25rem; }
+  .sb-score          { font-size:3.8rem; min-width:100px; }
+  .sb-time           { font-size:3rem; min-width:110px; }
+  .sb-team           { font-size:2.1rem; }
+  .sb-sub            { font-size:1.2rem; }
+  .sb-logo           { width:58px; height:58px; }
+  .jf-thumb          { width:60px; height:86px; }
+  .jf-thumb-sm       { width:48px; height:68px; }
+  .td-event-team     { font-size:1.9rem; }
+  .td-event-time     { font-size:1.5rem; }
+  .wc-name           { font-size:1.55rem; }
+  .wc-score-num      { font-size:3.2rem; }
 }
 
 @media (max-width:1100px) {
@@ -969,16 +1037,15 @@ body {
   .tv-content-grid {
     grid-template-columns: 1fr 1fr;
     grid-template-areas:
-      "sports weather"
-      "entertainment gaming";
+      "today sports"
+      "entertainment weather";
   }
-  .tonight-callouts { height:auto; flex-wrap:wrap; }
 }
 
 @media (max-width:750px) {
   .tv-content-grid {
-    grid-template-columns:1fr;
-    grid-template-areas: "sports" "weather" "entertainment" "gaming";
+    grid-template-columns: 1fr;
+    grid-template-areas: "today" "sports" "entertainment" "weather";
   }
   .tv-header { flex-wrap:wrap; height:auto; padding:14px var(--h-pad); gap:16px; }
   .tv-nav-icon { display:none; }

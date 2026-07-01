@@ -31,38 +31,25 @@
 
   </header>
 
-  <!-- ── Tonight — hero full-width strip ──────────────────── -->
-  <section class="tonight-hero" id="tonight-card">
-    <div class="tonight-label">Tonight</div>
-    <div id="tonight-body" class="tonight-callouts">
-      <div class="tn-callout tn-callout-skeleton">
-        <div class="tn-co-icon">—</div>
-        <div class="tn-co-body"><div class="tn-co-value">—</div><div class="tn-co-label">Loading…</div></div>
-      </div>
-    </div>
-  </section>
+  <!-- ── Live Strip — single live event, hidden when nothing active ── -->
+  <section class="live-strip" id="live-strip" aria-hidden="true"></section>
 
   <!-- ── Main content grid ────────────────────────────────── -->
   <div class="tv-content-grid">
 
-    <!-- Sports — wide left column, full height -->
+    <!-- Today — left column, full height, "what matters today?" -->
+    <section class="card card-today" id="today-card">
+      <h2 class="card-label">Today</h2>
+      <div class="today-body" id="today-body">
+        <p class="card-placeholder">Loading…</p>
+      </div>
+    </section>
+
+    <!-- Sports — center column, full height -->
     <section class="card card-sports" id="sports-card">
       <h2 class="card-label">Philly Sports</h2>
       <div class="scoreboard" id="sports-list">
         <div class="sb-placeholder">Loading…</div>
-      </div>
-    </section>
-
-    <!-- Weather — center column, full height -->
-    <section class="card card-weather" id="weather-card">
-      <h2 class="card-label">Arvada, CO</h2>
-      <div class="weather-body" id="weather-body">
-        <div class="weather-icon-wrap">
-          <span class="weather-icon" id="weather-icon">—</span>
-        </div>
-        <div class="weather-temp" id="weather-temp">—°</div>
-        <div class="weather-condition" id="weather-condition">Loading…</div>
-        <div class="weather-hilo" id="weather-hilo"></div>
       </div>
     </section>
 
@@ -74,12 +61,15 @@
       </div>
     </section>
 
-    <!-- Gaming — right column bottom -->
-    <section class="card card-gaming" id="gaming-card">
-      <div class="gaming-grid-line" aria-hidden="true"></div>
-      <h2 class="card-label card-label-gaming">Gaming</h2>
-      <div id="gaming-body" class="gaming-body">
-        <p class="card-placeholder">Loading…</p>
+    <!-- Weather Detail — right column bottom (header already shows current temp) -->
+    <section class="card card-weather" id="weather-card">
+      <h2 class="card-label">Arvada, CO</h2>
+      <div class="weather-body" id="weather-body">
+        <div class="weather-icon-wrap">
+          <span class="weather-icon" id="weather-icon">—</span>
+        </div>
+        <div class="weather-condition" id="weather-condition">Loading…</div>
+        <div class="weather-hilo" id="weather-hilo"></div>
       </div>
     </section>
 
