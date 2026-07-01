@@ -656,6 +656,67 @@ body {
   animation: liveDot 1.4s ease-in-out infinite;
 }
 
+/* Opponent logo — smaller, dimmer than home logo */
+.sb-logo-opp {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+  flex-shrink: 0;
+  opacity: 0.55;
+}
+
+/* Inline record badge — sits inside sb-team or sb-sub */
+.sb-record {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text-3);
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+}
+
+/* Pitcher matchup line — shown under "vs Pirates" for Phillies upcoming */
+.sb-pitcher-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 5px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+.sb-pitcher-us {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sb-pitcher-vs {
+  font-size: 0.95rem;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+.sb-pitcher-them {
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Offseason news headline — one-line ticker under team name */
+.sb-headline {
+  font-size: 1.1rem;
+  color: var(--text-2);
+  margin-top: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-style: italic;
+  opacity: 0.75;
+}
+
 .sb-placeholder {
   color: var(--text-2);
   font-size: 1.3rem;

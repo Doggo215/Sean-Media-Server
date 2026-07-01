@@ -402,10 +402,34 @@ const TEAM_LOGOS = {
   world_cup: "https://a.espncdn.com/i/leaguelogos/soccer/500/68.png",
 };
 
+const TEAM_LEAGUES = {
+  phillies: "mlb", eagles: "nfl", sixers: "nba", flyers: "nhl",
+};
+
 function teamLogo(key) {
   const url = TEAM_LOGOS[key];
   if (!url) return "";
   return `<img class="sb-logo" src="${url}" alt="" loading="lazy" onerror="this.style.display='none'">`;
+}
+
+function oppLogo(abbr, league) {
+  if (!abbr || !league) return "";
+  const src = `https://a.espncdn.com/i/teamlogos/${league}/500/${abbr}.png`;
+  return `<img class="sb-logo sb-logo-opp" src="${src}" alt="" loading="lazy" onerror="this.style.display='none'">`;
+}
+
+function buildPitcherRow(pitchers) {
+  const isPhiHome = (pitchers.home_abbr || "").toLowerCase() === "phi";
+  const us   = isPhiHome ? pitchers.home : pitchers.away;
+  const them = isPhiHome ? pitchers.away : pitchers.home;
+  const usStr   = us   ? `${us.name}  ${us.W}-${us.L}  ${us.ERA} ERA` : "TBD";
+  const themStr = them ? `${them.name}  ${them.W}-${them.L}  ${them.ERA} ERA` : "TBD";
+  return `
+    <div class="sb-pitcher-row">
+      <span class="sb-pitcher-us">${usStr}</span>
+      <span class="sb-pitcher-vs">vs</span>
+      <span class="sb-pitcher-them">${themStr}</span>
+    </div>`;
 }
 
 function renderSportsRow(team, key) {
@@ -415,49 +439,79 @@ function renderSportsRow(team, key) {
   if (key === "world_cup") return renderWCRow(team);
 
   const teamAttr = `data-team="${key}"`;
-  const logo = teamLogo(key);
+  const logo     = teamLogo(key);
+  const league   = TEAM_LEAGUES[key] || "";
 
   if (team.live) {
-    const score  = team.live.score || `${team.live.my_score ?? "—"}-${team.live.opp_score ?? "—"}`;
-    const period = team.live.period || "Live";
+    const g = team.live;
+    const score  = g.score || `${g.my_score ?? "—"}-${g.opp_score ?? "—"}`;
+    const period = g.period || "Live";
+    const opp    = oppLogo(g.opponent_abbr, league);
+    const record = team.record ? `<span class="sb-record">${team.record}</span>` : "";
     return `
       <div class="sb-row sb-row-live sb-row-hero" ${teamAttr}>
         ${logo}
         <div class="sb-team-wrap">
-          <div class="sb-team">${team.label}</div>
+          <div class="sb-team">${team.label}${record ? " " : ""}${record}</div>
           <div class="sb-sub sb-sub-live"><span class="sb-live-dot"></span>LIVE · ${period}</div>
         </div>
+        ${opp}
         <div class="sb-score sb-score-live">${score}</div>
       </div>`;
   }
 
   if (team.next) {
-    const sub = team.next.opponent ? `vs ${team.next.opponent}` : "";
+    const g = team.next;
+    const opp    = oppLogo(g.opponent_abbr, league);
+    const haway  = g.home_away === "home" ? "vs" : "@";
+    const record = team.record ? `${team.record} · ` : "";
+    const sub    = g.opponent ? `${record}${haway} ${g.opponent}` : record;
+    const pitchers = (key === "phillies" && team.pitchers) ? buildPitcherRow(team.pitchers) : "";
     return `
       <div class="sb-row" ${teamAttr}>
         ${logo}
         <div class="sb-team-wrap">
           <div class="sb-team">${team.label}</div>
           ${sub ? `<div class="sb-sub">${sub}</div>` : ""}
+          ${pitchers}
         </div>
-        <div class="sb-time">${team.next.time || "TBD"}</div>
+        ${opp}
+        <div class="sb-time">${g.time || "TBD"}</div>
       </div>`;
   }
 
   if (team.last) {
-    const score    = team.last.score || `${team.last.my_score ?? "—"}-${team.last.opp_score ?? "—"}`;
-    const result   = team.last.result || "";
-    const sub      = result === "W" ? "Win" : result === "L" ? "Loss" : "Final";
+    const g = team.last;
+    const score    = g.score || `${g.my_score ?? "—"}-${g.opp_score ?? "—"}`;
+    const result   = g.result || "";
+    const subLabel = result === "W" ? "Win" : result === "L" ? "Loss" : "Final";
+    const record   = team.record ? ` · ${team.record}` : "";
     const subCls   = result === "W" ? "sb-sub-win" : result === "L" ? "sb-sub-loss" : "";
     const scoreCls = result === "W" ? "sb-score-win" : result === "L" ? "sb-score-loss" : "";
+    const opp      = oppLogo(g.opponent_abbr, league);
     return `
       <div class="sb-row" ${teamAttr}>
         ${logo}
         <div class="sb-team-wrap">
           <div class="sb-team">${team.label}</div>
-          <div class="sb-sub ${subCls}">${sub}</div>
+          <div class="sb-sub ${subCls}">${subLabel}${record}</div>
         </div>
+        ${opp}
         <div class="sb-score ${scoreCls}">${score}</div>
+      </div>`;
+  }
+
+  // Offseason — show headline if available
+  if (team.headline) {
+    const standing = team.standing || "Offseason";
+    return `
+      <div class="sb-row" ${teamAttr}>
+        ${logo}
+        <div class="sb-team-wrap">
+          <div class="sb-team">${team.label}</div>
+          <div class="sb-sub">${standing}${team.record ? " · " + team.record : ""}</div>
+          <div class="sb-headline">${team.headline}</div>
+        </div>
       </div>`;
   }
 

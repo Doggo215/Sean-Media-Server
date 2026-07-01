@@ -5,6 +5,7 @@ Phase 1A: scaffold, health, system status, static serving.
 Phase 1B: weather (Open-Meteo, no auth, cached).
 """
 
+import asyncio
 import time
 import shutil
 import subprocess
@@ -61,10 +62,10 @@ _weather_cache = {"data": None, "fetched_at": 0}
 
 # All Philadelphia teams share the "phi" team abbreviation in ESPN's API
 SPORTS_TEAMS = {
-    "phillies": {"label": "Phillies", "sport": "baseball", "league": "mlb", "team": "phi"},
-    "eagles": {"label": "Eagles", "sport": "football", "league": "nfl", "team": "phi"},
-    "sixers": {"label": "Sixers", "sport": "basketball", "league": "nba", "team": "phi"},
-    "flyers": {"label": "Flyers", "sport": "hockey", "league": "nhl", "team": "phi"},
+    "phillies": {"label": "Phillies", "sport": "baseball", "league": "mlb", "team": "phi", "espn_id": "22"},
+    "eagles": {"label": "Eagles", "sport": "football", "league": "nfl", "team": "phi", "espn_id": "21"},
+    "sixers": {"label": "Sixers", "sport": "basketball", "league": "nba", "team": "phi", "espn_id": "20"},
+    "flyers": {"label": "Flyers", "sport": "hockey", "league": "nhl", "team": "phi", "espn_id": "4"},
 }
 
 SPORTS_CACHE_TTL_LIVE = 60    # poll faster while a tracked game is in progress
@@ -377,8 +378,10 @@ def parse_team_events(payload, team_abbr):
 
             date_str, time_str = _to_mt_strings(event_dt)
             opponent_name = opp["team"].get("shortDisplayName") or opp["team"].get("abbreviation")
+            opp_abbr = opp["team"].get("abbreviation", "").lower()
             entry = {
                 "opponent": opponent_name,
+                "opponent_abbr": opp_abbr,
                 "date": date_str,
                 "time": time_str,
                 "home_away": me.get("homeAway"),
@@ -446,6 +449,75 @@ def parse_world_cup(payload):
     return {"next": next_match, "last": last_match, "live": live_match}
 
 
+async def fetch_team_info(client, sport, league, team_abbr):
+    """Returns team record and standing summary."""
+    url = f"https://site.api.espn.com/apis/site/v2/sports/{sport}/{league}/teams/{team_abbr}"
+    resp = await client.get(url)
+    resp.raise_for_status()
+    data = resp.json()
+    team = (data.get("team") or {})
+    record_items = ((team.get("record") or {}).get("items") or [])
+    record = record_items[0].get("summary", "") if record_items else ""
+    standing = team.get("standingSummary", "")
+    return {"record": record, "standing": standing}
+
+
+async def fetch_team_news(client, sport, league, team_abbr):
+    """Returns the latest news headline for a team."""
+    url = f"https://site.api.espn.com/apis/site/v2/sports/{sport}/{league}/news?team={team_abbr}&limit=1"
+    resp = await client.get(url)
+    resp.raise_for_status()
+    data = resp.json()
+    articles = data.get("articles") or []
+    if articles:
+        return articles[0].get("headline", "")
+    return ""
+
+
+async def fetch_mlb_scoreboard(client):
+    """Returns today's MLB scoreboard, which includes probable pitchers."""
+    url = "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard"
+    resp = await client.get(url)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def parse_pitcher(probables):
+    """Extract pitcher name + stats from ESPN probables array."""
+    if not probables:
+        return None
+    p = probables[0]
+    athlete = p.get("athlete") or {}
+    stats = {s["name"]: s.get("displayValue", "—") for s in (p.get("statistics") or [])}
+    return {
+        "name": athlete.get("shortName") or athlete.get("fullName") or "TBD",
+        "W": stats.get("wins", "—"),
+        "L": stats.get("losses", "—"),
+        "ERA": stats.get("ERA", "—"),
+    }
+
+
+def find_phillies_pitchers(scoreboard_payload, phillies_abbr="PHI"):
+    """Find the Phillies game in today's scoreboard and return both pitchers."""
+    for ev in scoreboard_payload.get("events", []):
+        try:
+            comp = ev["competitions"][0]
+            competitors = comp["competitors"]
+            me = next((c for c in competitors if c["team"]["abbreviation"].upper() == phillies_abbr), None)
+            opp = next((c for c in competitors if c["team"]["abbreviation"].upper() != phillies_abbr), None)
+            if not me or not opp:
+                continue
+            return {
+                "home": parse_pitcher(me.get("probables")),
+                "away": parse_pitcher(opp.get("probables")),
+                "home_abbr": me["team"]["abbreviation"].lower(),
+                "away_abbr": opp["team"]["abbreviation"].lower(),
+            }
+        except Exception:
+            continue
+    return None
+
+
 @app.get("/api/sports")
 async def sports():
     now = time.time()
@@ -457,27 +529,84 @@ async def sports():
     any_live = False
 
     try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            for key, cfg in SPORTS_TEAMS.items():
-                try:
-                    payload = await fetch_team_schedule(client, cfg["sport"], cfg["league"], cfg["team"])
-                    parsed = parse_team_events(payload, cfg["team"])
-                    result["teams"][key] = {"label": cfg["label"], "available": True, **parsed}
-                    if parsed["live"]:
-                        any_live = True
-                except Exception:
-                    result["teams"][key] = {"label": cfg["label"], "available": False}
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            # Fetch all schedules + WC + mlb scoreboard in parallel
+            team_keys = list(SPORTS_TEAMS.keys())
+            team_cfgs = list(SPORTS_TEAMS.values())
 
-            try:
-                wc_payload = await fetch_world_cup_scoreboard(client)
+            schedule_tasks = [
+                fetch_team_schedule(client, cfg["sport"], cfg["league"], cfg["team"])
+                for cfg in team_cfgs
+            ]
+            info_tasks = [
+                fetch_team_info(client, cfg["sport"], cfg["league"], cfg["team"])
+                for cfg in team_cfgs
+            ]
+            news_tasks = [
+                fetch_team_news(client, cfg["sport"], cfg["league"], cfg["team"])
+                for cfg in team_cfgs
+            ]
+
+            (
+                schedule_results,
+                info_results,
+                news_results,
+                wc_payload,
+                mlb_scoreboard,
+            ) = await asyncio.gather(
+                asyncio.gather(*schedule_tasks, return_exceptions=True),
+                asyncio.gather(*info_tasks, return_exceptions=True),
+                asyncio.gather(*news_tasks, return_exceptions=True),
+                fetch_world_cup_scoreboard(client),
+                fetch_mlb_scoreboard(client),
+                return_exceptions=True,
+            )
+
+            # Phillies probable pitchers (from mlb scoreboard)
+            phillies_pitchers = None
+            if not isinstance(mlb_scoreboard, Exception):
+                phillies_pitchers = find_phillies_pitchers(mlb_scoreboard)
+
+            for i, key in enumerate(team_keys):
+                cfg = team_cfgs[i]
+                schedule_payload = schedule_results[i] if not isinstance(schedule_results, Exception) else None
+                if schedule_payload is None or isinstance(schedule_payload, Exception):
+                    result["teams"][key] = {"label": cfg["label"], "available": False}
+                    continue
+
+                parsed = parse_team_events(schedule_payload, cfg["team"])
+                entry = {"label": cfg["label"], "available": True, **parsed}
+
+                # Merge team record/standing
+                info = info_results[i] if not isinstance(info_results, Exception) else None
+                if info and not isinstance(info, Exception):
+                    entry["record"] = info.get("record", "")
+                    entry["standing"] = info.get("standing", "")
+
+                # Merge news headline (shown in offseason when no live/next games)
+                news = news_results[i] if not isinstance(news_results, Exception) else None
+                if news and not isinstance(news, Exception):
+                    entry["headline"] = news
+
+                # Phillies only: attach probable pitchers
+                if key == "phillies" and phillies_pitchers:
+                    entry["pitchers"] = phillies_pitchers
+
+                if parsed["live"]:
+                    any_live = True
+
+                result["teams"][key] = entry
+
+            # World Cup
+            if not isinstance(wc_payload, Exception):
                 wc_parsed = parse_world_cup(wc_payload)
                 result["teams"]["world_cup"] = {"label": "World Cup", "available": True, **wc_parsed}
                 if wc_parsed["live"]:
                     any_live = True
-            except Exception:
+            else:
                 result["teams"]["world_cup"] = {"label": "World Cup", "available": False}
+
     except Exception:
-        # Fail gracefully — serve stale cache if we have one, otherwise unavailable
         if _sports_cache["data"]:
             return {**_sports_cache["data"], "cached": True, "stale": True}
         return JSONResponse(status_code=200, content={"available": False})
