@@ -410,6 +410,15 @@ body {
 .sb-row[data-team="flyers"]   { border-left-color: var(--c-flyers); }
 .sb-row[data-team="world_cup"]{ border-left-color: var(--c-worldcup); }
 
+/* Team logo — sized to sit cleanly in the row */
+.sb-logo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex-shrink: 0;
+  opacity: 0.92;
+}
+
 /* Team name — must be readable from the couch */
 .sb-team {
   font-size: 2.4rem;
@@ -541,11 +550,12 @@ body {
 .weather-icon {
   font-size: 8rem;
   line-height:1;
-  display:inline-block;
+  display:block;
   animation: float 5s ease-in-out infinite;
-  /* Drop shadow gives emoji depth */
-  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.5));
 }
+
+/* SVG icons inherit the font-size (width="1em" height="1em" on each SVG) */
+.weather-icon svg { display:block; }
 
 /* The temperature — this is the ANSWER to "what's the weather" */
 .weather-temp {
@@ -614,7 +624,7 @@ body {
 }
 .jf-poster-row:last-child { border-bottom:none; }
 
-/* Colored poster art placeholder — until real artwork is wired */
+/* Poster artwork — real image from Jellyfin, or colored initial fallback */
 .jf-thumb {
   width:52px; height:74px;
   border-radius:8px;
@@ -631,12 +641,23 @@ body {
   position:relative;
 }
 
+.jf-thumb img {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:inherit;
+  display:block;
+}
+
 .jf-thumb::after {
   content:"";
   position:absolute;
   inset:0;
   background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%);
+  pointer-events:none;
 }
+
+/* Suppress the ::after shine when image loads (image is on top anyway) */
 
 .jf-thumb-sm {
   width:44px; height:62px; font-size:1.5rem;
@@ -895,6 +916,7 @@ body {
   .sb-score        { font-size:3.2rem; }
   .sb-team         { font-size:2rem; }
   .tn-co-value     { font-size:2.6rem; }
+  .sb-logo         { width:38px; height:38px; }
 }
 
 @media (max-width:1100px) {

@@ -63,7 +63,7 @@ async function pollWeather() {
   if (!iconEl) return;
 
   const setUnavailable = () => {
-    iconEl.textContent = "⚠️";
+    iconEl.innerHTML = "⚠️";
     if (tempEl) tempEl.textContent = "—°";
     if (condEl) { condEl.textContent = "Unavailable"; condEl.className = "weather-unavailable"; }
     if (hiloEl) hiloEl.textContent = "";
@@ -78,7 +78,13 @@ async function pollWeather() {
     const d = await res.json();
     if (!d.available) { setUnavailable(); return; }
 
-    iconEl.textContent = d.icon;
+    // SVG animated icon in the weather card; emoji fallback in header (smaller, less critical)
+    if (typeof getWeatherIcon === "function") {
+      iconEl.innerHTML = getWeatherIcon(d.condition);
+    } else {
+      iconEl.innerHTML = d.icon;
+    }
+
     if (tempEl) tempEl.textContent = `${d.temperature_f}°`;
     if (condEl) { condEl.textContent = d.condition + (d.stale ? " (cached)" : ""); condEl.className = "weather-condition"; }
     if (hiloEl) hiloEl.textContent  = `H: ${d.high_f}°  ·  L: ${d.low_f}°`;
@@ -214,19 +220,35 @@ async function pollTonight() {
   setTimeout(pollTonight, 120000);
 }
 
-/* ── Sports — scoreboard, team colors ────────────────────────── */
+/* ── Sports — scoreboard, team colors, logos ─────────────────── */
 const SPORTS_ORDER = ["phillies", "eagles", "sixers", "flyers", "world_cup"];
+
+const TEAM_LOGOS = {
+  phillies:  "https://a.espncdn.com/i/teamlogos/mlb/500/phi.png",
+  eagles:    "https://a.espncdn.com/i/teamlogos/nfl/500/phi.png",
+  sixers:    "https://a.espncdn.com/i/teamlogos/nba/500/phi.png",
+  flyers:    "https://a.espncdn.com/i/teamlogos/nhl/500/phi.png",
+  world_cup: "https://a.espncdn.com/i/leaguelogos/soccer/500/68.png",
+};
+
+function teamLogo(key) {
+  const url = TEAM_LOGOS[key];
+  if (!url) return "";
+  return `<img class="sb-logo" src="${url}" alt="" loading="lazy" onerror="this.style.display='none'">`;
+}
 
 function renderSportsRow(team, key) {
   if (!team || team.available === false) return "";
 
   const teamAttr = `data-team="${key}"`;
+  const logo = teamLogo(key);
 
   if (team.live) {
     const score  = team.live.score || `${team.live.my_score ?? "—"}-${team.live.opp_score ?? "—"}`;
     const period = team.live.period ? ` · ${team.live.period}` : "";
     return `
       <div class="sb-row sb-row-live" ${teamAttr}>
+        ${logo}
         <div class="sb-team">${team.label}</div>
         <div class="sb-score sb-score-live">${score}</div>
         <div class="sb-badge sb-badge-live"><span class="sb-live-dot"></span>LIVE${period}</div>
@@ -237,6 +259,7 @@ function renderSportsRow(team, key) {
     const opp = team.next.opponent ? `vs ${team.next.opponent}` : (team.next.matchup || "");
     return `
       <div class="sb-row" ${teamAttr}>
+        ${logo}
         <div class="sb-team">${team.label}</div>
         <div class="sb-time">${team.next.time || "TBD"}</div>
         <div class="sb-badge sb-badge-next">${opp}</div>
@@ -250,6 +273,7 @@ function renderSportsRow(team, key) {
     const sClass = result === "W" ? "sb-score-win" : result === "L" ? "sb-score-loss" : "";
     return `
       <div class="sb-row" ${teamAttr}>
+        ${logo}
         <div class="sb-team">${team.label}</div>
         <div class="sb-score sb-score-final ${sClass}">${score}</div>
         <div class="sb-badge ${rClass}">${result || "Final"}</div>
@@ -332,7 +356,26 @@ async function pollGaming() {
   }
 }
 
-/* ── Entertainment — poster style ────────────────────────────── */
+/* ── Entertainment — poster artwork ──────────────────────────── */
+function jfThumbFail(img) {
+  const wrap = img.parentNode;
+  if (wrap) wrap.innerHTML = wrap.dataset.initial || "?";
+}
+
+function jfPoster(item, large) {
+  const initial = (item.label || "?").charAt(0).toUpperCase();
+  const cls = large ? "jf-thumb" : "jf-thumb jf-thumb-sm";
+  if (item.id) {
+    const jfBase = `http://${window.location.hostname}:8096`;
+    const h = large ? 148 : 124;
+    const src = `${jfBase}/Items/${item.id}/Images/Primary?maxHeight=${h}&quality=85`;
+    return `<div class="${cls}" data-initial="${initial}">` +
+           `<img src="${src}" alt="" loading="lazy" onerror="jfThumbFail(this)">` +
+           `</div>`;
+  }
+  return `<div class="${cls}">${initial}</div>`;
+}
+
 async function pollJellyfin() {
   const bodyEl = document.getElementById("jellyfin-body");
   if (!bodyEl) return;
@@ -353,10 +396,9 @@ async function pollJellyfin() {
     if (d.continue_watching && d.continue_watching.length) {
       sections.push(`<div class="jf-section-label">Continue Watching</div>`);
       for (const item of d.continue_watching.slice(0, 1)) {
-        const initial = (item.label || "?").charAt(0).toUpperCase();
         sections.push(`
           <div class="jf-poster-row">
-            <div class="jf-thumb">${initial}</div>
+            ${jfPoster(item, true)}
             <div class="jf-poster-info">
               <div class="jf-poster-title">${item.label}</div>
               <div class="jf-progress-bar"><div class="jf-progress-fill" style="width:${item.progress}%"></div></div>
@@ -369,10 +411,9 @@ async function pollJellyfin() {
     if (d.recently_added && d.recently_added.length) {
       sections.push(`<div class="jf-section-label">Recently Added</div>`);
       for (const item of d.recently_added.slice(0, 3)) {
-        const initial = (item.label || "?").charAt(0).toUpperCase();
         sections.push(`
           <div class="jf-poster-row">
-            <div class="jf-thumb jf-thumb-sm">${initial}</div>
+            ${jfPoster(item, false)}
             <div class="jf-poster-info">
               <div class="jf-poster-title">${item.label}</div>
               <div class="jf-poster-meta">${item.runtime || item.type || ""}</div>
