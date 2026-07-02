@@ -421,17 +421,31 @@ function renderWCRow(team) {
     const scoreParts = (g.score || "0-0").split("-");
     const awayScore  = scoreParts[0]?.trim() ?? "0";
     const homeScore  = scoreParts[1]?.trim() ?? "0";
-    const period = g.period || "Live";
+    const period = g.period || "";
+    const half   = g.half   || "";
     const round  = g.round  ? ` · ${g.round}` : "";
 
-    // Goal scorers grouped by side
+    // Meta line: LIVE · 40' · 1st Half (show what's available)
+    const metaParts = ["LIVE"];
+    if (period) metaParts.push(period);
+    if (half)   metaParts.push(half);
+    const metaText = metaParts.join(" · ");
+
+    // Goal scorers — dedicated section, chronological, with team abbr
     const goals = g.goals || [];
-    let awayGoalHtml = "", homeGoalHtml = "";
+    let scorersHtml = "";
     if (goals.length) {
-      const awayGoals = goals.filter(x => x.side === "away").map(x => `${x.player} ${x.minute}`).join(", ");
-      const homeGoals = goals.filter(x => x.side === "home").map(x => `${x.player} ${x.minute}`).join(", ");
-      if (awayGoals) awayGoalHtml = `<div class="soccer-goals">${awayGoals}</div>`;
-      if (homeGoals) homeGoalHtml = `<div class="soccer-goals">${homeGoals}</div>`;
+      const rows = goals.map(goal => {
+        const marker = goal.own_goal ? "OG" : goal.penalty ? "PK" : "⚽";
+        const abbr   = (goal.abbr || "").toUpperCase();
+        return `<div class="soccer-scorer-row">
+          <span class="soccer-scorer-marker">${marker}</span>
+          <span class="soccer-scorer-abbr">${abbr}</span>
+          <span class="soccer-scorer-name">${goal.player}</span>
+          <span class="soccer-scorer-min">${goal.minute}</span>
+        </div>`;
+      }).join("");
+      scorersHtml = `<div class="soccer-scorers-section">${rows}</div>`;
     }
 
     // Upcoming today — other games not yet started
@@ -455,10 +469,7 @@ function renderWCRow(team) {
         <div class="soccer-live-scoreline">
           <div class="soccer-team-side soccer-team-away">
             <span class="soccer-team-flag">${renderFlag(g.away_abbr)}</span>
-            <div class="soccer-team-info">
-              <span class="soccer-team-name">${m.away}</span>
-              ${awayGoalHtml}
-            </div>
+            <span class="soccer-team-name">${m.away}</span>
           </div>
           <div class="soccer-score-center">
             <div class="soccer-score">${awayScore}</div>
@@ -466,18 +477,15 @@ function renderWCRow(team) {
             <div class="soccer-score">${homeScore}</div>
           </div>
           <div class="soccer-team-side soccer-team-home">
-            <div class="soccer-team-info soccer-team-info-right">
-              <span class="soccer-team-name">${m.home}</span>
-              ${homeGoalHtml}
-            </div>
+            <span class="soccer-team-name">${m.home}</span>
             <span class="soccer-team-flag">${renderFlag(g.home_abbr)}</span>
           </div>
         </div>
         <div class="soccer-live-meta">
           <span class="sb-live-dot"></span>
-          <span class="soccer-live-label">LIVE</span>
-          <span class="soccer-clock">${period}${round}</span>
+          <span class="soccer-meta-text">${metaText}${round}</span>
         </div>
+        ${scorersHtml}
         ${upcomingHtml}
       </div>`;
   }

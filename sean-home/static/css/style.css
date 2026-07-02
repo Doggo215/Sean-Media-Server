@@ -1460,6 +1460,55 @@ body {
   color: rgba(255,255,255,0.62);
   font-weight: 600;
 }
+/* Soccer goal scorers — below scoreline */
+.soccer-scorers-section {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 0 2px;
+}
+.soccer-scorer-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.35rem;
+  color: var(--text-2);
+}
+.soccer-scorer-marker {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  width: 18px;
+  text-align: center;
+}
+.soccer-scorer-abbr {
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--c-worldcup);
+  flex-shrink: 0;
+  min-width: 32px;
+}
+.soccer-scorer-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+.soccer-scorer-min {
+  font-size: 1.2rem;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+/* Soccer meta line */
+.soccer-meta-text {
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.62);
+}
+.soccer-live-meta .soccer-meta-text { color: rgba(255,255,255,0.62); }
+
 .soccer-upcoming-list {
   display: flex;
   flex-direction: column;

@@ -565,17 +565,39 @@ def parse_world_cup(payload):
             if state == "in":
                 entry["score"] = f"{_score_str(away)}-{_score_str(home)}"
                 entry["period"] = comp["status"]["type"].get("shortDetail")
+                period_num = comp["status"].get("period") or 0
+                if period_num == 1:
+                    entry["half"] = "1st Half"
+                elif period_num == 2:
+                    entry["half"] = "2nd Half"
+                elif period_num in (3, 4):
+                    entry["half"] = "Extra Time"
+                elif period_num >= 5:
+                    entry["half"] = "Penalties"
+                else:
+                    entry["half"] = ""
                 # Goal scorers from competition details
                 goals = []
                 for detail in (comp.get("details") or []):
                     dtype = (detail.get("type") or {}).get("text", "").lower()
                     if dtype in ("goal", "penalty goal", "header goal", "own goal"):
                         athletes = detail.get("athletesInvolved") or []
-                        player = athletes[0].get("displayName", "") if athletes else ""
+                        athl = athletes[0] if athletes else {}
+                        player = athl.get("shortName") or athl.get("displayName", "")
                         minute = (detail.get("clock") or {}).get("displayValue", "")
                         team_id = (detail.get("team") or {}).get("id", "")
                         side = "home" if team_id == home_id else "away"
-                        goals.append({"player": player, "minute": minute, "side": side})
+                        abbr = home_abbr if side == "home" else away_abbr
+                        own_goal = detail.get("ownGoal", False)
+                        penalty = detail.get("penaltyKick", False)
+                        goals.append({
+                            "player": player,
+                            "minute": minute,
+                            "side": side,
+                            "abbr": abbr,
+                            "own_goal": own_goal,
+                            "penalty": penalty,
+                        })
                 entry["goals"] = goals
                 live_match = entry
             elif state == "post":
