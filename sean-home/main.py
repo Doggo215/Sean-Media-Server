@@ -583,7 +583,7 @@ def parse_world_cup(payload):
                 goals = []
                 for detail in (comp.get("details") or []):
                     dtype = (detail.get("type") or {}).get("text", "").lower()
-                    if dtype in ("goal", "penalty goal", "header goal", "own goal"):
+                    if "goal" in dtype:
                         athletes = detail.get("athletesInvolved") or []
                         athl = athletes[0] if athletes else {}
                         player = athl.get("shortName") or athl.get("displayName", "")
@@ -609,7 +609,7 @@ def parse_world_cup(payload):
                 post_goals = []
                 for detail in (comp.get("details") or []):
                     dtype = (detail.get("type") or {}).get("text", "").lower()
-                    if dtype in ("goal", "penalty goal", "header goal", "own goal"):
+                    if "goal" in dtype:
                         athletes = detail.get("athletesInvolved") or []
                         athl = athletes[0] if athletes else {}
                         player = athl.get("shortName") or athl.get("displayName", "")
