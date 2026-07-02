@@ -261,7 +261,32 @@ async function pollToday() {
 
     // ── Tonight's schedule ──────────────────────────────────────
     const events = [];
-    for (const g of upcoming.slice(0, 3)) {
+    for (const g of upcoming.slice(0, 4)) {
+      // World Cup multi-game block
+      if (g.team === "World Cup" && g.wc_games && g.wc_games.length) {
+        const gameLines = g.wc_games.map(wg => {
+          const m = parseMatchup(wg.matchup);
+          const stateTag = wg.state === "in"
+            ? `<span class="td-wc-live">LIVE</span>`
+            : `<span class="td-wc-time">${wg.time}</span>`;
+          return `<div class="td-wc-game">
+            <span class="td-wc-flag">${getFlag(m.away)}</span>
+            <span class="td-wc-teams">${m.away} vs ${m.home}</span>
+            <span class="td-wc-flag">${getFlag(m.home)}</span>
+            ${stateTag}
+          </div>`;
+        }).join("");
+        events.push(`
+          <div class="td-event td-wc-block">
+            <div class="td-event-body">
+              <div class="td-event-team">World Cup</div>
+              <div class="td-wc-games">${gameLines}</div>
+            </div>
+          </div>`);
+        continue;
+      }
+
+      // Standard single-game event
       const isWC = g.team === "World Cup" && (g.opponent || "").includes("@");
       let opp = "";
       if (isWC) {
@@ -367,7 +392,7 @@ const SPORTS_ORDER = ["phillies", "eagles", "sixers", "flyers", "world_cup"];
 
 /* Country flag emoji lookup for World Cup matchups */
 const COUNTRY_FLAGS = {
-  "argentina":"🇦🇷","australia":"🇦🇺","austria":"🇦🇹","belgium":"🇧🇪",
+  "algeria":"🇩🇿","argentina":"🇦🇷","australia":"🇦🇺","austria":"🇦🇹","belgium":"🇧🇪",
   "bolivia":"🇧🇴","brazil":"🇧🇷","cameroon":"🇨🇲","canada":"🇨🇦",
   "chile":"🇨🇱","china":"🇨🇳","colombia":"🇨🇴","costa rica":"🇨🇷",
   "croatia":"🇭🇷","cuba":"🇨🇺","denmark":"🇩🇰","ecuador":"🇪🇨",
@@ -445,6 +470,25 @@ function renderWCRow(team) {
     const g = team.next;
     const m = parseMatchup(g.matchup);
     const round = g.round ? `<span class="wc-round">${g.round}</span>` : "";
+
+    // Other today's games (not the featured one)
+    const todayGames = (team.today_games || []).filter(tg => tg.matchup !== g.matchup && tg.state !== "post");
+    const moreHtml = todayGames.length ? `
+      <div class="wc-more-today">
+        ${todayGames.map(tg => {
+          const tm = parseMatchup(tg.matchup);
+          const stateTag = tg.state === "in"
+            ? `<span class="wc-more-live">LIVE</span>`
+            : `<span class="wc-more-time">${tg.time}</span>`;
+          return `<div class="wc-more-row">
+            <span class="wc-more-flag">${getFlag(tm.away)}</span>
+            <span class="wc-more-name">${tm.away} vs ${tm.home}</span>
+            <span class="wc-more-flag">${getFlag(tm.home)}</span>
+            ${stateTag}
+          </div>`;
+        }).join("")}
+      </div>` : "";
+
     return `
       <div class="sb-row sb-row-wc sb-row-wc-next" data-team="world_cup">
         <div class="wc-matchup-line">
@@ -461,6 +505,7 @@ function renderWCRow(team) {
           </div>
         </div>
         <div class="wc-status-line wc-status-next">⚽ World Cup${round ? " · " : ""}${round}</div>
+        ${moreHtml}
       </div>`;
   }
   if (team.last) {

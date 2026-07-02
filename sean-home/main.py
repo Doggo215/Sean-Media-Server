@@ -486,10 +486,12 @@ def parse_team_events(payload, team_abbr):
 
 
 def parse_world_cup(payload):
-    """World Cup has no single tracked team — summarize across all current matches."""
+    """World Cup — returns all today's MT games plus next/last/live for compat."""
     events = payload.get("events", [])
     now = datetime.now(timezone.utc)
+    today_mt = now.astimezone(DENVER).strftime("%Y-%m-%d")
 
+    today_games: list = []
     next_match, next_dt = None, None
     last_match, last_dt = None, None
     live_match = None
@@ -499,6 +501,7 @@ def parse_world_cup(payload):
             comp = ev["competitions"][0]
             state = comp["status"]["type"]["state"]
             event_dt = datetime.fromisoformat(ev["date"].replace("Z", "+00:00"))
+            mt_date = event_dt.astimezone(DENVER).strftime("%Y-%m-%d")
             competitors = comp["competitors"]
             home = next(c for c in competitors if c["homeAway"] == "home")
             away = next(c for c in competitors if c["homeAway"] == "away")
@@ -508,6 +511,8 @@ def parse_world_cup(payload):
             away_name = away["team"].get("shortDisplayName", "")
             home_id = home["team"].get("id", "")
             away_id = away["team"].get("id", "")
+            home_abbr = home["team"].get("abbreviation", "")
+            away_abbr = away["team"].get("abbreviation", "")
 
             # Round / phase (e.g. "Group Stage", "Round of 16")
             comp_type = (comp.get("type") or {}).get("text", "")
@@ -516,8 +521,13 @@ def parse_world_cup(payload):
 
             entry = {
                 "matchup": f"{away_name} @ {home_name}",
+                "away": away_name,
+                "home": home_name,
+                "away_abbr": away_abbr,
+                "home_abbr": home_abbr,
                 "date": date_str,
                 "time": time_str,
+                "state": state,
                 "round": round_label,
             }
 
@@ -538,16 +548,25 @@ def parse_world_cup(payload):
                 entry["goals"] = goals
                 live_match = entry
             elif state == "post":
+                entry["score"] = f"{_score_str(away)}-{_score_str(home)}"
                 if last_dt is None or event_dt > last_dt:
-                    entry["score"] = f"{_score_str(away)}-{_score_str(home)}"
                     last_match, last_dt = entry, event_dt
             elif state == "pre":
                 if event_dt >= now and (next_dt is None or event_dt < next_dt):
                     next_match, next_dt = entry, event_dt
+
+            # Collect all today's MT games (ESPN returns events in time order)
+            if mt_date == today_mt:
+                today_games.append(entry)
         except Exception:
             continue
 
-    return {"next": next_match, "last": last_match, "live": live_match}
+    return {
+        "next": next_match,
+        "last": last_match,
+        "live": live_match,
+        "today_games": today_games,
+    }
 
 
 async def fetch_team_info(client, sport, league, team_abbr):
@@ -1010,7 +1029,17 @@ async def tonight():
                         "period": g.get("period"),
                     })
 
-                if team.get("next") and team["next"].get("date") == today_str:
+                if key == "world_cup":
+                    # Add ALL today's WC games as a single grouped entry
+                    today_wc = [g for g in team.get("today_games", []) if g.get("state") != "post"]
+                    if today_wc:
+                        upcoming_games.append({
+                            "team": "World Cup",
+                            "opponent": today_wc[0].get("matchup", ""),
+                            "time": today_wc[0].get("time", ""),
+                            "wc_games": today_wc,
+                        })
+                elif team.get("next") and team["next"].get("date") == today_str:
                     g = team["next"]
                     upcoming_games.append({
                         "team": label,

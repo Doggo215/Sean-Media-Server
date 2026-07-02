@@ -1260,6 +1260,48 @@ body {
 .wc-status-final { color: var(--text-2); }
 .wc-round { color: var(--text-3); font-style: italic; }
 
+/* Additional today's WC games — compact rows below featured match */
+.wc-more-today {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.wc-more-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.4rem;
+  color: var(--text-2);
+}
+.wc-more-flag { font-size: 1.5rem; line-height: 1; flex-shrink: 0; }
+.wc-more-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wc-more-time { font-size: 1.3rem; color: var(--text-3); flex-shrink: 0; }
+.wc-more-live { font-size: 1.1rem; font-weight: 700; color: var(--red); flex-shrink: 0; letter-spacing: 0.06em; }
+
+/* TODAY card — World Cup multi-game block */
+.td-wc-block .td-event-body { flex: 1; }
+.td-wc-games {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 6px;
+}
+.td-wc-game {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.65rem;
+  color: var(--text-2);
+  line-height: 1.2;
+}
+.td-wc-flag { font-size: 1.7rem; line-height: 1; flex-shrink: 0; }
+.td-wc-teams { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.td-wc-time { font-size: 1.5rem; color: var(--blue); flex-shrink: 0; font-weight: 200; }
+.td-wc-live { font-size: 1.2rem; color: var(--red); font-weight: 700; flex-shrink: 0; letter-spacing: 0.06em; }
+
 /* Goal scorers line — shown during live WC matches */
 .wc-goals-line {
   display: flex;
