@@ -612,6 +612,45 @@ function renderSportsRow(team, key) {
   return "";
 }
 
+/* ── News Card — team headlines drawn from sports data ────────── */
+const NEWS_ORDER  = ["eagles", "sixers", "flyers", "phillies"];
+const NEWS_COLORS = {
+  phillies: "#e81828",
+  eagles:   "#00b140",
+  sixers:   "#006bb6",
+  flyers:   "#f74902",
+};
+const NEWS_NAMES = {
+  phillies: "Phillies", eagles: "Eagles", sixers: "Sixers", flyers: "Flyers",
+};
+
+function renderNewsCard(teams) {
+  const bodyEl = document.getElementById("news-body");
+  if (!bodyEl) return;
+
+  const items = [];
+  for (const key of NEWS_ORDER) {
+    const team = teams && teams[key];
+    if (!team) continue;
+    const headline = team.headline || "";
+    if (!headline) continue;
+    const color = NEWS_COLORS[key] || "var(--text-3)";
+    const name  = NEWS_NAMES[key]  || key;
+    items.push(`
+      <div class="news-item">
+        <div class="news-accent" style="background:${color}"></div>
+        <div class="news-team-info">
+          <div class="news-team-name" style="color:${color}">${name}</div>
+          <div class="news-headline">${headline}</div>
+        </div>
+      </div>`);
+  }
+
+  bodyEl.innerHTML = items.length
+    ? items.join("")
+    : `<p class="card-placeholder">No news available</p>`;
+}
+
 async function pollSports() {
   const listEl  = document.getElementById("sports-list");
   const sportsCard = document.getElementById("sports-card");
@@ -648,10 +687,13 @@ async function pollSports() {
       // Grid expands sports column when any live game is active
       const gridEl = document.querySelector(".tv-content-grid");
       if (gridEl) gridEl.classList.toggle("sports-hero", hasAnyLive);
+
+      renderNewsCard(d.teams);
     }
   } catch {
     console.warn("Sean Home: sports unavailable");
     listEl.innerHTML = `<div class="sb-placeholder">Sports unavailable</div>`;
+    renderNewsCard(null);
   }
 
   setTimeout(pollSports, nextDelay);
@@ -801,5 +843,4 @@ setInterval(pollWeather, 600000);
 pollLiveStrip();
 pollToday();
 pollSports();
-pollJellyfin();
 pollMediaServer();
