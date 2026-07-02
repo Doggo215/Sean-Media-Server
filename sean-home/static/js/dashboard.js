@@ -88,7 +88,13 @@ async function pollWeather() {
     if (!d.available) { setUnavailable(); return; }
 
     // Header
-    if (hwIcon) hwIcon.textContent = d.icon;
+    if (hwIcon) {
+      if (typeof getWeatherIcon === "function") {
+        hwIcon.innerHTML = getWeatherIcon(d.condition);
+      } else {
+        hwIcon.textContent = d.icon;
+      }
+    }
     if (hwTemp) hwTemp.textContent = `${d.temperature_f}°`;
     if (hwDesc) hwDesc.textContent = `${d.condition}  ·  Low ${d.low_f}°`;
 

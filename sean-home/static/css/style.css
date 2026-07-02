@@ -198,7 +198,8 @@ body {
 
 /* Header weather */
 .tv-header-weather { display:flex; align-items:center; gap:20px; flex-shrink:0; }
-.tv-hw-icon { font-size:3.6rem; line-height:1; display:inline-block; }
+.tv-hw-icon { font-size:3.6rem; line-height:1; display:inline-block; width:3.6rem; height:3.6rem; }
+.tv-hw-icon svg { width:100%; height:100%; display:block; }
 .tv-hw-info { display:flex; flex-direction:column; gap:4px; }
 .tv-hw-temp {
   font-size: 3.8rem;
@@ -402,7 +403,7 @@ body {
 .td-section { flex-shrink: 0; margin-top: 14px; }
 
 .td-section-label {
-  font-size: 0.85rem;
+  font-size: 1.1rem;
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -432,7 +433,7 @@ body {
 }
 
 .td-event-team {
-  font-size: 2.2rem;
+  font-size: 3.08rem;
   font-weight: 800;
   color: var(--text);
   text-transform: uppercase;
@@ -444,7 +445,7 @@ body {
 }
 
 .td-event-opp {
-  font-size: 1.2rem;
+  font-size: 1.68rem;
   color: var(--text-2);
   margin-top: 4px;
   overflow: hidden;
@@ -453,7 +454,7 @@ body {
 }
 
 .td-event-time {
-  font-size: 1.8rem;
+  font-size: 2.52rem;
   font-weight: 200;
   color: var(--blue);
   letter-spacing: -1px;
@@ -462,7 +463,7 @@ body {
 }
 
 .td-event-score {
-  font-size: 2rem;
+  font-size: 2.8rem;
   font-weight: 200;
   letter-spacing: -1px;
 }
@@ -484,7 +485,7 @@ body {
   flex-shrink: 0;
 }
 .td-gaming-name {
-  font-size: 1.6rem;
+  font-size: 2.24rem;
   font-weight: 700;
   color: var(--text);
 }
@@ -501,7 +502,7 @@ body {
   animation: breathe 3s ease-in-out infinite;
 }
 .td-gaming-headline {
-  font-size: 1.1rem;
+  font-size: 1.54rem;
   color: var(--text-2);
   margin-top: 5px;
   overflow: hidden;
@@ -528,18 +529,18 @@ body {
 .td-cal-icon { font-size: 1.5rem; line-height: 1; flex-shrink: 0; }
 .td-cal-info { flex: 1; min-width: 0; }
 .td-cal-day {
-  font-size: 1.3rem;
+  font-size: 1.82rem;
   font-weight: 700;
   color: var(--text);
   line-height: 1.1;
 }
 .td-cal-date {
-  font-size: 1.0rem;
+  font-size: 1.4rem;
   color: var(--text-2);
   margin-top: 2px;
 }
 .td-cal-note {
-  font-size: 0.9rem;
+  font-size: 1.26rem;
   color: var(--text-3);
   font-style: italic;
   margin-top: 8px;
@@ -626,7 +627,7 @@ body {
   gap:5px;
 }
 .sb-team {
-  font-size: 2.2rem;
+  font-size: 2.86rem;
   font-weight: 800;
   color: var(--text);
   text-transform: uppercase;
@@ -638,7 +639,7 @@ body {
 }
 /* Sub-line: opponent, matchup, result, or live period */
 .sb-sub {
-  font-size: 1.45rem;
+  font-size: 2.0rem;
   color: var(--text-2);
   overflow:hidden;
   text-overflow:ellipsis;
@@ -651,7 +652,7 @@ body {
 .sb-sub-win  { color: var(--green); font-weight:600; }
 .sb-sub-loss { color: var(--red);   font-weight:600; }
 .sb-sub-live { color: var(--red);   font-weight:700; letter-spacing:0.06em; }
-.sb-sub-date { color: var(--text-3); font-size: 1.25rem; }
+.sb-sub-date { color: var(--text-3); font-size: 1.75rem; }
 
 /* Score — the number you read from the couch */
 .sb-score {
@@ -699,7 +700,7 @@ body {
 
 /* Inline record badge — sits inside sb-team or sb-sub */
 .sb-record {
-  font-size: 1.1rem;
+  font-size: 1.5rem;
   font-weight: 500;
   color: var(--text-3);
   letter-spacing: 0.02em;
@@ -716,7 +717,7 @@ body {
   overflow: hidden;
 }
 .sb-pitcher-us {
-  font-size: 1.1rem;
+  font-size: 1.65rem;
   font-weight: 600;
   color: var(--text);
   white-space: nowrap;
@@ -724,12 +725,12 @@ body {
   text-overflow: ellipsis;
 }
 .sb-pitcher-vs {
-  font-size: 0.95rem;
+  font-size: 1.3rem;
   color: var(--text-3);
   flex-shrink: 0;
 }
 .sb-pitcher-them {
-  font-size: 1.1rem;
+  font-size: 1.65rem;
   font-weight: 400;
   color: var(--text-2);
   white-space: nowrap;
@@ -739,7 +740,7 @@ body {
 
 /* Offseason news headline — one-line ticker under team name */
 .sb-headline {
-  font-size: 1.1rem;
+  font-size: 1.54rem;
   color: var(--text-2);
   margin-top: 5px;
   overflow: hidden;
@@ -796,13 +797,13 @@ body {
 .weather-icon svg { display: block; }
 
 .weather-condition {
-  font-size: 1.7rem;
+  font-size: 2.21rem;
   font-weight: 500;
   color: var(--text);
   letter-spacing: 0.02em;
 }
 .weather-hilo {
-  font-size: 1.45rem;
+  font-size: 1.89rem;
   color: var(--text-2);
   letter-spacing: 0.02em;
 }
@@ -817,7 +818,7 @@ body {
   margin-top: 2px;
 }
 .wx-chip {
-  font-size: 1.05rem;
+  font-size: 1.37rem;
   color: var(--text-2);
   background: rgba(255,255,255,0.055);
   border: 1px solid rgba(255,255,255,0.08);
@@ -849,15 +850,15 @@ body {
   padding: 6px 4px 5px;
 }
 .wx-h-label {
-  font-size: 0.8rem;
+  font-size: 1.04rem;
   color: var(--text-3);
   font-weight: 600;
   letter-spacing: 0.04em;
   white-space: nowrap;
 }
-.wx-h-icon { font-size: 1.4rem; line-height: 1; }
-.wx-h-temp { font-size: 1.05rem; font-weight: 600; color: var(--text); }
-.wx-h-rain { font-size: 0.8rem; color: var(--blue); }
+.wx-h-icon { font-size: 1.82rem; line-height: 1; }
+.wx-h-temp { font-size: 1.37rem; font-weight: 600; color: var(--text); }
+.wx-h-rain { font-size: 1.04rem; color: var(--blue); }
 
 /* Sunrise / sunset row */
 .weather-sun {
@@ -865,7 +866,7 @@ body {
   justify-content: center;
   align-items: center;
   gap: 14px;
-  font-size: 1.0rem;
+  font-size: 1.3rem;
   color: var(--text-3);
   margin-top: 4px;
 }
@@ -888,13 +889,13 @@ body {
   border-radius: 8px;
 }
 .wx-day {
-  font-size: 1.0rem;
+  font-size: 1.3rem;
   font-weight: 600;
   color: var(--text-2);
   min-width: 70px;
 }
-.wx-ficon { font-size: 1.3rem; line-height: 1; }
-.wx-ftemps { font-size: 1.0rem; color: var(--text-2); flex: 1; }
+.wx-ficon { font-size: 1.69rem; line-height: 1; }
+.wx-ftemps { font-size: 1.3rem; color: var(--text-2); flex: 1; }
 
 /* ── ENTERTAINMENT CARD ──────────────────────────────────────── */
 .card-entertainment {
@@ -915,7 +916,7 @@ body {
 }
 
 .jf-section-label {
-  font-size: 1.0rem;
+  font-size: 1.4rem;
   font-weight:700;
   letter-spacing:0.18em;
   text-transform:uppercase;
@@ -973,7 +974,7 @@ body {
 
 .jf-poster-info { flex:1; min-width:0; }
 .jf-poster-title {
-  font-size: 1.55rem;
+  font-size: 2.17rem;
   font-weight:600;
   color: var(--text);
   overflow:hidden;
@@ -982,7 +983,7 @@ body {
   line-height:1.3;
 }
 .jf-poster-meta {
-  font-size: 1.1rem;
+  font-size: 1.54rem;
   color: var(--text-2);
   margin-top:6px;
 }
@@ -1012,18 +1013,18 @@ body {
   text-align: center;
 }
 .jf-offline-title {
-  font-size: 1.5rem;
+  font-size: 2.1rem;
   font-weight: 700;
   color: var(--text-2);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 .jf-offline-status {
-  font-size: 1.2rem;
+  font-size: 1.68rem;
   color: var(--text-3);
 }
 .jf-offline-hint {
-  font-size: 1.0rem;
+  font-size: 1.4rem;
   color: var(--text-3);
   opacity: 0.6;
   max-width: 280px;
