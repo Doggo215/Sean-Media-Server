@@ -115,6 +115,7 @@ async function pollWeather() {
             ${d.wind_mph      !== undefined ? `<span class="wx-dl-item">Wind ${d.wind_mph} mph</span>` : ""}
             ${d.precip_chance !== undefined ? `<span class="wx-dl-item">Rain ${d.precip_chance}%</span>` : ""}
             ${d.humidity_pct  !== undefined ? `<span class="wx-dl-item">Humidity ${d.humidity_pct}%</span>` : ""}
+            ${d.sunrise && d.sunset ? `<span class="wx-dl-item wx-dl-sun">Rise ${d.sunrise} · Set ${d.sunset}</span>` : ""}
           </div>
         </div>
       </div>`;
@@ -561,6 +562,82 @@ function buildPitcherRow(pitchers) {
     </div>`;
 }
 
+function renderPhilliesLiveDetail(team) {
+  const g = team.live;
+  const d = g.detail;
+
+  const myScore  = d.my_score  ?? g.my_score  ?? "—";
+  const oppScore = d.opp_score ?? g.opp_score ?? "—";
+  const period   = g.period || "Live";
+  const record   = team.record ? `<span class="sb-record">${team.record}</span>` : "";
+
+  // Game state line
+  const outsStr  = d.outs != null ? `${d.outs} OUT${d.outs !== 1 ? "S" : ""}` : "";
+  const countStr = (d.balls != null && d.strikes != null) ? `${d.balls}-${d.strikes}` : "";
+  const gameState = [period, outsStr, countStr].filter(Boolean).join(" · ");
+
+  // Base diamond — lit = runner on base
+  const b1 = d.on_first  ? "base-on" : "";
+  const b2 = d.on_second ? "base-on" : "";
+  const b3 = d.on_third  ? "base-on" : "";
+  const diamond = `
+    <div class="mlb-diamond">
+      <div class="base base-2b ${b2}"></div>
+      <div class="base base-1b ${b1}"></div>
+      <div class="base base-3b ${b3}"></div>
+      <div class="base base-home"></div>
+    </div>`;
+
+  const batterHtml = d.batter?.name ? `
+    <div class="mlb-player-line">
+      <span class="mlb-role">Batter</span>
+      <span class="mlb-name">${d.batter.name}</span>
+      ${d.batter.line ? `<span class="mlb-line">${d.batter.line}</span>` : ""}
+    </div>` : "";
+
+  const pitcherHtml = d.pitcher?.name ? `
+    <div class="mlb-player-line">
+      <span class="mlb-role">Pitcher</span>
+      <span class="mlb-name">${d.pitcher.name}</span>
+      ${d.pitcher.line ? `<span class="mlb-line">${d.pitcher.line}</span>` : ""}
+    </div>` : "";
+
+  const lastPlayHtml = d.last_play
+    ? `<div class="mlb-last-play">Last: ${d.last_play}</div>` : "";
+
+  const oppAbbr = (g.opponent_abbr || "").toUpperCase();
+
+  return `
+    <div class="sb-row sb-row-live sb-row-hero mlb-live-panel" data-team="phillies">
+      <div class="mlb-header">
+        ${teamLogo("phillies")}
+        <div class="mlb-title-wrap">
+          <div class="mlb-title-team">PHILLIES ${record}</div>
+          <div class="mlb-live-badge"><span class="sb-live-dot"></span>LIVE · ${period}</div>
+        </div>
+      </div>
+      <div class="mlb-scoreboard">
+        <div class="mlb-sb-row">
+          <span class="mlb-sb-label">PHI</span>
+          <span class="mlb-sb-score mlb-sb-mine">${myScore}</span>
+        </div>
+        <div class="mlb-sb-row">
+          <span class="mlb-sb-label">${oppAbbr || g.opponent || "OPP"}</span>
+          <span class="mlb-sb-score">${oppScore}</span>
+        </div>
+      </div>
+      <div class="mlb-game-state">${gameState}</div>
+      <div class="mlb-mid">
+        ${diamond}
+        <div class="mlb-players">
+          ${batterHtml}
+          ${pitcherHtml}
+        </div>
+      </div>
+      ${lastPlayHtml}
+    </div>`;
+}
+
 function renderSportsRow(team, key) {
   if (!team || team.available === false) return "";
 
@@ -572,6 +649,9 @@ function renderSportsRow(team, key) {
   const league   = TEAM_LEAGUES[key] || "";
 
   if (team.live) {
+    if (key === "phillies" && team.live.detail) {
+      return renderPhilliesLiveDetail(team);
+    }
     const g = team.live;
     const score  = g.score || `${g.my_score ?? "—"}-${g.opp_score ?? "—"}`;
     const period = g.period || "Live";
@@ -973,7 +1053,8 @@ setInterval(pollSystemStatus, 30000);
 pollWeather();
 setInterval(pollWeather, 600000);
 
-pollLiveStrip();
+// Live strip retired — Sports HQ is the live center
+// pollLiveStrip();
 pollToday();
 pollSports();
 pollMajorNews();

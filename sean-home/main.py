@@ -654,6 +654,56 @@ def find_phillies_pitchers(scoreboard_payload, phillies_abbr="PHI"):
     return None
 
 
+def find_phillies_live_detail(scoreboard_payload, phillies_abbr="PHI"):
+    """Extract rich situational data for a live Phillies game from the MLB scoreboard."""
+    for ev in scoreboard_payload.get("events", []):
+        try:
+            comp = ev["competitions"][0]
+            state = comp["status"]["type"]["state"]
+            if state != "in":
+                continue
+            competitors = comp["competitors"]
+            me = next((c for c in competitors if c["team"]["abbreviation"].upper() == phillies_abbr), None)
+            opp = next((c for c in competitors if c["team"]["abbreviation"].upper() != phillies_abbr), None)
+            if not me or not opp:
+                continue
+
+            sit = comp.get("situation") or {}
+
+            batter_obj = sit.get("batter") or {}
+            batter_ath = batter_obj.get("athlete") or {}
+            batter = {
+                "name": batter_ath.get("shortName") or batter_ath.get("fullName"),
+                "line": batter_obj.get("summary"),
+            } if batter_ath.get("fullName") else None
+
+            pitcher_obj = sit.get("pitcher") or {}
+            pitcher_ath = pitcher_obj.get("athlete") or {}
+            pitcher = {
+                "name": pitcher_ath.get("shortName") or pitcher_ath.get("fullName"),
+                "line": pitcher_obj.get("summary"),
+            } if pitcher_ath.get("fullName") else None
+
+            last_play_text = (sit.get("lastPlay") or {}).get("text")
+
+            return {
+                "my_score": _score_str(me),
+                "opp_score": _score_str(opp),
+                "balls": sit.get("balls"),
+                "strikes": sit.get("strikes"),
+                "outs": sit.get("outs"),
+                "on_first": bool(sit.get("onFirst")),
+                "on_second": bool(sit.get("onSecond")),
+                "on_third": bool(sit.get("onThird")),
+                "batter": batter,
+                "pitcher": pitcher,
+                "last_play": last_play_text,
+            }
+        except Exception:
+            continue
+    return None
+
+
 @app.get("/api/sports")
 async def sports():
     now = time.time()
@@ -698,10 +748,12 @@ async def sports():
                 return_exceptions=True,
             )
 
-            # Phillies probable pitchers (from mlb scoreboard)
+            # Phillies data from mlb scoreboard (pitchers + live situational detail)
             phillies_pitchers = None
+            phillies_live_detail = None
             if not isinstance(mlb_scoreboard, Exception):
                 phillies_pitchers = find_phillies_pitchers(mlb_scoreboard)
+                phillies_live_detail = find_phillies_live_detail(mlb_scoreboard)
 
             for i, key in enumerate(team_keys):
                 cfg = team_cfgs[i]
@@ -724,9 +776,12 @@ async def sports():
                 if news and not isinstance(news, Exception):
                     entry["headline"] = news
 
-                # Phillies only: attach probable pitchers
-                if key == "phillies" and phillies_pitchers:
-                    entry["pitchers"] = phillies_pitchers
+                # Phillies only: attach probable pitchers + live detail
+                if key == "phillies":
+                    if phillies_pitchers:
+                        entry["pitchers"] = phillies_pitchers
+                    if phillies_live_detail and entry.get("live"):
+                        entry["live"]["detail"] = phillies_live_detail
 
                 if parsed["live"]:
                     any_live = True

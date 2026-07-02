@@ -848,9 +848,12 @@ body {
   margin-top: 3px;
 }
 .wx-dl-item {
-  font-size: 1.4rem;
-  color: var(--text-3);
+  font-size: 1.6rem;
+  color: rgba(255, 255, 255, 0.52);
   white-space: nowrap;
+}
+.wx-dl-sun {
+  color: rgba(255, 200, 80, 0.65);
 }
 
 /* ── HOURLY SECTION — flex:1 fills remaining space ── */
@@ -873,17 +876,17 @@ body {
   min-height: 0;
 }
 .wx-h-label {
-  font-size: 1.6rem;
-  color: var(--text-3);
+  font-size: 1.85rem;
+  color: rgba(255, 255, 255, 0.48);
   font-weight: 600;
-  min-width: 64px;
+  min-width: 72px;
   white-space: nowrap;
 }
-.wx-h-icon { font-size: 1.8rem; line-height: 1; flex-shrink: 0; }
-.wx-h-icon-svg { display:inline-flex; align-items:center; width:2.2rem; height:2.2rem; flex-shrink:0; }
+.wx-h-icon { font-size: 2.0rem; line-height: 1; flex-shrink: 0; }
+.wx-h-icon-svg { display:inline-flex; align-items:center; width:2.6rem; height:2.6rem; flex-shrink:0; }
 .wx-h-icon-svg svg { width:100%; height:100%; display:block; }
-.wx-h-temp { font-size: 1.8rem; font-weight: 600; color: var(--text); flex: 1; }
-.wx-h-rain { font-size: 1.4rem; color: var(--blue); flex-shrink: 0; }
+.wx-h-temp { font-size: 2.1rem; font-weight: 600; color: var(--text); flex: 1; }
+.wx-h-rain { font-size: 1.7rem; color: var(--blue); flex-shrink: 0; }
 
 /* ── FORECAST SECTION — fixed bottom strip ── */
 .wx-forecast-section {
@@ -905,22 +908,22 @@ body {
   min-width: 0;
 }
 .wx-fd-label {
-  font-size: 1.4rem;
-  font-weight: 600;
-  color: var(--text-3);
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: var(--text-2);
   white-space: nowrap;
 }
 .wx-fd-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 3rem;
-  height: 3rem;
+  width: 3.4rem;
+  height: 3.4rem;
 }
 .wx-fd-icon svg { width: 100%; height: 100%; display: block; }
 .wx-fd-temps {
-  font-size: 1.4rem;
-  color: var(--text-2);
+  font-size: 1.6rem;
+  color: var(--text);
   white-space: nowrap;
 }
 
@@ -1415,6 +1418,14 @@ body {
 .scoreboard.has-hero .sb-row:not(.sb-row-hero):not(.sb-row-wc) .sb-score { font-size: 3rem; min-width: 76px; }
 .scoreboard.has-hero .sb-row:not(.sb-row-hero):not(.sb-row-wc) .sb-time  { font-size: 2.4rem; min-width: 88px; }
 
+/* Idle section rows stay readable even when hero is active */
+.scoreboard.has-hero .shq-idle-section .sb-row { padding: 8px 14px 8px 12px; }
+.scoreboard.has-hero .shq-idle-section .sb-row .sb-logo  { width: 62px; height: 62px; }
+.scoreboard.has-hero .shq-idle-section .sb-row .sb-team  { font-size: 2.2rem; }
+.scoreboard.has-hero .shq-idle-section .sb-row .sb-sub   { font-size: 1.4rem; }
+.scoreboard.has-hero .shq-idle-section .sb-row .sb-score { font-size: 3.4rem; min-width: 88px; }
+.scoreboard.has-hero .shq-idle-section .sb-row .sb-time  { font-size: 2.7rem; min-width: 104px; }
+
 /* Grid widens sports column when any live game is active */
 .tv-content-grid.sports-hero {
   grid-template-columns: 1.2fr 2.2fr 1.35fr;
@@ -1467,6 +1478,161 @@ body {
 .card-sports .sb-sub-live {
   color: #ff6575;
   font-size: 2.5rem;
+}
+
+/* ── Phillies MLB live detail panel ───────────────────────────── */
+.mlb-live-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 18px 16px;
+  gap: 10px;
+  border-left: 3px solid var(--c-phillies);
+  background: rgba(232, 24, 40, 0.05);
+}
+/* Override sb-row-hero sizing — panel controls its own layout */
+.mlb-live-panel.sb-row-hero { padding: 14px 18px 16px; }
+.mlb-live-panel.sb-row-hero .sb-logo { width: 64px; height: 64px; }
+
+.mlb-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.mlb-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.mlb-title-team {
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: 0.05em;
+}
+.mlb-live-badge {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #ff6070;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.08em;
+}
+
+.mlb-scoreboard {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-left: 4px;
+}
+.mlb-sb-row {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+.mlb-sb-label {
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-2);
+  min-width: 52px;
+}
+.mlb-sb-score {
+  font-size: 3.6rem;
+  font-weight: 100;
+  color: var(--text-2);
+  line-height: 1;
+}
+.mlb-sb-mine {
+  font-size: 4.4rem;
+  font-weight: 300;
+  color: var(--text);
+}
+
+.mlb-game-state {
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+/* Diamond */
+.mlb-mid {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+.mlb-diamond {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  flex-shrink: 0;
+}
+.base {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  transform: rotate(45deg);
+  background: rgba(255, 255, 255, 0.10);
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+}
+.base-on {
+  background: #f5c518;
+  border-color: #f5c518;
+  box-shadow: 0 0 10px rgba(245, 197, 24, 0.55);
+}
+.base-2b   { top: 2px;    left: 50%; margin-left: -12px; }
+.base-1b   { top: 50%;   right: 2px; margin-top:  -12px; }
+.base-3b   { top: 50%;    left: 2px; margin-top:  -12px; }
+.base-home { bottom: 2px; left: 50%; margin-left: -12px; }
+
+/* Batter / pitcher */
+.mlb-players {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+}
+.mlb-player-line {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 1.65rem;
+  overflow: hidden;
+}
+.mlb-role {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  min-width: 62px;
+  flex-shrink: 0;
+}
+.mlb-name {
+  color: var(--text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.mlb-line {
+  color: var(--text-2);
+  font-size: 1.35rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mlb-last-play {
+  font-size: 1.45rem;
+  color: var(--text-2);
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-top: 2px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 /* ── Responsive — Mac browser / narrower screens ────────────── */
