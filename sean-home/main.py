@@ -494,6 +494,7 @@ def parse_team_events(payload, team_abbr):
                 "date": date_str,
                 "time": time_str,
                 "home_away": me.get("homeAway"),
+                "game_utc": event_dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
             }
 
             if state == "in":
@@ -560,6 +561,7 @@ def parse_world_cup(payload):
                 "time": time_str,
                 "state": state,
                 "round": round_label,
+                "game_utc": event_dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
             }
 
             if state == "in":

@@ -915,6 +915,198 @@ function renderNewsCard(teams) {
   renderMajorNewsSlice();
 }
 
+// ── Sports HQ countdown helpers ──────────────────────────────────────────────
+
+function minutesUntilGame(utcIso) {
+  if (!utcIso) return null;
+  const delta = new Date(utcIso).getTime() - Date.now();
+  if (delta <= 0) return null;
+  return Math.floor(delta / 60000);
+}
+
+function fmtCountdown(mins) {
+  if (mins == null) return null;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
+function renderPhillyCountdownHero(team, key, minsUntil) {
+  const g = team.next;
+  const homeAway  = g.home_away === "home" ? "vs" : "@";
+  const oppName   = (g.opponent || "").toUpperCase();
+  const countdown = fmtCountdown(minsUntil);
+  const cdHtml    = countdown ? `<div class="shq-countdown">Starts in <span class="shq-countdown-time">${countdown}</span></div>` : "";
+  const record    = team.record ? `<span class="shq-hero-record">${team.record}</span>` : "";
+  return `
+    <div class="shq-countdown-hero">
+      <div class="shq-hero-teams">
+        <div class="shq-hero-side shq-hero-us">
+          ${teamLogo(key)}
+          <span class="shq-hero-name">${key.toUpperCase()}</span>
+          ${record}
+        </div>
+        <div class="shq-hero-vs-col">
+          <span class="shq-hero-vs">${homeAway}</span>
+        </div>
+        <div class="shq-hero-side shq-hero-them">
+          ${oppLogo(g.opponent_abbr, key === "phillies" ? "mlb" : key === "eagles" ? "nfl" : key === "sixers" ? "nba" : "nhl")}
+          <span class="shq-hero-name">${oppName}</span>
+        </div>
+      </div>
+      <div class="shq-hero-time">${g.time}${g.date !== new Date().toLocaleDateString("en-US", {weekday:"short",month:"short",day:"numeric"}) ? " · " + g.date : ""}</div>
+      ${cdHtml}
+    </div>`;
+}
+
+function renderWCCountdownHero(wcTeam, minsUntil) {
+  const g = wcTeam.next;
+  if (!g) return "";
+  const m = parseMatchup(g.matchup);
+  const countdown = fmtCountdown(minsUntil);
+  const cdHtml    = countdown ? `<div class="shq-countdown">Starts in <span class="shq-countdown-time">${countdown}</span></div>` : "";
+  return `
+    <div class="shq-countdown-hero shq-countdown-wc">
+      <div class="shq-hero-teams shq-hero-teams-wc">
+        <div class="shq-hero-side shq-hero-us">
+          <span class="shq-hero-flag">${renderFlag(g.away_abbr)}</span>
+          <span class="shq-hero-name">${m.away}</span>
+        </div>
+        <div class="shq-hero-vs-col">
+          <span class="shq-hero-vs">vs</span>
+        </div>
+        <div class="shq-hero-side shq-hero-them">
+          <span class="shq-hero-name">${m.home}</span>
+          <span class="shq-hero-flag">${renderFlag(g.home_abbr)}</span>
+        </div>
+      </div>
+      <div class="shq-hero-time">${g.time}</div>
+      ${cdHtml}
+    </div>`;
+}
+
+// Returns recent final items (today or within 12h, not currently live).
+// Priority: Philly teams first, then World Cup.
+function getRecentFinals(teams, todayLabel) {
+  const PHILLY_KEYS = ["phillies", "eagles", "sixers", "flyers"];
+  const now = Date.now();
+  const RECENT_WINDOW_MS = 12 * 60 * 60 * 1000;
+  const results = [];
+
+  for (const k of PHILLY_KEYS) {
+    const t = teams[k];
+    if (!t?.last || t.live) continue;
+    const last = t.last;
+    const isToday  = last.date === todayLabel;
+    const isRecent = last.game_utc && (now - new Date(last.game_utc).getTime()) < RECENT_WINDOW_MS;
+    if (isToday || isRecent) results.push({ type: "philly", key: k, team: t, last });
+  }
+
+  if (!teams.world_cup?.live) {
+    const wc = teams.world_cup;
+    if (wc?.last) {
+      const last = wc.last;
+      const isToday  = last.date === todayLabel;
+      const isRecent = last.game_utc && (now - new Date(last.game_utc).getTime()) < RECENT_WINDOW_MS;
+      if (isToday || isRecent) results.push({ type: "world_cup", last, next: wc.next });
+    }
+  }
+
+  return results;
+}
+
+function renderRecentFinalHero(item, todayLabel) {
+  if (item.type === "philly") {
+    const { key, team, last } = item;
+    const sport   = key === "phillies" ? "mlb" : key === "eagles" ? "nfl" : key === "sixers" ? "nba" : "nhl";
+    const myScore = last.my_score  ?? "—";
+    const oppScore= last.opp_score ?? "—";
+    const oppName = (last.opponent || "").toUpperCase();
+    const teamName= key.toUpperCase();
+    const myCls   = last.result === "W" ? "shq-final-score-win" : last.result === "L" ? "shq-final-score-loss" : "";
+    const oppCls  = last.result === "L" ? "shq-final-score-win" : last.result === "W" ? "shq-final-score-loss" : "";
+
+    let nextHtml = "";
+    if (team.next) {
+      const n  = team.next;
+      const ha = n.home_away === "home" ? "vs" : "@";
+      const nd = n.date !== todayLabel ? ` · ${n.date}` : "";
+      nextHtml = `<div class="shq-final-next">Next: ${teamName} ${ha} ${(n.opponent||"").toUpperCase()}${nd} · ${n.time}</div>`;
+    }
+
+    return `
+      <div class="shq-recent-final shq-final-hero">
+        <div class="shq-final-scoreboard">
+          <div class="shq-final-team-row">
+            <div class="shq-final-logo">${teamLogo(key)}</div>
+            <span class="shq-final-name">${teamName}</span>
+            <span class="shq-final-score ${myCls}">${myScore}</span>
+          </div>
+          <div class="shq-final-team-row">
+            <div class="shq-final-logo">${oppLogo(last.opponent_abbr, sport)}</div>
+            <span class="shq-final-name">${oppName}</span>
+            <span class="shq-final-score ${oppCls}">${oppScore}</span>
+          </div>
+          <span class="shq-final-status">FINAL</span>
+        </div>
+        ${nextHtml}
+      </div>`;
+  }
+
+  if (item.type === "world_cup") {
+    const { last, next } = item;
+    const m = parseMatchup(last.matchup || "");
+    const scoreParts = (last.score || "").split("-");
+    const awayScore  = scoreParts[0]?.trim() ?? "—";
+    const homeScore  = scoreParts[1]?.trim() ?? "—";
+
+    const goals = last.goals || [];
+    let scorersHtml = "";
+    if (goals.length) {
+      const rows = goals.map(g => {
+        const marker = g.own_goal ? "OG" : g.penalty ? "PK" : "⚽";
+        return `<div class="shq-final-scorer-row">
+          <span class="shq-final-scorer-marker">${marker}</span>
+          <span class="shq-final-scorer-abbr">${(g.abbr||"").toUpperCase()}</span>
+          <span class="shq-final-scorer-name">${g.player}</span>
+          <span class="shq-final-scorer-min">${g.minute}</span>
+        </div>`;
+      }).join("");
+      scorersHtml = `<div class="shq-final-scorers">${rows}</div>`;
+    }
+
+    let nextHtml = "";
+    if (next) {
+      const nm = parseMatchup(next.matchup || "");
+      nextHtml = `<div class="shq-final-next">Next: ${nm.away} vs ${nm.home} · ${next.time}</div>`;
+    }
+
+    return `
+      <div class="shq-recent-final shq-final-hero shq-final-hero-wc">
+        <div class="shq-final-scoreline-wc">
+          <div class="shq-final-side-wc">
+            <span class="shq-final-flag">${renderFlag(last.away_abbr)}</span>
+            <span class="shq-final-name-wc">${m.away || last.away || ""}</span>
+            <span class="shq-final-score-wc">${awayScore}</span>
+          </div>
+          <div class="shq-final-divider-wc">
+            <span class="shq-final-status-wc">FINAL</span>
+          </div>
+          <div class="shq-final-side-wc">
+            <span class="shq-final-flag">${renderFlag(last.home_abbr)}</span>
+            <span class="shq-final-name-wc">${m.home || last.home || ""}</span>
+            <span class="shq-final-score-wc">${homeScore}</span>
+          </div>
+        </div>
+        ${scorersHtml}
+        ${nextHtml}
+      </div>`;
+  }
+
+  return "";
+}
+
 function renderSportsHQ(teams) {
   const PHILLY_KEYS = ["phillies", "eagles", "sixers", "flyers"];
 
@@ -935,15 +1127,44 @@ function renderSportsHQ(teams) {
 
   const wcTodayGames = (teams.world_cup?.today_games || []).filter(g => g.state !== "post");
   const hasWcToday   = !wcLive && wcTodayGames.length > 0;
-  // Show WC final panel when a match finished today and nothing else is live/upcoming
   const wcLastToday  = !wcLive && !hasWcToday && !!(teams.world_cup?.last);
 
   const phillyIdle = PHILLY_KEYS.filter(k =>
     !phillyLive.includes(k) && !phillyToday.includes(k)
   );
 
+  // ── Recent Finals (today or within 12h) ────────────────────────────────
+  // Philly finals shown even when WC is live; WC finals only when WC is not live.
+  // Individual live-team guard is inside getRecentFinals (skips t.live teams).
+  const recentFinals = getRecentFinals(teams, todayLabel);
+  const recentFinalKeys = new Set(recentFinals.filter(r => r.type === "philly").map(r => r.key));
+  const wcHasRecentFinal = recentFinals.some(r => r.type === "world_cup");
+
+  // ── Countdown candidate (no live games only) ────────────────────────────
+  const COUNTDOWN_THRESHOLD_MIN = 180;
+  let countdownCandidate = null;
+  if (!phillyLive.length && !wcLive) {
+    for (const k of phillyToday) {
+      const mins = minutesUntilGame(teams[k]?.next?.game_utc);
+      if (mins != null && mins <= COUNTDOWN_THRESHOLD_MIN) {
+        countdownCandidate = { type: "philly", key: k, team: teams[k], minsUntil: mins };
+        break;
+      }
+    }
+    if (!countdownCandidate) {
+      const wcNext = wcTodayGames.find(g => g.state === "pre" && g.game_utc);
+      if (wcNext) {
+        const mins = minutesUntilGame(wcNext.game_utc);
+        if (mins != null && mins <= COUNTDOWN_THRESHOLD_MIN) {
+          countdownCandidate = { type: "world_cup", game: wcNext, minsUntil: mins };
+        }
+      }
+    }
+  }
+
   let html = "";
 
+  // ── LIVE MODE ───────────────────────────────────────────────────────────
   if (phillyLive.length > 0) {
     html += `<div class="shq-section-hdr shq-hdr-live"><span class="shq-live-dot"></span>Live Now</div>`;
     for (const k of phillyLive) html += renderSportsRow(teams[k], k);
@@ -954,20 +1175,63 @@ function renderSportsHQ(teams) {
     html += renderWCRow(teams.world_cup);
   }
 
-  if (phillyToday.length > 0 || hasWcToday) {
-    html += `<div class="shq-section-hdr shq-hdr-next">Up Next</div>`;
-    for (const k of phillyToday) html += renderSportsRow(teams[k], k);
-    if (hasWcToday) html += renderWCRow(teams.world_cup);
+  // ── RECENT FINAL HEROES ─────────────────────────────────────────────────
+  if (recentFinals.length > 0) {
+    html += `<div class="shq-section-hdr shq-hdr-recent">Recent Final</div>`;
+    for (const item of recentFinals) html += renderRecentFinalHero(item, todayLabel);
   }
 
-  if (wcLastToday) {
+  // ── COUNTDOWN HERO ──────────────────────────────────────────────────────
+  if (countdownCandidate) {
+    if (countdownCandidate.type === "philly") {
+      html += `<div class="shq-section-hdr shq-hdr-next">Next Up</div>`;
+      html += renderPhillyCountdownHero(countdownCandidate.team, countdownCandidate.key, countdownCandidate.minsUntil);
+    } else {
+      html += `<div class="shq-section-hdr shq-hdr-next shq-hdr-wc">World Cup · Next Up</div>`;
+      html += renderWCCountdownHero(teams.world_cup, countdownCandidate.minsUntil);
+    }
+  }
+
+  // ── UP NEXT (today schedule, no countdown) ──────────────────────────────
+  const phillyTodayRemaining = countdownCandidate?.type === "philly"
+    ? phillyToday.filter(k => k !== countdownCandidate.key)
+    : phillyToday;
+
+  if (phillyTodayRemaining.length > 0 || (hasWcToday && !countdownCandidate)) {
+    html += `<div class="shq-section-hdr shq-hdr-next">Up Next</div>`;
+    for (const k of phillyTodayRemaining) html += renderSportsRow(teams[k], k);
+    if (hasWcToday && !countdownCandidate) html += renderWCRow(teams.world_cup);
+  }
+
+  // WC today games listed compactly below WC countdown hero
+  if (countdownCandidate?.type === "world_cup" && wcTodayGames.length > 1) {
+    const remaining = wcTodayGames.filter(g => g.game_utc !== countdownCandidate.game.game_utc && g.state !== "in");
+    if (remaining.length) {
+      html += `<div class="shq-section-hdr shq-hdr-next" style="font-size:1.3rem;padding:2px 14px 2px">Today</div>`;
+      remaining.forEach(tg => {
+        const tm = parseMatchup(tg.matchup);
+        html += `<div class="sb-row sb-row-wc sb-row-wc-next" data-team="world_cup" style="padding:6px 14px">
+          <div class="wc-matchup-line">
+            <div class="wc-team-away"><span class="wc-flag">${renderFlag(tg.away_abbr)}</span><span class="wc-name" style="font-size:1.6rem">${tm.away}</span></div>
+            <div class="wc-score-center"><div class="wc-score-time" style="font-size:1.6rem">${tg.time}</div></div>
+            <div class="wc-team-home"><span class="wc-name" style="font-size:1.6rem">${tm.home}</span><span class="wc-flag">${renderFlag(tg.home_abbr)}</span></div>
+          </div>
+        </div>`;
+      });
+    }
+  }
+
+  // WC last/final that isn't covered by a recent final hero
+  if (wcLastToday && !wcHasRecentFinal) {
     html += `<div class="shq-section-hdr shq-hdr-teams shq-hdr-wc">World Cup</div>`;
     html += renderWCRow(teams.world_cup);
   }
 
-  const idleRows = phillyIdle.map(k => renderSportsRow(teams[k], k)).filter(Boolean).join("");
+  // Philly idle — exclude any team already shown in a recent final hero
+  const phillyIdleFiltered = phillyIdle.filter(k => !recentFinalKeys.has(k));
+  const idleRows = phillyIdleFiltered.map(k => renderSportsRow(teams[k], k)).filter(Boolean).join("");
   if (idleRows) {
-    const showHdr = hasAnyLive || phillyToday.length > 0 || hasWcToday || wcLastToday;
+    const showHdr = hasAnyLive || phillyToday.length > 0 || hasWcToday || wcLastToday || countdownCandidate || recentFinals.length > 0;
     html += (showHdr ? `<div class="shq-section-hdr shq-hdr-teams">Philly</div>` : "")
           + `<div class="shq-idle-section">${idleRows}</div>`;
   }
