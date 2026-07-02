@@ -1420,6 +1420,55 @@ body {
   grid-template-columns: 1.2fr 2.2fr 1.35fr;
 }
 
+/* ── Sports HQ — card title override ─────────────────────────── */
+#sports-card .card-label {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.88);
+  letter-spacing: 0.2em;
+}
+
+/* ── Sports HQ — section headers ─────────────────────────────── */
+.shq-section-hdr {
+  font-size: 1.7rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+  padding: 8px 14px 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.shq-hdr-live {
+  color: #ff6070;
+  text-shadow: 0 0 18px rgba(244, 63, 94, 0.55);
+}
+.shq-hdr-next {
+  color: rgba(100, 185, 255, 0.95);
+  text-shadow: 0 0 14px rgba(79, 142, 247, 0.45);
+}
+.shq-hdr-teams {
+  color: rgba(255, 255, 255, 0.72);
+}
+.shq-live-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--red);
+  flex-shrink: 0;
+  animation: scorePulse 1.5s ease-in-out infinite;
+}
+.shq-idle-section .sb-row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+/* Phillies live status — slightly more readable in Sports HQ context */
+.card-sports .sb-sub-live {
+  color: #ff6575;
+  font-size: 2.5rem;
+}
+
 /* ── Responsive — Mac browser / narrower screens ────────────── */
 @media (max-width:1500px) {
   :root { --h-pad:48px; }

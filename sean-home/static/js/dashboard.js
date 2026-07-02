@@ -736,6 +736,55 @@ function renderNewsCard(teams) {
   renderMajorNewsSlice();
 }
 
+function renderSportsHQ(teams) {
+  const PHILLY_KEYS = ["phillies", "eagles", "sixers", "flyers"];
+
+  // Build today label matching backend format: "Thu Jul 2"
+  const now = new Date();
+  const days   = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const todayLabel = `${days[now.getDay()]} ${months[now.getMonth()]} ${now.getDate()}`;
+
+  const phillyLive  = PHILLY_KEYS.filter(k => teams[k]?.live);
+  const wcLive      = !!(teams.world_cup?.live);
+  const hasAnyLive  = phillyLive.length > 0 || wcLive;
+
+  const phillyToday = PHILLY_KEYS.filter(k => {
+    const t = teams[k];
+    return !t?.live && t?.next && t.next.date === todayLabel;
+  });
+
+  const wcTodayGames = (teams.world_cup?.today_games || []).filter(g => g.state !== "post");
+  const hasWcToday   = !wcLive && wcTodayGames.length > 0;
+
+  const phillyIdle = PHILLY_KEYS.filter(k =>
+    !phillyLive.includes(k) && !phillyToday.includes(k)
+  );
+
+  let html = "";
+
+  if (hasAnyLive) {
+    html += `<div class="shq-section-hdr shq-hdr-live"><span class="shq-live-dot"></span>Live Now</div>`;
+    for (const k of phillyLive) html += renderSportsRow(teams[k], k);
+    if (wcLive) html += renderWCRow(teams.world_cup);
+  }
+
+  if (phillyToday.length > 0 || hasWcToday) {
+    html += `<div class="shq-section-hdr shq-hdr-next">Up Next</div>`;
+    for (const k of phillyToday) html += renderSportsRow(teams[k], k);
+    if (hasWcToday) html += renderWCRow(teams.world_cup);
+  }
+
+  const idleRows = phillyIdle.map(k => renderSportsRow(teams[k], k)).filter(Boolean).join("");
+  if (idleRows) {
+    const showHdr = hasAnyLive || phillyToday.length > 0 || hasWcToday;
+    html += (showHdr ? `<div class="shq-section-hdr shq-hdr-teams">Philly</div>` : "")
+          + `<div class="shq-idle-section">${idleRows}</div>`;
+  }
+
+  return html || `<div class="sb-placeholder">No games data</div>`;
+}
+
 async function pollSports() {
   const listEl  = document.getElementById("sports-list");
   const sportsCard = document.getElementById("sports-card");
@@ -750,12 +799,11 @@ async function pollSports() {
     if (!d.available) {
       listEl.innerHTML = `<div class="sb-placeholder">Sports unavailable</div>`;
     } else {
-      const rows = SPORTS_ORDER
-        .filter(k => d.teams[k])
-        .map(k => renderSportsRow(d.teams[k], k))
-        .filter(Boolean)
-        .join("");
-      listEl.innerHTML = rows || `<div class="sb-placeholder">No games data</div>`;
+      // Rename header once
+      const cardHdr = document.querySelector('#sports-card .card-label');
+      if (cardHdr) cardHdr.textContent = 'Sports HQ';
+
+      listEl.innerHTML = renderSportsHQ(d.teams);
       nextDelay = d.live_active ? 60000 : 600000;
 
       // Live state classes
