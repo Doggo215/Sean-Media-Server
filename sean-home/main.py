@@ -212,13 +212,14 @@ async def weather():
         hourly_out = []
         for i in range(h_start, min(h_start + 7, len(h_times))):
             h_code = hourly["weather_code"][i]
-            _, h_icon = WEATHER_CODES.get(h_code, ("Unknown", "🌡️"))
+            h_cond, h_icon = WEATHER_CODES.get(h_code, ("Unknown", "🌡️"))
             h_dt = datetime.fromisoformat(h_times[i])
             label = "Now" if i == h_start else h_dt.strftime("%-I %p")
             hourly_out.append({
                 "label": label,
                 "temp_f": round(hourly["temperature_2m"][i]),
                 "icon": h_icon,
+                "condition": h_cond,
                 "precip_chance": round(hourly["precipitation_probability"][i]),
             })
 

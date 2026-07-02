@@ -130,16 +130,22 @@ async function pollWeather() {
       detailEl.innerHTML = chips.map(c => `<span class="wx-chip">${c}</span>`).join("");
     }
 
-    // Hourly strip
+    // Hourly strip — 4 rows for TV readability
     const hourlyEl = document.getElementById("weather-hourly");
     if (hourlyEl && d.hourly && d.hourly.length) {
-      hourlyEl.innerHTML = d.hourly.map(h => `
-        <div class="wx-hour">
-          <div class="wx-h-label">${h.label}</div>
-          <div class="wx-h-icon">${h.icon}</div>
-          <div class="wx-h-temp">${h.temp_f}°</div>
-          ${h.precip_chance >= 20 ? `<div class="wx-h-rain">${h.precip_chance}%</div>` : ""}
-        </div>`).join("");
+      const useSvg = typeof getWeatherIcon === "function";
+      hourlyEl.innerHTML = d.hourly.slice(0, 4).map(h => {
+        const iconHtml = useSvg
+          ? `<span class="wx-h-icon wx-h-icon-svg">${getWeatherIcon(h.condition)}</span>`
+          : `<span class="wx-h-icon">${h.icon}</span>`;
+        return `
+          <div class="wx-hour-row">
+            <span class="wx-h-label">${h.label}</span>
+            ${iconHtml}
+            <span class="wx-h-temp">${h.temp_f}°</span>
+            ${h.precip_chance >= 20 ? `<span class="wx-h-rain">${h.precip_chance}%</span>` : ""}
+          </div>`;
+      }).join("");
     }
 
     // Sunrise / Sunset
@@ -157,11 +163,7 @@ async function pollWeather() {
         const rain = r.precip_chance > 0 ? ` · Rain ${r.precip_chance}%` : "";
         rows.push(`<div class="wx-forecast-row"><span class="wx-day">Tomorrow</span><span class="wx-ficon">${r.icon}</span><span class="wx-ftemps">${r.high_f}° / ${r.low_f}°${rain}</span></div>`);
       }
-      if (d.weekend) {
-        const r = d.weekend;
-        const rain = r.precip_chance > 0 ? ` · Rain ${r.precip_chance}%` : "";
-        rows.push(`<div class="wx-forecast-row"><span class="wx-day">${r.day}</span><span class="wx-ficon">${r.icon}</span><span class="wx-ftemps">${r.high_f}° / ${r.low_f}°${rain}</span></div>`);
-      }
+      // Weekend removed — today + tomorrow is enough
       forecastEl.innerHTML = rows.join("");
     }
 
@@ -343,6 +345,10 @@ async function pollToday() {
             <span class="td-gaming-badge">${status}</span>
           </div>
           ${headline ? `<div class="td-gaming-headline">${headline}</div>` : ""}
+          <div class="td-gaming" style="margin-top:8px">
+            <span class="td-gaming-name">PS5</span>
+            <span class="td-gaming-badge td-gaming-badge-dim">Friends · Soon</span>
+          </div>
         </div>`);
     }
 
