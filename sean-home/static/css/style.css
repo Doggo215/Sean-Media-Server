@@ -779,125 +779,150 @@ body {
 .card-weather.weather-snowy  { background: linear-gradient(175deg, #08091a 0%, #121828 100%); border-color: rgba(186,230,253,0.15); }
 .card-weather.weather-stormy { background: linear-gradient(175deg, #08050f 0%, #0e0818 100%); border-color: rgba(139,92,246,0.22); }
 
-/* Slim layout — no giant temp (header handles that) */
+/* Weather body — 3-section full-height column */
 .weather-body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 20px 16px;
-  gap: 10px;
-  text-align: center;
+  padding: 8px 14px 10px;
+  gap: 0;
   overflow: hidden;
+  min-height: 0;
 }
+.weather-unavailable { color: var(--text-2); font-size: 1.4rem; opacity: 0.55; padding: 20px; }
 
-.weather-icon-wrap { flex-shrink: 0; }
-.weather-icon {
-  font-size: 9rem;
-  line-height: 1;
-  display: block;
+/* ── SUMMARY ROW — icon left, details right ── */
+.wx-summary {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.wx-summary-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.wx-main-icon {
+  display: inline-flex;
+  width: 6rem;
+  height: 6rem;
   animation: float 5s ease-in-out infinite;
 }
-.weather-icon svg { display: block; }
-
-.weather-condition {
-  font-size: 3.2rem;
+.wx-main-icon svg { width: 100%; height: 100%; display: block; }
+.wx-main-condition {
+  font-size: 1.8rem;
   font-weight: 500;
   color: var(--text);
-  letter-spacing: 0.02em;
-}
-.weather-hilo {
-  font-size: 2.4rem;
-  color: var(--text-2);
-  letter-spacing: 0.02em;
-}
-.weather-unavailable { color: var(--text-2); font-size: 1.2rem; opacity: 0.55; }
-
-/* Detail chips row — feels like · wind · rain · humidity */
-.weather-detail {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px;
-  margin-top: 2px;
-}
-.wx-chip {
-  font-size: 1.7rem;
-  color: var(--text-2);
-  background: rgba(255,255,255,0.055);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 100px;
-  padding: 3px 11px;
+  text-align: center;
   white-space: nowrap;
-  letter-spacing: 0.01em;
 }
-
-/* Hourly forecast — row layout for TV readability */
-.weather-hourly {
+.wx-summary-right {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  width: 100%;
-  margin-top: 6px;
+  align-items: flex-end;
+  gap: 3px;
+}
+.wx-current-temp {
+  font-size: 3.8rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+.wx-hilo-line {
+  font-size: 1.7rem;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.wx-details-list {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  margin-top: 3px;
+}
+.wx-dl-item {
+  font-size: 1.4rem;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+/* ── HOURLY SECTION — flex:1 fills remaining space ── */
+.wx-hourly-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 7px 0 5px;
+  min-height: 0;
 }
 .wx-hour-row {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 6px 10px;
-  background: rgba(255,255,255,0.04);
-  border-radius: 10px;
+  gap: 12px;
+  padding: 0 10px;
+  background: rgba(255,255,255,0.045);
+  border-radius: 9px;
+  min-height: 0;
 }
 .wx-h-label {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   color: var(--text-3);
   font-weight: 600;
-  min-width: 72px;
+  min-width: 64px;
   white-space: nowrap;
 }
-.wx-h-icon { font-size: 2.0rem; line-height: 1; flex-shrink: 0; }
-.wx-h-icon-svg { display:inline-flex; align-items:center; width:2.2rem; height:2.2rem; }
+.wx-h-icon { font-size: 1.8rem; line-height: 1; flex-shrink: 0; }
+.wx-h-icon-svg { display:inline-flex; align-items:center; width:2.2rem; height:2.2rem; flex-shrink:0; }
 .wx-h-icon-svg svg { width:100%; height:100%; display:block; }
-.wx-h-temp { font-size: 2.0rem; font-weight: 600; color: var(--text); flex: 1; }
-.wx-h-rain { font-size: 1.4rem; color: var(--blue); }
+.wx-h-temp { font-size: 1.8rem; font-weight: 600; color: var(--text); flex: 1; }
+.wx-h-rain { font-size: 1.4rem; color: var(--blue); flex-shrink: 0; }
 
-/* Sunrise / sunset row */
-.weather-sun {
+/* ── FORECAST SECTION — fixed bottom strip ── */
+.wx-forecast-section {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 14px;
-  font-size: 1.3rem;
-  color: var(--text-3);
-  margin-top: 4px;
+  gap: 5px;
+  flex-shrink: 0;
+  padding-top: 7px;
+  border-top: 1px solid rgba(255,255,255,0.07);
 }
-.wx-sun-sep { opacity: 0.4; }
-
-/* Tomorrow + weekend forecast */
-.weather-forecast {
+.wx-forecast-day {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  width: 100%;
-  margin-top: 4px;
-}
-.wx-forecast-row {
-  display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 4px 8px;
-  background: rgba(255,255,255,0.035);
-  border-radius: 8px;
+  gap: 4px;
+  padding: 8px 3px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+  min-width: 0;
 }
-.wx-day {
-  font-size: 1.7rem;
+.wx-fd-label {
+  font-size: 1.4rem;
   font-weight: 600;
-  color: var(--text-2);
-  min-width: 70px;
+  color: var(--text-3);
+  white-space: nowrap;
 }
-.wx-ficon { font-size: 2.2rem; line-height: 1; }
-.wx-ftemps { font-size: 1.7rem; color: var(--text-2); flex: 1; }
+.wx-fd-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+}
+.wx-fd-icon svg { width: 100%; height: 100%; display: block; }
+.wx-fd-temps {
+  font-size: 1.4rem;
+  color: var(--text-2);
+  white-space: nowrap;
+}
 
 /* ── NEWS CARD ────────────────────────────────────────────────── */
 .card-news {

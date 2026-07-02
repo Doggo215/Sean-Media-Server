@@ -172,7 +172,7 @@ async def fetch_weather():
         "temperature_unit": "fahrenheit",
         "wind_speed_unit": "mph",
         "timezone": "America/Denver",
-        "forecast_days": 3,
+        "forecast_days": 7,
     }
     async with httpx.AsyncClient(timeout=5.0) as client:
         resp = await client.get(WEATHER_URL, params=params)
@@ -251,6 +251,21 @@ async def weather():
                 }
                 break
 
+        # 5-day forecast array (days 1–5, skipping today at index 0)
+        daily_out = []
+        for i in range(1, min(6, len(daily["weather_code"]))):
+            d_dt = now_dt + timedelta(days=i)
+            d_code = daily["weather_code"][i]
+            d_cond, d_icon = WEATHER_CODES.get(d_code, ("Unknown", "🌡️"))
+            daily_out.append({
+                "label": d_dt.strftime("%a %-m/%-d"),
+                "condition": d_cond,
+                "icon": d_icon,
+                "high_f": round(daily["temperature_2m_max"][i]),
+                "low_f": round(daily["temperature_2m_min"][i]),
+                "precip_chance": round(daily["precipitation_probability_max"][i]),
+            })
+
         data = {
             "available": True,
             "temperature_f": round(cur["temperature_2m"]),
@@ -265,6 +280,7 @@ async def weather():
             "sunrise": _fmt_sun(daily["sunrise"][0]),
             "sunset": _fmt_sun(daily["sunset"][0]),
             "hourly": hourly_out,
+            "daily": daily_out,
             "tomorrow": tomorrow,
             "weekend": weekend,
             "location": "Arvada, CO",

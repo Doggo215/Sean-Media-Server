@@ -63,19 +63,15 @@ async function pollSystemStatus() {
 
 /* ── Weather ─────────────────────────────────────────────────── */
 async function pollWeather() {
-  const iconEl = document.getElementById("weather-icon");
-  const condEl = document.getElementById("weather-condition");
-  const hiloEl = document.getElementById("weather-hilo");
+  const body   = document.getElementById("weather-body");
   const hwIcon = document.getElementById("header-weather-icon");
   const hwTemp = document.getElementById("header-weather-temp");
   const hwDesc = document.getElementById("header-weather-desc");
   const card   = document.getElementById("weather-card");
-  if (!iconEl) return;
+  if (!body) return;
 
   const setUnavailable = () => {
-    iconEl.innerHTML = "⚠️";
-    if (condEl) { condEl.textContent = "Unavailable"; condEl.className = "weather-unavailable"; }
-    if (hiloEl) hiloEl.textContent = "";
+    body.innerHTML = `<p class="weather-unavailable">Weather unavailable</p>`;
     if (hwIcon) hwIcon.textContent = "⚠️";
     if (hwTemp) hwTemp.textContent = "—°";
     if (hwDesc) hwDesc.textContent = "Weather unavailable";
@@ -87,13 +83,12 @@ async function pollWeather() {
     const d = await res.json();
     if (!d.available) { setUnavailable(); return; }
 
-    // Header
+    const useSvg = typeof getWeatherIcon === "function";
+
+    // Header bar
     if (hwIcon) {
-      if (typeof getWeatherIcon === "function") {
-        hwIcon.innerHTML = getWeatherIcon(d.condition);
-      } else {
-        hwIcon.textContent = d.icon;
-      }
+      if (useSvg) hwIcon.innerHTML = getWeatherIcon(d.condition);
+      else hwIcon.textContent = d.icon;
     }
     if (hwTemp) hwTemp.textContent = `${d.temperature_f}°`;
     if (hwDesc) hwDesc.textContent = `${d.condition}  ·  Low ${d.low_f}°`;
@@ -104,68 +99,58 @@ async function pollWeather() {
       card.className = `card card-weather${wClass ? " " + wClass : ""}`;
     }
 
-    // Main icon — SVG or emoji
-    if (typeof getWeatherIcon === "function") {
-      iconEl.innerHTML = getWeatherIcon(d.condition);
-    } else {
-      iconEl.textContent = d.icon;
-    }
+    // ── SUMMARY ROW — icon left, current info right ──────────────
+    const mainIcon = useSvg ? getWeatherIcon(d.condition) : d.icon;
+    const summaryHtml = `
+      <div class="wx-summary">
+        <div class="wx-summary-left">
+          <span class="wx-main-icon">${mainIcon}</span>
+          <span class="wx-main-condition">${d.condition}</span>
+        </div>
+        <div class="wx-summary-right">
+          ${d.temperature_f !== undefined ? `<div class="wx-current-temp">${d.temperature_f}°</div>` : ""}
+          <div class="wx-hilo-line">H ${d.high_f}°&nbsp;/&nbsp;L ${d.low_f}°</div>
+          <div class="wx-details-list">
+            ${d.feels_like_f  !== undefined ? `<span class="wx-dl-item">Feels ${d.feels_like_f}°</span>` : ""}
+            ${d.wind_mph      !== undefined ? `<span class="wx-dl-item">Wind ${d.wind_mph} mph</span>` : ""}
+            ${d.precip_chance !== undefined ? `<span class="wx-dl-item">Rain ${d.precip_chance}%</span>` : ""}
+            ${d.humidity_pct  !== undefined ? `<span class="wx-dl-item">Humidity ${d.humidity_pct}%</span>` : ""}
+          </div>
+        </div>
+      </div>`;
 
-    // Condition + H/L
-    if (condEl) {
-      condEl.textContent = d.condition;
-      condEl.className = "weather-condition";
-    }
-    if (hiloEl) hiloEl.textContent = `H: ${d.high_f}°  ·  L: ${d.low_f}°`;
-
-    // Detail row — feels like, wind, rain, humidity
-    const detailEl = document.getElementById("weather-detail");
-    if (detailEl) {
-      const chips = [
-        d.feels_like_f  !== undefined ? `Feels ${d.feels_like_f}°`          : null,
-        d.wind_mph      !== undefined ? `Wind ${d.wind_mph} mph`             : null,
-        d.precip_chance !== undefined ? `Rain ${d.precip_chance}%`           : null,
-        d.humidity_pct  !== undefined ? `Humidity ${d.humidity_pct}%`        : null,
-      ].filter(Boolean);
-      detailEl.innerHTML = chips.map(c => `<span class="wx-chip">${c}</span>`).join("");
-    }
-
-    // Hourly strip — 4 rows for TV readability
-    const hourlyEl = document.getElementById("weather-hourly");
-    if (hourlyEl && d.hourly && d.hourly.length) {
-      const useSvg = typeof getWeatherIcon === "function";
-      hourlyEl.innerHTML = d.hourly.slice(0, 4).map(h => {
-        const iconHtml = useSvg
-          ? `<span class="wx-h-icon wx-h-icon-svg">${getWeatherIcon(h.condition)}</span>`
-          : `<span class="wx-h-icon">${h.icon}</span>`;
-        return `
-          <div class="wx-hour-row">
+    // ── HOURLY SECTION ───────────────────────────────────────────
+    const hourlyHtml = `
+      <div class="wx-hourly-section">
+        ${(d.hourly || []).slice(0, 5).map(h => {
+          const hIcon = useSvg
+            ? `<span class="wx-h-icon-svg">${getWeatherIcon(h.condition)}</span>`
+            : `<span class="wx-h-icon">${h.icon}</span>`;
+          return `<div class="wx-hour-row">
             <span class="wx-h-label">${h.label}</span>
-            ${iconHtml}
+            ${hIcon}
             <span class="wx-h-temp">${h.temp_f}°</span>
             ${h.precip_chance >= 20 ? `<span class="wx-h-rain">${h.precip_chance}%</span>` : ""}
           </div>`;
-      }).join("");
-    }
+        }).join("")}
+      </div>`;
 
-    // Sunrise / Sunset
-    const sunEl = document.getElementById("weather-sun");
-    if (sunEl && d.sunrise && d.sunset) {
-      sunEl.innerHTML = `<span>☀ ${d.sunrise}</span><span class="wx-sun-sep">·</span><span>🌅 ${d.sunset}</span>`;
-    }
+    // ── FORECAST SECTION ─────────────────────────────────────────
+    const forecastHtml = (d.daily && d.daily.length) ? `
+      <div class="wx-forecast-section">
+        ${d.daily.slice(0, 5).map(day => {
+          const dIcon = useSvg
+            ? `<span class="wx-fd-icon">${getWeatherIcon(day.condition)}</span>`
+            : `<span class="wx-fd-icon">${day.icon}</span>`;
+          return `<div class="wx-forecast-day">
+            <span class="wx-fd-label">${day.label}</span>
+            ${dIcon}
+            <span class="wx-fd-temps">${day.high_f}° / ${day.low_f}°</span>
+          </div>`;
+        }).join("")}
+      </div>` : "";
 
-    // Tomorrow + weekend
-    const forecastEl = document.getElementById("weather-forecast");
-    if (forecastEl) {
-      const rows = [];
-      if (d.tomorrow) {
-        const r = d.tomorrow;
-        const rain = r.precip_chance > 0 ? ` · Rain ${r.precip_chance}%` : "";
-        rows.push(`<div class="wx-forecast-row"><span class="wx-day">Tomorrow</span><span class="wx-ficon">${r.icon}</span><span class="wx-ftemps">${r.high_f}° / ${r.low_f}°${rain}</span></div>`);
-      }
-      // Weekend removed — today + tomorrow is enough
-      forecastEl.innerHTML = rows.join("");
-    }
+    body.innerHTML = summaryHtml + hourlyHtml + forecastHtml;
 
   } catch {
     console.warn("Sean Home: weather unavailable");
