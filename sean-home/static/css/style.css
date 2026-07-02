@@ -335,8 +335,8 @@ body {
   grid-template-columns: 1.3fr 2.0fr 1.4fr;
   grid-template-rows: 1fr 1fr;
   grid-template-areas:
-    "today sports entertainment"
-    "today sports weather";
+    "today  sports entertainment"
+    "gaming sports weather";
   gap: var(--gap);
   padding: var(--gap) var(--h-pad);
   flex:1;
@@ -1168,8 +1168,7 @@ body {
   line-height: 1.5;
 }
 
-/* ── GAMING CARD — folded into TODAY, kept for future use ───── */
-.card-gaming { display: none; }
+/* ── GAMING CARD — now active, styled below in Gaming HQ section ── */
 
 /* ── MEDIA SERVER STRIP ──────────────────────────────────────── */
 .ms-strip {
@@ -2030,6 +2029,104 @@ body {
   .wc-score-num      { font-size:3.2rem; }
 }
 
+/* ── Gaming HQ Card ─────────────────────────────────────────────── */
+.card-gaming {
+  grid-area: gaming;
+  background: linear-gradient(160deg, #090d1a 0%, #0a0f1e 60%, #07090f 100%);
+  border-color: rgba(0, 112, 209, 0.22);
+  animation: rise 0.55s var(--ease-out) 0.18s both;
+}
+.card-gaming .card-label { padding: 14px 20px 0; }
+
+.gaming-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 20px 16px;
+  gap: 10px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.gaming-pill {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(0, 112, 209, 0.18);
+  border: 1px solid rgba(0, 112, 209, 0.35);
+  border-radius: 20px;
+  padding: 1px 10px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: rgba(0, 168, 255, 0.90);
+  margin-left: auto;
+}
+
+.gaming-header-row {
+  display: flex;
+  align-items: center;
+  padding: 14px 20px 0;
+  flex-shrink: 0;
+}
+.gaming-header-row .card-label {
+  padding: 0;
+  flex: 1;
+}
+
+.gaming-console {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: rgba(0, 168, 255, 0.85);
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+.gaming-status {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.gaming-status.offline {
+  color: var(--text-3);
+  opacity: 0.7;
+}
+.gaming-status.online {
+  color: rgba(80, 220, 120, 0.90);
+}
+
+.gaming-section {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.gaming-label {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.gaming-empty {
+  font-size: 1.3rem;
+  color: var(--text-3);
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.gaming-game {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+.gaming-friends {
+  font-size: 1.35rem;
+  color: var(--text-2);
+}
+
 @media (max-width:1100px) {
   :root { --h-pad:28px; }
   .tv-clock { font-size:4.5rem; }
@@ -2037,7 +2134,8 @@ body {
   .tv-content-grid {
     grid-template-columns: 1fr 1fr;
     grid-template-areas:
-      "today sports"
+      "today   sports"
+      "gaming  sports"
       "entertainment weather";
   }
 }
@@ -2045,7 +2143,7 @@ body {
 @media (max-width:750px) {
   .tv-content-grid {
     grid-template-columns: 1fr;
-    grid-template-areas: "today" "sports" "entertainment" "weather";
+    grid-template-areas: "today" "gaming" "sports" "entertainment" "weather";
   }
   .tv-header { flex-wrap:wrap; height:auto; padding:14px var(--h-pad); gap:16px; }
   .tv-nav-icon { display:none; }
