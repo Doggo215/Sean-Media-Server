@@ -626,7 +626,7 @@ body {
   gap:5px;
 }
 .sb-team {
-  font-size: 2.6rem;
+  font-size: 2.2rem;
   font-weight: 800;
   color: var(--text);
   text-transform: uppercase;
@@ -651,6 +651,7 @@ body {
 .sb-sub-win  { color: var(--green); font-weight:600; }
 .sb-sub-loss { color: var(--red);   font-weight:600; }
 .sb-sub-live { color: var(--red);   font-weight:700; letter-spacing:0.06em; }
+.sb-sub-date { color: var(--text-3); font-size: 1.25rem; }
 
 /* Score — the number you read from the couch */
 .sb-score {
@@ -669,14 +670,14 @@ body {
 
 /* Time (next game) — blue, same size as score */
 .sb-time {
-  font-size: 3.8rem;
+  font-size: 3.2rem;
   font-weight: 200;
   color: var(--blue);
   letter-spacing:-2px;
   line-height:1;
   text-align:right;
   flex-shrink:0;
-  min-width:130px;
+  min-width:110px;
 }
 
 .sb-live-dot {
@@ -689,11 +690,11 @@ body {
 
 /* Opponent logo — smaller, dimmer than home logo */
 .sb-logo-opp {
-  width: 54px;
-  height: 54px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
   flex-shrink: 0;
-  opacity: 0.55;
+  opacity: 0.50;
 }
 
 /* Inline record badge — sits inside sb-team or sb-sub */
@@ -997,6 +998,36 @@ body {
   background: linear-gradient(90deg, var(--blue), var(--purple));
   border-radius:2px;
   transition: width 0.8s var(--ease);
+}
+
+/* Jellyfin offline / loading state */
+.jf-offline {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  text-align: center;
+}
+.jf-offline-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-2);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.jf-offline-status {
+  font-size: 1.2rem;
+  color: var(--text-3);
+}
+.jf-offline-hint {
+  font-size: 1.0rem;
+  color: var(--text-3);
+  opacity: 0.6;
+  max-width: 280px;
+  line-height: 1.5;
 }
 
 /* ── GAMING CARD — folded into TODAY, kept for future use ───── */

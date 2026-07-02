@@ -252,14 +252,8 @@ async function pollToday() {
     const parts = [];
 
     // ── Tonight's schedule ──────────────────────────────────────
-    const SPORT_ICONS = {
-      Phillies: "⚾", Eagles: "🏈", Sixers: "🏀",
-      Flyers: "🏒", "World Cup": "⚽",
-    };
-
     const events = [];
     for (const g of upcoming.slice(0, 3)) {
-      const icon = SPORT_ICONS[g.team] || "🏟️";
       const isWC = g.team === "World Cup" && (g.opponent || "").includes("@");
       let opp = "";
       if (isWC) {
@@ -270,7 +264,6 @@ async function pollToday() {
       }
       events.push(`
         <div class="td-event">
-          <div class="td-event-icon">${icon}</div>
           <div class="td-event-body">
             <div class="td-event-team">${g.team}</div>
             ${opp ? `<div class="td-event-opp">${opp}</div>` : ""}
@@ -282,11 +275,9 @@ async function pollToday() {
     // If no upcoming, show most recent final
     if (!events.length && finals.length) {
       const g = finals[0];
-      const icon = SPORT_ICONS[g.team] || "📊";
       const rCls = g.result === "W" ? "td-result-win" : g.result === "L" ? "td-result-loss" : "";
       events.push(`
         <div class="td-event">
-          <div class="td-event-icon">${icon}</div>
           <div class="td-event-body">
             <div class="td-event-team ${rCls}">${g.team}</div>
             <div class="td-event-opp">vs ${g.opponent}</div>
@@ -319,14 +310,12 @@ async function pollToday() {
       <div class="td-section">
         <div class="td-section-label">Calendar</div>
         <div class="td-cal-row">
-          <span class="td-cal-icon">📅</span>
           <div class="td-cal-info">
             <div class="td-cal-day">Today</div>
             <div class="td-cal-date">${todayStr}</div>
           </div>
         </div>
         <div class="td-cal-row td-cal-dim">
-          <span class="td-cal-icon">📆</span>
           <div class="td-cal-info">
             <div class="td-cal-day">Tomorrow</div>
             <div class="td-cal-date">${tomorrowStr}</div>
@@ -556,18 +545,21 @@ function renderSportsRow(team, key) {
 
   if (team.next) {
     const g = team.next;
-    const opp       = oppLogo(g.opponent_abbr, league);
-    const haway     = g.home_away === "home" ? "vs" : "@";
-    const record    = team.record ? `${team.record} · ` : "";
-    const oppRec    = g.opponent_record ? ` (${g.opponent_record})` : "";
-    const sub       = g.opponent ? `${record}${haway} ${g.opponent}${oppRec}` : record;
-    const pitchers  = (key === "phillies" && team.pitchers) ? buildPitcherRow(team.pitchers) : "";
+    const opp      = oppLogo(g.opponent_abbr, league);
+    const haway    = g.home_away === "home" ? "vs" : "@";
+    const record   = team.record ? `${team.record} · ` : "";
+    const oppRec   = g.opponent_record ? ` (${g.opponent_record})` : "";
+    const matchup  = g.opponent ? `${record}${haway} ${g.opponent}${oppRec}` : record;
+    // Date on its own line so it doesn't get truncated by long opponent names
+    const dateLine = g.date ? `<div class="sb-sub sb-sub-date">${g.date}</div>` : "";
+    const pitchers = (key === "phillies" && team.pitchers) ? buildPitcherRow(team.pitchers) : "";
     return `
       <div class="sb-row" ${teamAttr}>
         ${logo}
         <div class="sb-team-wrap">
           <div class="sb-team">${team.label}</div>
-          ${sub ? `<div class="sb-sub">${sub}</div>` : ""}
+          ${matchup ? `<div class="sb-sub">${matchup}</div>` : ""}
+          ${dateLine}
           ${pitchers}
         </div>
         ${opp}
@@ -575,6 +567,21 @@ function renderSportsRow(team, key) {
       </div>`;
   }
 
+  // No upcoming game — headline takes priority over stale last result (offseason)
+  if (team.headline) {
+    const standing = team.standing || "Offseason";
+    return `
+      <div class="sb-row" ${teamAttr}>
+        ${logo}
+        <div class="sb-team-wrap">
+          <div class="sb-team">${team.label}</div>
+          <div class="sb-sub">${standing}${team.record ? " · " + team.record : ""}</div>
+          <div class="sb-headline">${team.headline}</div>
+        </div>
+      </div>`;
+  }
+
+  // Last result — only shown when no headline available
   if (team.last) {
     const g = team.last;
     const score    = g.score || `${g.my_score ?? "—"}-${g.opp_score ?? "—"}`;
@@ -593,20 +600,6 @@ function renderSportsRow(team, key) {
         </div>
         ${opp}
         <div class="sb-score ${scoreCls}">${score}</div>
-      </div>`;
-  }
-
-  // Offseason — show headline if available
-  if (team.headline) {
-    const standing = team.standing || "Offseason";
-    return `
-      <div class="sb-row" ${teamAttr}>
-        ${logo}
-        <div class="sb-team-wrap">
-          <div class="sb-team">${team.label}</div>
-          <div class="sb-sub">${standing}${team.record ? " · " + team.record : ""}</div>
-          <div class="sb-headline">${team.headline}</div>
-        </div>
       </div>`;
   }
 
@@ -690,8 +683,13 @@ async function pollJellyfin() {
     const d = await res.json();
 
     if (!d.available) {
-      bodyEl.innerHTML = `<p class="card-placeholder">Entertainment unavailable</p>`;
-      setTimeout(pollJellyfin, 300000);
+      bodyEl.innerHTML = `
+        <div class="jf-offline">
+          <div class="jf-offline-title">Media Library</div>
+          <div class="jf-offline-status">Starting up...</div>
+          <div class="jf-offline-hint">Jellyfin is loading. Usually ready within 60 seconds of reboot.</div>
+        </div>`;
+      setTimeout(pollJellyfin, 30000);
       return;
     }
 
@@ -733,10 +731,15 @@ async function pollJellyfin() {
 
   } catch {
     console.warn("Sean Home: Jellyfin unavailable");
-    bodyEl.innerHTML = `<p class="card-placeholder">Entertainment unavailable</p>`;
+    bodyEl.innerHTML = `
+      <div class="jf-offline">
+        <div class="jf-offline-title">Media Library</div>
+        <div class="jf-offline-status">Starting up...</div>
+        <div class="jf-offline-hint">Jellyfin is loading. Usually ready within 60 seconds of reboot.</div>
+      </div>`;
   }
 
-  setTimeout(pollJellyfin, 300000);
+  setTimeout(pollJellyfin, 30000);
 }
 
 /* ── Media Server strip ──────────────────────────────────────── */
