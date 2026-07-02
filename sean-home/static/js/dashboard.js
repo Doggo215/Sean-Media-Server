@@ -418,42 +418,67 @@ function renderWCRow(team) {
   if (team.live) {
     const g = team.live;
     const m = parseMatchup(g.matchup);
-    const score  = g.score || "–";
+    const scoreParts = (g.score || "0-0").split("-");
+    const awayScore  = scoreParts[0]?.trim() ?? "0";
+    const homeScore  = scoreParts[1]?.trim() ?? "0";
     const period = g.period || "Live";
     const round  = g.round  ? ` · ${g.round}` : "";
 
     // Goal scorers grouped by side
     const goals = g.goals || [];
-    let goalHtml = "";
+    let awayGoalHtml = "", homeGoalHtml = "";
     if (goals.length) {
       const awayGoals = goals.filter(x => x.side === "away").map(x => `${x.player} ${x.minute}`).join(", ");
       const homeGoals = goals.filter(x => x.side === "home").map(x => `${x.player} ${x.minute}`).join(", ");
-      goalHtml = `<div class="wc-goals-line">
-        <span class="wc-goals-side">${awayGoals || "—"}</span>
-        <span class="wc-goals-sep">·</span>
-        <span class="wc-goals-side">${homeGoals || "—"}</span>
-      </div>`;
+      if (awayGoals) awayGoalHtml = `<div class="soccer-goals">${awayGoals}</div>`;
+      if (homeGoals) homeGoalHtml = `<div class="soccer-goals">${homeGoals}</div>`;
     }
 
+    // Upcoming today — other games not yet started
+    const upcomingToday = (team.today_games || []).filter(tg => tg.matchup !== g.matchup && tg.state !== "post" && tg.state !== "in");
+    const upcomingHtml = upcomingToday.length ? `
+      <div class="soccer-upcoming-list">
+        <span class="soccer-upcoming-label">Today</span>
+        ${upcomingToday.map(tg => {
+          const tm = parseMatchup(tg.matchup);
+          return `<div class="soccer-upcoming-row">
+            <span class="soccer-upcoming-flag">${renderFlag(tg.away_abbr)}</span>
+            <span class="soccer-upcoming-name">${tm.away} vs ${tm.home}</span>
+            <span class="soccer-upcoming-flag">${renderFlag(tg.home_abbr)}</span>
+            <span class="soccer-upcoming-time">${tg.time}</span>
+          </div>`;
+        }).join("")}
+      </div>` : "";
+
     return `
-      <div class="sb-row sb-row-wc sb-row-wc-live" data-team="world_cup">
-        <div class="wc-matchup-line">
-          <div class="wc-team-away">
-            <span class="wc-flag">${renderFlag(g.away_abbr)}</span>
-            <span class="wc-name">${m.away}</span>
+      <div class="sb-row sb-row-wc soccer-live-panel" data-team="world_cup">
+        <div class="soccer-live-scoreline">
+          <div class="soccer-team-side soccer-team-away">
+            <span class="soccer-team-flag">${renderFlag(g.away_abbr)}</span>
+            <div class="soccer-team-info">
+              <span class="soccer-team-name">${m.away}</span>
+              ${awayGoalHtml}
+            </div>
           </div>
-          <div class="wc-score-center">
-            <div class="wc-score-num wc-score-num-live">${score}</div>
+          <div class="soccer-score-center">
+            <div class="soccer-score">${awayScore}</div>
+            <div class="soccer-score-sep">–</div>
+            <div class="soccer-score">${homeScore}</div>
           </div>
-          <div class="wc-team-home">
-            <span class="wc-name">${m.home}</span>
-            <span class="wc-flag">${renderFlag(g.home_abbr)}</span>
+          <div class="soccer-team-side soccer-team-home">
+            <div class="soccer-team-info soccer-team-info-right">
+              <span class="soccer-team-name">${m.home}</span>
+              ${homeGoalHtml}
+            </div>
+            <span class="soccer-team-flag">${renderFlag(g.home_abbr)}</span>
           </div>
         </div>
-        ${goalHtml}
-        <div class="wc-status-line wc-status-live">
-          <span class="sb-live-dot"></span>LIVE · ${period}${round}
+        <div class="soccer-live-meta">
+          <span class="sb-live-dot"></span>
+          <span class="soccer-live-label">LIVE</span>
+          <span class="soccer-clock">${period}${round}</span>
         </div>
+        ${upcomingHtml}
       </div>`;
   }
   if (team.next) {
@@ -865,10 +890,14 @@ function renderSportsHQ(teams) {
 
   let html = "";
 
-  if (hasAnyLive) {
+  if (phillyLive.length > 0) {
     html += `<div class="shq-section-hdr shq-hdr-live"><span class="shq-live-dot"></span>Live Now</div>`;
     for (const k of phillyLive) html += renderSportsRow(teams[k], k);
-    if (wcLive) html += renderWCRow(teams.world_cup);
+  }
+  if (wcLive) {
+    const wcHdrLabel = phillyLive.length > 0 ? "World Cup Live" : "Live Now";
+    html += `<div class="shq-section-hdr shq-hdr-live shq-hdr-wc"><span class="shq-live-dot"></span>${wcHdrLabel}</div>`;
+    html += renderWCRow(teams.world_cup);
   }
 
   if (phillyToday.length > 0 || hasWcToday) {

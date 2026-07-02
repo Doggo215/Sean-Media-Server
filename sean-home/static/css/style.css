@@ -1368,6 +1368,128 @@ body {
 .wc-more-time { font-size: 1.3rem; color: var(--text-3); flex-shrink: 0; }
 .wc-more-live { font-size: 1.1rem; font-weight: 700; color: var(--red); flex-shrink: 0; letter-spacing: 0.06em; }
 
+/* ── Soccer live panel (Sports HQ — World Cup live match) ─────── */
+.soccer-live-panel {
+  flex-direction: column;
+  align-items: stretch;
+  padding: 12px 16px 14px;
+  gap: 8px;
+  border-left: 3px solid var(--c-worldcup);
+  background: linear-gradient(110deg, rgba(212,175,55,0.12) 0%, rgba(212,175,55,0.03) 100%);
+}
+.soccer-live-scoreline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.soccer-team-side {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.soccer-team-away { flex-direction: row; }
+.soccer-team-home { flex-direction: row-reverse; }
+.soccer-team-flag {
+  font-size: 2.6rem;
+  line-height: 1;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+.soccer-team-flag .wc-svg-flag { width: 3.2em; height: 2.1em; }
+.soccer-team-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  overflow: hidden;
+}
+.soccer-team-info-right { align-items: flex-end; }
+.soccer-team-name {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1;
+}
+.soccer-goals {
+  font-size: 1.25rem;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1;
+}
+.soccer-score-center {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.soccer-score {
+  font-size: 5.8rem;
+  font-weight: 100;
+  color: var(--text);
+  line-height: 0.9;
+  min-width: 52px;
+  text-align: center;
+}
+.soccer-score-sep {
+  font-size: 3rem;
+  font-weight: 100;
+  color: var(--text-3);
+  line-height: 1;
+  padding-bottom: 4px;
+}
+.soccer-live-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+.soccer-live-label { color: var(--red); }
+.soccer-clock {
+  color: rgba(255,255,255,0.62);
+  font-weight: 600;
+}
+.soccer-upcoming-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 2px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+.soccer-upcoming-label {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 3px;
+}
+.soccer-upcoming-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.4rem;
+  color: var(--text-2);
+}
+.soccer-upcoming-flag { font-size: 1.5rem; line-height: 1; flex-shrink: 0; display: inline-flex; align-items: center; }
+.soccer-upcoming-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.soccer-upcoming-time { font-size: 1.3rem; color: var(--text-3); flex-shrink: 0; }
+/* World Cup Live section header accent */
+.shq-hdr-wc { color: var(--c-worldcup); text-shadow: 0 0 14px rgba(212,175,55,0.45); }
+.shq-hdr-wc .shq-live-dot { background: var(--c-worldcup); }
+
 /* TODAY card — World Cup multi-game block */
 .td-wc-block .td-event-body { flex: 1; }
 .td-wc-games {
