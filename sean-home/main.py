@@ -9,7 +9,7 @@ import asyncio
 import time
 import shutil
 import subprocess
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -160,16 +160,29 @@ async def fetch_weather():
     params = {
         "latitude": WEATHER_LAT,
         "longitude": WEATHER_LON,
-        "current": "temperature_2m,weather_code",
-        "daily": "temperature_2m_max,temperature_2m_min",
+        "current": (
+            "temperature_2m,weather_code,apparent_temperature,"
+            "relative_humidity_2m,precipitation_probability,wind_speed_10m"
+        ),
+        "hourly": "temperature_2m,precipitation_probability,weather_code",
+        "daily": (
+            "temperature_2m_max,temperature_2m_min,weather_code,"
+            "precipitation_probability_max,sunrise,sunset"
+        ),
         "temperature_unit": "fahrenheit",
+        "wind_speed_unit": "mph",
         "timezone": "America/Denver",
-        "forecast_days": 1,
+        "forecast_days": 3,
     }
     async with httpx.AsyncClient(timeout=5.0) as client:
         resp = await client.get(WEATHER_URL, params=params)
         resp.raise_for_status()
         return resp.json()
+
+
+def _fmt_sun(dt_str):
+    """'2026-07-02T05:48' → '5:48 AM'"""
+    return datetime.fromisoformat(dt_str).strftime("%-I:%M %p")
 
 
 @app.get("/api/weather")
@@ -181,16 +194,78 @@ async def weather():
 
     try:
         raw = await fetch_weather()
-        code = raw["current"]["weather_code"]
+        cur = raw["current"]
+        daily = raw["daily"]
+        hourly = raw["hourly"]
+
+        code = cur["weather_code"]
         condition, icon = WEATHER_CODES.get(code, ("Unknown", "🌡️"))
+
+        # Hourly — next 6 hours from current hour
+        now_dt = datetime.now(DENVER)
+        now_hour_str = now_dt.strftime("%Y-%m-%dT%H:00")
+        h_times = hourly["time"]
+        try:
+            h_start = h_times.index(now_hour_str)
+        except ValueError:
+            h_start = 0
+        hourly_out = []
+        for i in range(h_start, min(h_start + 7, len(h_times))):
+            h_code = hourly["weather_code"][i]
+            _, h_icon = WEATHER_CODES.get(h_code, ("Unknown", "🌡️"))
+            h_dt = datetime.fromisoformat(h_times[i])
+            label = "Now" if i == h_start else h_dt.strftime("%-I %p")
+            hourly_out.append({
+                "label": label,
+                "temp_f": round(hourly["temperature_2m"][i]),
+                "icon": h_icon,
+                "precip_chance": round(hourly["precipitation_probability"][i]),
+            })
+
+        # Tomorrow (daily index 1)
+        t_code = daily["weather_code"][1]
+        t_cond, t_icon = WEATHER_CODES.get(t_code, ("Unknown", "🌡️"))
+        tomorrow = {
+            "condition": t_cond,
+            "icon": t_icon,
+            "high_f": round(daily["temperature_2m_max"][1]),
+            "low_f": round(daily["temperature_2m_min"][1]),
+            "precip_chance": round(daily["precipitation_probability_max"][1]),
+        }
+
+        # Weekend preview — first Sat or Sun in the next 3-day window
+        weekend = None
+        for i in [1, 2]:
+            day_dt = now_dt + timedelta(days=i)
+            if day_dt.weekday() >= 5:
+                w_code = daily["weather_code"][i]
+                w_cond, w_icon = WEATHER_CODES.get(w_code, ("Unknown", "🌡️"))
+                weekend = {
+                    "day": day_dt.strftime("%A"),
+                    "condition": w_cond,
+                    "icon": w_icon,
+                    "high_f": round(daily["temperature_2m_max"][i]),
+                    "low_f": round(daily["temperature_2m_min"][i]),
+                    "precip_chance": round(daily["precipitation_probability_max"][i]),
+                }
+                break
 
         data = {
             "available": True,
-            "temperature_f": round(raw["current"]["temperature_2m"]),
-            "high_f": round(raw["daily"]["temperature_2m_max"][0]),
-            "low_f": round(raw["daily"]["temperature_2m_min"][0]),
+            "temperature_f": round(cur["temperature_2m"]),
+            "feels_like_f": round(cur["apparent_temperature"]),
+            "high_f": round(daily["temperature_2m_max"][0]),
+            "low_f": round(daily["temperature_2m_min"][0]),
             "condition": condition,
             "icon": icon,
+            "humidity_pct": round(cur["relative_humidity_2m"]),
+            "precip_chance": round(cur.get("precipitation_probability", 0)),
+            "wind_mph": round(cur["wind_speed_10m"]),
+            "sunrise": _fmt_sun(daily["sunrise"][0]),
+            "sunset": _fmt_sun(daily["sunset"][0]),
+            "hourly": hourly_out,
+            "tomorrow": tomorrow,
+            "weekend": weekend,
             "location": "Arvada, CO",
         }
         _weather_cache["data"] = data
@@ -198,7 +273,6 @@ async def weather():
         return {**data, "cached": False}
 
     except Exception:
-        # Fail gracefully — serve stale cache if we have one, otherwise unavailable
         if _weather_cache["data"]:
             return {**_weather_cache["data"], "cached": True, "stale": True}
         return JSONResponse(
@@ -379,9 +453,12 @@ def parse_team_events(payload, team_abbr):
             date_str, time_str = _to_mt_strings(event_dt)
             opponent_name = opp["team"].get("shortDisplayName") or opp["team"].get("abbreviation")
             opp_abbr = opp["team"].get("abbreviation", "").lower()
+            opp_records = opp.get("records") or []
+            opp_record = next((r.get("summary", "") for r in opp_records if r.get("name") == "overall"), "")
             entry = {
                 "opponent": opponent_name,
                 "opponent_abbr": opp_abbr,
+                "opponent_record": opp_record,
                 "date": date_str,
                 "time": time_str,
                 "home_away": me.get("homeAway"),
@@ -426,15 +503,38 @@ def parse_world_cup(payload):
             away = next(c for c in competitors if c["homeAway"] == "away")
 
             date_str, time_str = _to_mt_strings(event_dt)
+            home_name = home["team"].get("shortDisplayName", "")
+            away_name = away["team"].get("shortDisplayName", "")
+            home_id = home["team"].get("id", "")
+            away_id = away["team"].get("id", "")
+
+            # Round / phase (e.g. "Group Stage", "Round of 16")
+            comp_type = (comp.get("type") or {}).get("text", "")
+            notes = comp.get("notes") or []
+            round_label = next((n.get("headline", "") for n in notes if n.get("type") == "rotation"), comp_type)
+
             entry = {
-                "matchup": f"{away['team'].get('shortDisplayName')} @ {home['team'].get('shortDisplayName')}",
+                "matchup": f"{away_name} @ {home_name}",
                 "date": date_str,
                 "time": time_str,
+                "round": round_label,
             }
 
             if state == "in":
                 entry["score"] = f"{_score_str(away)}-{_score_str(home)}"
                 entry["period"] = comp["status"]["type"].get("shortDetail")
+                # Goal scorers from competition details
+                goals = []
+                for detail in (comp.get("details") or []):
+                    dtype = (detail.get("type") or {}).get("text", "").lower()
+                    if dtype in ("goal", "penalty goal", "header goal", "own goal"):
+                        athletes = detail.get("athletesInvolved") or []
+                        player = athletes[0].get("displayName", "") if athletes else ""
+                        minute = (detail.get("clock") or {}).get("displayValue", "")
+                        team_id = (detail.get("team") or {}).get("id", "")
+                        side = "home" if team_id == home_id else "away"
+                        goals.append({"player": player, "minute": minute, "side": side})
+                entry["goals"] = goals
                 live_match = entry
             elif state == "post":
                 if last_dt is None or event_dt > last_dt:

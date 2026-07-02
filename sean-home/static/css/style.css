@@ -515,6 +515,37 @@ body {
   font-style: italic;
 }
 
+/* Calendar rows in TODAY card */
+.td-cal-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.td-cal-row:last-of-type { border-bottom: none; }
+.td-cal-dim { opacity: 0.5; }
+.td-cal-icon { font-size: 1.5rem; line-height: 1; flex-shrink: 0; }
+.td-cal-info { flex: 1; min-width: 0; }
+.td-cal-day {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.1;
+}
+.td-cal-date {
+  font-size: 1.0rem;
+  color: var(--text-2);
+  margin-top: 2px;
+}
+.td-cal-note {
+  font-size: 0.9rem;
+  color: var(--text-3);
+  font-style: italic;
+  margin-top: 8px;
+  padding-left: 2px;
+}
+
 .td-empty {
   font-size: 1.3rem;
   color: var(--text-2);
@@ -775,6 +806,94 @@ body {
   letter-spacing: 0.02em;
 }
 .weather-unavailable { color: var(--text-2); font-size: 1.2rem; opacity: 0.55; }
+
+/* Detail chips row — feels like · wind · rain · humidity */
+.weather-detail {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+.wx-chip {
+  font-size: 1.05rem;
+  color: var(--text-2);
+  background: rgba(255,255,255,0.055);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 100px;
+  padding: 3px 11px;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+/* Hourly forecast strip */
+.weather-hourly {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  align-items: flex-end;
+  margin-top: 6px;
+  overflow: hidden;
+  width: 100%;
+}
+.wx-hour {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+  padding: 6px 4px 5px;
+}
+.wx-h-label {
+  font-size: 0.8rem;
+  color: var(--text-3);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.wx-h-icon { font-size: 1.4rem; line-height: 1; }
+.wx-h-temp { font-size: 1.05rem; font-weight: 600; color: var(--text); }
+.wx-h-rain { font-size: 0.8rem; color: var(--blue); }
+
+/* Sunrise / sunset row */
+.weather-sun {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  font-size: 1.0rem;
+  color: var(--text-3);
+  margin-top: 4px;
+}
+.wx-sun-sep { opacity: 0.4; }
+
+/* Tomorrow + weekend forecast */
+.weather-forecast {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  margin-top: 4px;
+}
+.wx-forecast-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px;
+  background: rgba(255,255,255,0.035);
+  border-radius: 8px;
+}
+.wx-day {
+  font-size: 1.0rem;
+  font-weight: 600;
+  color: var(--text-2);
+  min-width: 70px;
+}
+.wx-ficon { font-size: 1.3rem; line-height: 1; }
+.wx-ftemps { font-size: 1.0rem; color: var(--text-2); flex: 1; }
 
 /* ── ENTERTAINMENT CARD ──────────────────────────────────────── */
 .card-entertainment {
@@ -1047,6 +1166,20 @@ body {
 .wc-status-live  { color: var(--red); }
 .wc-status-next  { color: var(--text-3); }
 .wc-status-final { color: var(--text-2); }
+.wc-round { color: var(--text-3); font-style: italic; }
+
+/* Goal scorers line — shown during live WC matches */
+.wc-goals-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 1.0rem;
+  color: var(--text-2);
+  padding: 2px 6px;
+  line-height: 1.4;
+}
+.wc-goals-side { flex: 1; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wc-goals-sep  { color: var(--text-3); flex-shrink: 0; }
 
 /* ── LIVE SPORTS HERO ────────────────────────────────────────── */
 /* When a Philly team goes live, their row expands               */

@@ -87,23 +87,78 @@ async function pollWeather() {
     const d = await res.json();
     if (!d.available) { setUnavailable(); return; }
 
-    if (typeof getWeatherIcon === "function") {
-      iconEl.innerHTML = getWeatherIcon(d.condition);
-    } else {
-      iconEl.innerHTML = d.icon;
-    }
-
-    if (condEl) { condEl.textContent = d.condition + (d.stale ? " (cached)" : ""); condEl.className = "weather-condition"; }
-    if (hiloEl) hiloEl.textContent  = `H: ${d.high_f}°  ·  L: ${d.low_f}°`;
-
+    // Header
     if (hwIcon) hwIcon.textContent = d.icon;
     if (hwTemp) hwTemp.textContent = `${d.temperature_f}°`;
     if (hwDesc) hwDesc.textContent = `${d.condition}  ·  Low ${d.low_f}°`;
 
+    // Card scene tint
     if (card) {
       const wClass = weatherClass(d.condition);
       card.className = `card card-weather${wClass ? " " + wClass : ""}`;
     }
+
+    // Main icon — SVG or emoji
+    if (typeof getWeatherIcon === "function") {
+      iconEl.innerHTML = getWeatherIcon(d.condition);
+    } else {
+      iconEl.textContent = d.icon;
+    }
+
+    // Condition + H/L
+    if (condEl) {
+      condEl.textContent = d.condition;
+      condEl.className = "weather-condition";
+    }
+    if (hiloEl) hiloEl.textContent = `H: ${d.high_f}°  ·  L: ${d.low_f}°`;
+
+    // Detail row — feels like, wind, rain, humidity
+    const detailEl = document.getElementById("weather-detail");
+    if (detailEl) {
+      const chips = [
+        d.feels_like_f  !== undefined ? `Feels ${d.feels_like_f}°`          : null,
+        d.wind_mph      !== undefined ? `Wind ${d.wind_mph} mph`             : null,
+        d.precip_chance !== undefined ? `Rain ${d.precip_chance}%`           : null,
+        d.humidity_pct  !== undefined ? `Humidity ${d.humidity_pct}%`        : null,
+      ].filter(Boolean);
+      detailEl.innerHTML = chips.map(c => `<span class="wx-chip">${c}</span>`).join("");
+    }
+
+    // Hourly strip
+    const hourlyEl = document.getElementById("weather-hourly");
+    if (hourlyEl && d.hourly && d.hourly.length) {
+      hourlyEl.innerHTML = d.hourly.map(h => `
+        <div class="wx-hour">
+          <div class="wx-h-label">${h.label}</div>
+          <div class="wx-h-icon">${h.icon}</div>
+          <div class="wx-h-temp">${h.temp_f}°</div>
+          ${h.precip_chance >= 20 ? `<div class="wx-h-rain">${h.precip_chance}%</div>` : ""}
+        </div>`).join("");
+    }
+
+    // Sunrise / Sunset
+    const sunEl = document.getElementById("weather-sun");
+    if (sunEl && d.sunrise && d.sunset) {
+      sunEl.innerHTML = `<span>☀ ${d.sunrise}</span><span class="wx-sun-sep">·</span><span>🌅 ${d.sunset}</span>`;
+    }
+
+    // Tomorrow + weekend
+    const forecastEl = document.getElementById("weather-forecast");
+    if (forecastEl) {
+      const rows = [];
+      if (d.tomorrow) {
+        const r = d.tomorrow;
+        const rain = r.precip_chance > 0 ? ` · Rain ${r.precip_chance}%` : "";
+        rows.push(`<div class="wx-forecast-row"><span class="wx-day">Tomorrow</span><span class="wx-ficon">${r.icon}</span><span class="wx-ftemps">${r.high_f}° / ${r.low_f}°${rain}</span></div>`);
+      }
+      if (d.weekend) {
+        const r = d.weekend;
+        const rain = r.precip_chance > 0 ? ` · Rain ${r.precip_chance}%` : "";
+        rows.push(`<div class="wx-forecast-row"><span class="wx-day">${r.day}</span><span class="wx-ficon">${r.icon}</span><span class="wx-ftemps">${r.high_f}° / ${r.low_f}°${rain}</span></div>`);
+      }
+      forecastEl.innerHTML = rows.join("");
+    }
+
   } catch {
     console.warn("Sean Home: weather unavailable");
     setUnavailable();
@@ -255,11 +310,29 @@ async function pollToday() {
     }
 
     // ── Calendar ────────────────────────────────────────────────
+    const now = new Date();
+    const todayStr = now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+    const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1);
+    const tomorrowStr = tomorrow.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
     parts.push(`
       <div class="td-divider"></div>
       <div class="td-section">
         <div class="td-section-label">Calendar</div>
-        <div class="td-calendar-note">Coming soon</div>
+        <div class="td-cal-row">
+          <span class="td-cal-icon">📅</span>
+          <div class="td-cal-info">
+            <div class="td-cal-day">Today</div>
+            <div class="td-cal-date">${todayStr}</div>
+          </div>
+        </div>
+        <div class="td-cal-row td-cal-dim">
+          <span class="td-cal-icon">📆</span>
+          <div class="td-cal-info">
+            <div class="td-cal-day">Tomorrow</div>
+            <div class="td-cal-date">${tomorrowStr}</div>
+          </div>
+        </div>
+        <div class="td-cal-note">Google Calendar · coming soon</div>
       </div>`);
 
     // ── Gaming ──────────────────────────────────────────────────
@@ -327,9 +400,25 @@ function parseMatchup(str) {
 /* World Cup dedicated renderer — always shows both teams + flags */
 function renderWCRow(team) {
   if (team.live) {
-    const m = parseMatchup(team.live.matchup);
-    const score  = team.live.score || "–";
-    const period = team.live.period || "Live";
+    const g = team.live;
+    const m = parseMatchup(g.matchup);
+    const score  = g.score || "–";
+    const period = g.period || "Live";
+    const round  = g.round  ? ` · ${g.round}` : "";
+
+    // Goal scorers grouped by side
+    const goals = g.goals || [];
+    let goalHtml = "";
+    if (goals.length) {
+      const awayGoals = goals.filter(x => x.side === "away").map(x => `${x.player} ${x.minute}`).join(", ");
+      const homeGoals = goals.filter(x => x.side === "home").map(x => `${x.player} ${x.minute}`).join(", ");
+      goalHtml = `<div class="wc-goals-line">
+        <span class="wc-goals-side">${awayGoals || "—"}</span>
+        <span class="wc-goals-sep">·</span>
+        <span class="wc-goals-side">${homeGoals || "—"}</span>
+      </div>`;
+    }
+
     return `
       <div class="sb-row sb-row-wc sb-row-wc-live" data-team="world_cup">
         <div class="wc-matchup-line">
@@ -345,13 +434,16 @@ function renderWCRow(team) {
             <span class="wc-flag">${getFlag(m.home)}</span>
           </div>
         </div>
+        ${goalHtml}
         <div class="wc-status-line wc-status-live">
-          <span class="sb-live-dot"></span>LIVE · ${period}
+          <span class="sb-live-dot"></span>LIVE · ${period}${round}
         </div>
       </div>`;
   }
   if (team.next) {
-    const m = parseMatchup(team.next.matchup);
+    const g = team.next;
+    const m = parseMatchup(g.matchup);
+    const round = g.round ? `<span class="wc-round">${g.round}</span>` : "";
     return `
       <div class="sb-row sb-row-wc sb-row-wc-next" data-team="world_cup">
         <div class="wc-matchup-line">
@@ -360,19 +452,21 @@ function renderWCRow(team) {
             <span class="wc-name">${m.away}</span>
           </div>
           <div class="wc-score-center">
-            <div class="wc-score-time">${team.next.time || "TBD"}</div>
+            <div class="wc-score-time">${g.time || "TBD"}</div>
           </div>
           <div class="wc-team-home">
             <span class="wc-name">${m.home}</span>
             <span class="wc-flag">${getFlag(m.home)}</span>
           </div>
         </div>
-        <div class="wc-status-line wc-status-next">World Cup</div>
+        <div class="wc-status-line wc-status-next">⚽ World Cup${round ? " · " : ""}${round}</div>
       </div>`;
   }
   if (team.last) {
-    const m = parseMatchup(team.last.matchup);
-    const score = team.last.score || "–";
+    const g = team.last;
+    const m = parseMatchup(g.matchup);
+    const score = g.score || "–";
+    const round = g.round ? ` · ${g.round}` : "";
     return `
       <div class="sb-row sb-row-wc sb-row-wc-last" data-team="world_cup">
         <div class="wc-matchup-line">
@@ -388,7 +482,7 @@ function renderWCRow(team) {
             <span class="wc-flag">${getFlag(m.home)}</span>
           </div>
         </div>
-        <div class="wc-status-line wc-status-final">Final · World Cup</div>
+        <div class="wc-status-line wc-status-final">Final${round}</div>
       </div>`;
   }
   return "";
@@ -462,11 +556,12 @@ function renderSportsRow(team, key) {
 
   if (team.next) {
     const g = team.next;
-    const opp    = oppLogo(g.opponent_abbr, league);
-    const haway  = g.home_away === "home" ? "vs" : "@";
-    const record = team.record ? `${team.record} · ` : "";
-    const sub    = g.opponent ? `${record}${haway} ${g.opponent}` : record;
-    const pitchers = (key === "phillies" && team.pitchers) ? buildPitcherRow(team.pitchers) : "";
+    const opp       = oppLogo(g.opponent_abbr, league);
+    const haway     = g.home_away === "home" ? "vs" : "@";
+    const record    = team.record ? `${team.record} · ` : "";
+    const oppRec    = g.opponent_record ? ` (${g.opponent_record})` : "";
+    const sub       = g.opponent ? `${record}${haway} ${g.opponent}${oppRec}` : record;
+    const pitchers  = (key === "phillies" && team.pitchers) ? buildPitcherRow(team.pitchers) : "";
     return `
       <div class="sb-row" ${teamAttr}>
         ${logo}
