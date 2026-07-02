@@ -664,11 +664,51 @@ const NEWS_NAMES = {
   phillies: "Phillies", eagles: "Eagles", sixers: "Sixers", flyers: "Flyers",
 };
 
+/* Major news rotation state */
+let _majorNews = [];
+let _majorNewsIdx = 0;
+let _majorRotateInterval = null;
+
+function renderMajorNewsSlice() {
+  const el = document.getElementById("news-major-body");
+  if (!el) return;
+  if (!_majorNews.length) {
+    el.innerHTML = `<p class="card-placeholder">Major news unavailable</p>`;
+    return;
+  }
+  const slice = _majorNews.slice(_majorNewsIdx, _majorNewsIdx + 3);
+  el.innerHTML = slice.map(item => `
+    <div class="news-major-item">
+      <div class="news-major-cat">${item.category}</div>
+      <div class="news-major-headline">${item.headline}</div>
+    </div>`).join("");
+}
+
+async function pollMajorNews() {
+  try {
+    const res = await fetch("/api/news");
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+    _majorNews = (d.available && d.major && d.major.length) ? d.major : [];
+    _majorNewsIdx = 0;
+  } catch {
+    _majorNews = [];
+  }
+  renderMajorNewsSlice();
+  if (_majorRotateInterval) clearInterval(_majorRotateInterval);
+  if (_majorNews.length > 3) {
+    _majorRotateInterval = setInterval(() => {
+      _majorNewsIdx = (_majorNewsIdx + 3) % _majorNews.length;
+      renderMajorNewsSlice();
+    }, 25000);
+  }
+}
+
 function renderNewsCard(teams) {
   const bodyEl = document.getElementById("news-body");
   if (!bodyEl) return;
 
-  const items = [];
+  const sportItems = [];
   for (const key of NEWS_ORDER) {
     const team = teams && teams[key];
     if (!team) continue;
@@ -676,7 +716,7 @@ function renderNewsCard(teams) {
     if (!headline) continue;
     const color = NEWS_COLORS[key] || "var(--text-3)";
     const name  = NEWS_NAMES[key]  || key;
-    items.push(`
+    sportItems.push(`
       <div class="news-item">
         <div class="news-accent" style="background:${color}"></div>
         <div class="news-team-info">
@@ -686,9 +726,14 @@ function renderNewsCard(teams) {
       </div>`);
   }
 
-  bodyEl.innerHTML = items.length
-    ? items.join("")
-    : `<p class="card-placeholder">No news available</p>`;
+  bodyEl.innerHTML = `
+    <div class="news-section-hdr">Sports News</div>
+    ${sportItems.length ? sportItems.join("") : '<p class="card-placeholder">No sports news</p>'}
+    <div class="news-section-hdr news-section-hdr-major">Major News</div>
+    <div id="news-major-body"><p class="card-placeholder">Loading…</p></div>`;
+
+  /* Re-populate major section (may already have data from a prior poll) */
+  renderMajorNewsSlice();
 }
 
 async function pollSports() {
@@ -883,4 +928,6 @@ setInterval(pollWeather, 600000);
 pollLiveStrip();
 pollToday();
 pollSports();
+pollMajorNews();
+setInterval(pollMajorNews, 600000);
 pollMediaServer();

@@ -849,6 +849,63 @@ async def gaming():
     return {**result, "cached": False}
 
 
+# ─── Major News (RSS) ────────────────────────────────────────────────────────
+
+import xml.etree.ElementTree as ET  # stdlib — no extra dep
+
+NEWS_CACHE_TTL = 600  # 10 minutes
+_news_cache: dict = {"data": None, "fetched_at": 0}
+
+NEWS_FEEDS = [
+    {"category": "LOCAL",  "source": "Colorado Sun",  "url": "https://coloradosun.com/feed/"},
+    {"category": "U.S.",   "source": "NY Times",     "url": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"},
+    {"category": "WORLD",  "source": "BBC World",    "url": "https://feeds.bbci.co.uk/news/world/rss.xml"},
+]
+
+
+async def _fetch_rss_headline(client: httpx.AsyncClient, feed: dict) -> dict | None:
+    try:
+        resp = await client.get(
+            feed["url"], timeout=5.0,
+            headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120 Safari/537.36"},
+            follow_redirects=True,
+        )
+        resp.raise_for_status()
+        root = ET.fromstring(resp.text)
+        # RSS items can be at channel/item or directly under root
+        items = root.findall(".//item")
+        if not items:
+            return None
+        title = (items[0].findtext("title") or "").strip()
+        if not title:
+            return None
+        return {"category": feed["category"], "headline": title, "source": feed["source"]}
+    except Exception:
+        return None
+
+
+@app.get("/api/news")
+async def news():
+    now = time.time()
+    if _news_cache["data"] and (now - _news_cache["fetched_at"]) < NEWS_CACHE_TTL:
+        return {**_news_cache["data"], "cached": True}
+    try:
+        async with httpx.AsyncClient() as client:
+            results = await asyncio.gather(
+                *[_fetch_rss_headline(client, f) for f in NEWS_FEEDS],
+                return_exceptions=True,
+            )
+        major = [r for r in results if isinstance(r, dict)]
+        data = {"available": True, "major": major}
+        _news_cache["data"] = data
+        _news_cache["fetched_at"] = now
+        return {**data, "cached": False}
+    except Exception:
+        if _news_cache["data"]:
+            return {**_news_cache["data"], "cached": True}
+        return {"available": False, "major": []}
+
+
 # ─── Jellyfin ────────────────────────────────────────────────────────────────
 
 JELLYFIN_BASE = os.environ.get("JELLYFIN_URL", "http://127.0.0.1:8096")
