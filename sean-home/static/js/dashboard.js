@@ -425,7 +425,11 @@ function renderWCRow(team) {
     const half   = g.half   || "";
     const round  = g.round  ? ` · ${g.round}` : "";
 
-    // Meta line: LIVE · 40' · 1st Half (show what's available)
+    // Halftime / status detection
+    const statusName  = g.status_name || "";
+    const isHalftime  = statusName === "STATUS_HALFTIME";
+
+    // Meta line: LIVE · 45'+3' · 1st Half (show what's available)
     const metaParts = ["LIVE"];
     if (period) metaParts.push(period);
     if (half)   metaParts.push(half);
@@ -481,10 +485,10 @@ function renderWCRow(team) {
             <span class="soccer-team-flag">${renderFlag(g.home_abbr)}</span>
           </div>
         </div>
-        <div class="soccer-live-meta">
-          <span class="sb-live-dot"></span>
-          <span class="soccer-meta-text">${metaText}${round}</span>
-        </div>
+        ${isHalftime
+          ? `<div class="soccer-live-meta soccer-status-halftime"><span class="soccer-meta-text">HALFTIME</span></div>`
+          : `<div class="soccer-live-meta"><span class="sb-live-dot"></span><span class="soccer-meta-text">${metaText}${round}</span></div>`
+        }
         ${scorersHtml}
         ${upcomingHtml}
       </div>`;
@@ -534,24 +538,64 @@ function renderWCRow(team) {
   if (team.last) {
     const g = team.last;
     const m = parseMatchup(g.matchup);
-    const score = g.score || "–";
-    const round = g.round ? ` · ${g.round}` : "";
+    const scoreParts = (g.score || "0-0").split("-");
+    const awayScore  = scoreParts[0]?.trim() ?? "–";
+    const homeScore  = scoreParts[1]?.trim() ?? "–";
+    const round      = g.round ? ` · ${g.round}` : "";
+
+    const goals = g.goals || [];
+    let finalScorersHtml = "";
+    if (goals.length) {
+      const rows = goals.map(goal => {
+        const marker = goal.own_goal ? "OG" : goal.penalty ? "PK" : "⚽";
+        const abbr   = (goal.abbr || "").toUpperCase();
+        return `<div class="soccer-scorer-row">
+          <span class="soccer-scorer-marker">${marker}</span>
+          <span class="soccer-scorer-abbr">${abbr}</span>
+          <span class="soccer-scorer-name">${goal.player}</span>
+          <span class="soccer-scorer-min">${goal.minute}</span>
+        </div>`;
+      }).join("");
+      finalScorersHtml = `<div class="soccer-scorers-section">${rows}</div>`;
+    }
+
+    const upcomingToday = (team.today_games || []).filter(tg => tg.matchup !== g.matchup && tg.state !== "post" && tg.state !== "in");
+    const upcomingHtml = upcomingToday.length ? `
+      <div class="soccer-upcoming-list">
+        <span class="soccer-upcoming-label">Today</span>
+        ${upcomingToday.map(tg => {
+          const tm = parseMatchup(tg.matchup);
+          return `<div class="soccer-upcoming-row">
+            <span class="soccer-upcoming-flag">${renderFlag(tg.away_abbr)}</span>
+            <span class="soccer-upcoming-name">${tm.away} vs ${tm.home}</span>
+            <span class="soccer-upcoming-flag">${renderFlag(tg.home_abbr)}</span>
+            <span class="soccer-upcoming-time">${tg.time}</span>
+          </div>`;
+        }).join("")}
+      </div>` : "";
+
     return `
-      <div class="sb-row sb-row-wc sb-row-wc-last" data-team="world_cup">
-        <div class="wc-matchup-line">
-          <div class="wc-team-away">
-            <span class="wc-flag">${renderFlag(g.away_abbr)}</span>
-            <span class="wc-name">${m.away}</span>
+      <div class="sb-row sb-row-wc soccer-live-panel soccer-final-panel" data-team="world_cup">
+        <div class="soccer-live-scoreline">
+          <div class="soccer-team-side soccer-team-away">
+            <span class="soccer-team-flag">${renderFlag(g.away_abbr)}</span>
+            <span class="soccer-team-name">${m.away}</span>
           </div>
-          <div class="wc-score-center">
-            <div class="wc-score-num">${score}</div>
+          <div class="soccer-score-center">
+            <div class="soccer-score soccer-score-final">${awayScore}</div>
+            <div class="soccer-score-sep">–</div>
+            <div class="soccer-score soccer-score-final">${homeScore}</div>
           </div>
-          <div class="wc-team-home">
-            <span class="wc-name">${m.home}</span>
-            <span class="wc-flag">${renderFlag(g.home_abbr)}</span>
+          <div class="soccer-team-side soccer-team-home">
+            <span class="soccer-team-name">${m.home}</span>
+            <span class="soccer-team-flag">${renderFlag(g.home_abbr)}</span>
           </div>
         </div>
-        <div class="wc-status-line wc-status-final">Final${round}</div>
+        <div class="soccer-live-meta soccer-status-final">
+          <span class="soccer-meta-text">FINAL${round}</span>
+        </div>
+        ${finalScorersHtml}
+        ${upcomingHtml}
       </div>`;
   }
   return "";
@@ -891,6 +935,8 @@ function renderSportsHQ(teams) {
 
   const wcTodayGames = (teams.world_cup?.today_games || []).filter(g => g.state !== "post");
   const hasWcToday   = !wcLive && wcTodayGames.length > 0;
+  // Show WC final panel when a match finished today and nothing else is live/upcoming
+  const wcLastToday  = !wcLive && !hasWcToday && !!(teams.world_cup?.last);
 
   const phillyIdle = PHILLY_KEYS.filter(k =>
     !phillyLive.includes(k) && !phillyToday.includes(k)
@@ -914,9 +960,14 @@ function renderSportsHQ(teams) {
     if (hasWcToday) html += renderWCRow(teams.world_cup);
   }
 
+  if (wcLastToday) {
+    html += `<div class="shq-section-hdr shq-hdr-teams shq-hdr-wc">World Cup</div>`;
+    html += renderWCRow(teams.world_cup);
+  }
+
   const idleRows = phillyIdle.map(k => renderSportsRow(teams[k], k)).filter(Boolean).join("");
   if (idleRows) {
-    const showHdr = hasAnyLive || phillyToday.length > 0 || hasWcToday;
+    const showHdr = hasAnyLive || phillyToday.length > 0 || hasWcToday || wcLastToday;
     html += (showHdr ? `<div class="shq-section-hdr shq-hdr-teams">Philly</div>` : "")
           + `<div class="shq-idle-section">${idleRows}</div>`;
   }

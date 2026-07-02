@@ -564,6 +564,7 @@ def parse_world_cup(payload):
 
             if state == "in":
                 entry["score"] = f"{_score_str(away)}-{_score_str(home)}"
+                entry["status_name"] = comp["status"]["type"].get("name", "")
                 entry["period"] = comp["status"]["type"].get("shortDetail")
                 period_num = comp["status"].get("period") or 0
                 if period_num == 1:
@@ -602,6 +603,22 @@ def parse_world_cup(payload):
                 live_match = entry
             elif state == "post":
                 entry["score"] = f"{_score_str(away)}-{_score_str(home)}"
+                entry["status_name"] = comp["status"]["type"].get("name", "STATUS_FULL_TIME")
+                post_goals = []
+                for detail in (comp.get("details") or []):
+                    dtype = (detail.get("type") or {}).get("text", "").lower()
+                    if dtype in ("goal", "penalty goal", "header goal", "own goal"):
+                        athletes = detail.get("athletesInvolved") or []
+                        athl = athletes[0] if athletes else {}
+                        player = athl.get("shortName") or athl.get("displayName", "")
+                        minute = (detail.get("clock") or {}).get("displayValue", "")
+                        team_id = (detail.get("team") or {}).get("id", "")
+                        side = "home" if team_id == home_id else "away"
+                        abbr = home_abbr if side == "home" else away_abbr
+                        post_goals.append({"player": player, "minute": minute, "side": side,
+                                           "abbr": abbr, "own_goal": detail.get("ownGoal", False),
+                                           "penalty": detail.get("penaltyKick", False)})
+                entry["goals"] = post_goals
                 if last_dt is None or event_dt > last_dt:
                     last_match, last_dt = entry, event_dt
             elif state == "pre":
