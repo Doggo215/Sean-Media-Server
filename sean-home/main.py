@@ -185,12 +185,27 @@ def _fmt_sun(dt_str):
     return datetime.fromisoformat(dt_str).strftime("%-I:%M %p")
 
 
+def _is_full_weather(data: dict | None) -> bool:
+    """True only if data contains every field the weather widget needs."""
+    if not data or not data.get("available"):
+        return False
+    required = ("temperature_f", "high_f", "low_f", "condition", "sunrise", "sunset")
+    if not all(data.get(f) is not None for f in required):
+        return False
+    if not isinstance(data.get("hourly"), list) or len(data["hourly"]) == 0:
+        return False
+    if not isinstance(data.get("daily"), list) or len(data["daily"]) == 0:
+        return False
+    return True
+
+
 @app.get("/api/weather")
 async def weather():
     now = time.time()
 
-    if _weather_cache["data"] and (now - _weather_cache["fetched_at"]) < WEATHER_CACHE_TTL:
-        return {**_weather_cache["data"], "cached": True}
+    cached = _weather_cache["data"]
+    if _is_full_weather(cached) and (now - _weather_cache["fetched_at"]) < WEATHER_CACHE_TTL:
+        return {**cached, "cached": True}
 
     try:
         raw = await fetch_weather()
@@ -290,7 +305,7 @@ async def weather():
         return {**data, "cached": False}
 
     except Exception:
-        if _weather_cache["data"]:
+        if _is_full_weather(_weather_cache["data"]):
             return {**_weather_cache["data"], "cached": True, "stale": True}
         return JSONResponse(
             status_code=200,
@@ -1100,9 +1115,9 @@ async def tonight():
 
     # ── Weather ──────────────────────────────────────────────────────────────
     try:
-        wd = _weather_cache["data"]
+        wd = _weather_cache["data"] if _is_full_weather(_weather_cache["data"]) else None
         if not wd:
-            # Cache is cold on first load — trigger a fresh pull
+            # Cache cold or partial — fetch fresh but only use locally; /api/weather owns the cache
             try:
                 raw = await fetch_weather()
                 code = raw["current"]["weather_code"]
@@ -1116,8 +1131,7 @@ async def tonight():
                     "icon": icon,
                     "location": "Arvada, CO",
                 }
-                _weather_cache["data"] = wd
-                _weather_cache["fetched_at"] = time.time()
+                # Do NOT write to _weather_cache — /api/weather builds the full payload
             except Exception:
                 wd = None
 
