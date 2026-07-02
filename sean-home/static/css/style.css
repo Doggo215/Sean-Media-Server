@@ -1480,99 +1480,119 @@ body {
   font-size: 2.5rem;
 }
 
-/* ── Phillies MLB live detail panel ───────────────────────────── */
+/* ── Phillies MLB live detail panel — wide layout ─────────────── */
 .mlb-live-panel {
   display: flex;
   flex-direction: column;
-  padding: 14px 18px 16px;
-  gap: 10px;
+  padding: 12px 16px 14px;
+  gap: 9px;
   border-left: 3px solid var(--c-phillies);
-  background: rgba(232, 24, 40, 0.05);
+  background: rgba(232, 24, 40, 0.06);
 }
-/* Override sb-row-hero sizing — panel controls its own layout */
-.mlb-live-panel.sb-row-hero { padding: 14px 18px 16px; }
-.mlb-live-panel.sb-row-hero .sb-logo { width: 64px; height: 64px; }
+.mlb-live-panel.sb-row-hero { padding: 12px 16px 14px; }
 
-.mlb-header {
+/* Topbar */
+.mlb-topbar {
   display: flex;
   align-items: center;
-  gap: 14px;
+  justify-content: space-between;
 }
-.mlb-title-wrap {
+.mlb-topbar-left {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  align-items: center;
+  gap: 12px;
 }
 .mlb-title-team {
-  font-size: 2.6rem;
+  font-size: 2.0rem;
   font-weight: 800;
   color: var(--text);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
 }
 .mlb-live-badge {
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   font-weight: 700;
   color: #ff6070;
   display: flex;
   align-items: center;
-  gap: 8px;
-  letter-spacing: 0.08em;
+  gap: 7px;
+  letter-spacing: 0.1em;
+}
+.mlb-topbar-record {
+  font-size: 1.35rem;
+  color: var(--text-3);
+  font-weight: 600;
+  letter-spacing: 0.04em;
 }
 
-.mlb-scoreboard {
+/* Wide scoreboard row: PHI [left] | state [center] | OPP [right] */
+.mlb-scoreboard-wide {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mlb-team-side {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.mlb-team-side .sb-logo,
+.mlb-live-panel .sb-logo {
+  width: 70px;
+  height: 70px;
+  flex-shrink: 0;
+}
+.mlb-team-mine { flex-direction: row; }
+.mlb-team-opp  { flex-direction: row-reverse; }
+.mlb-team-info {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding-left: 4px;
+  align-items: flex-start;
+  line-height: 1;
+  gap: 2px;
 }
-.mlb-sb-row {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
-}
-.mlb-sb-label {
+.mlb-team-info-right { align-items: flex-end; }
+.mlb-team-abbr {
   font-size: 1.9rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   color: var(--text-2);
-  min-width: 52px;
 }
-.mlb-sb-score {
-  font-size: 3.6rem;
+.mlb-team-score {
+  font-size: 5.6rem;
   font-weight: 100;
   color: var(--text-2);
-  line-height: 1;
+  line-height: 0.9;
 }
-.mlb-sb-mine {
-  font-size: 4.4rem;
-  font-weight: 300;
+.mlb-score-mine {
+  font-size: 6.8rem;
+  font-weight: 200;
   color: var(--text);
 }
-
-.mlb-game-state {
-  font-size: 1.55rem;
+.mlb-center-state {
+  flex: 0 0 auto;
+  font-size: 1.45rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.68);
+  color: rgba(255, 255, 255, 0.62);
+  text-align: center;
+  white-space: nowrap;
+  padding: 0 6px;
 }
 
-/* Diamond */
-.mlb-mid {
+/* Detail grid: diamond (left) | batter/pitcher (right) */
+.mlb-detail-grid {
   display: flex;
   align-items: center;
-  gap: 22px;
+  gap: 18px;
 }
-.mlb-diamond {
-  position: relative;
-  width: 92px;
-  height: 92px;
-  flex-shrink: 0;
-}
+.mlb-diamond-wrap { flex-shrink: 0; }
+
+/* Base diamond — global styles (used in large diamond) */
 .base {
   position: absolute;
-  width: 24px;
-  height: 24px;
   transform: rotate(45deg);
   background: rgba(255, 255, 255, 0.10);
   border: 1.5px solid rgba(255, 255, 255, 0.22);
@@ -1580,18 +1600,31 @@ body {
 .base-on {
   background: #f5c518;
   border-color: #f5c518;
-  box-shadow: 0 0 10px rgba(245, 197, 24, 0.55);
 }
-.base-2b   { top: 2px;    left: 50%; margin-left: -12px; }
-.base-1b   { top: 50%;   right: 2px; margin-top:  -12px; }
-.base-3b   { top: 50%;    left: 2px; margin-top:  -12px; }
-.base-home { bottom: 2px; left: 50%; margin-left: -12px; }
 
-/* Batter / pitcher */
-.mlb-players {
+/* Large diamond container + scoped base sizes */
+.mlb-diamond-large {
+  position: relative;
+  width: 130px;
+  height: 130px;
+}
+.mlb-diamond-large .base {
+  width: 30px;
+  height: 30px;
+}
+.mlb-diamond-large .base-on {
+  box-shadow: 0 0 14px rgba(245, 197, 24, 0.7);
+}
+.mlb-diamond-large .base-2b   { top: 2px;    left: 50%; margin-left: -15px; }
+.mlb-diamond-large .base-1b   { top: 50%;   right: 2px; margin-top:  -15px; }
+.mlb-diamond-large .base-3b   { top: 50%;    left: 2px; margin-top:  -15px; }
+.mlb-diamond-large .base-home { bottom: 2px; left: 50%; margin-left: -15px; }
+
+/* Batter / pitcher info block */
+.mlb-info-block {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
   flex: 1;
   min-width: 0;
 }
@@ -1599,39 +1632,39 @@ body {
   display: flex;
   align-items: baseline;
   gap: 10px;
-  font-size: 1.65rem;
   overflow: hidden;
 }
 .mlb-role {
-  font-size: 1.25rem;
+  font-size: 1.3rem;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-3);
-  min-width: 62px;
+  min-width: 60px;
   flex-shrink: 0;
 }
 .mlb-name {
+  font-size: 1.75rem;
   color: var(--text);
   font-weight: 600;
   white-space: nowrap;
 }
 .mlb-line {
+  font-size: 1.4rem;
   color: var(--text-2);
-  font-size: 1.35rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .mlb-last-play {
-  font-size: 1.45rem;
+  font-size: 1.42rem;
   color: var(--text-2);
   font-style: italic;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding-top: 2px;
+  padding-top: 4px;
   border-top: 1px solid rgba(255, 255, 255, 0.07);
 }
 

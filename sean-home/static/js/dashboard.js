@@ -605,36 +605,58 @@ function renderPhilliesLiveDetail(team) {
   const lastPlayHtml = d.last_play
     ? `<div class="mlb-last-play">Last: ${d.last_play}</div>` : "";
 
-  const oppAbbr = (g.opponent_abbr || "").toUpperCase();
+  const oppAbbr    = (g.opponent_abbr || "").toUpperCase();
+  const oppLogoHtml = oppLogo(g.opponent_abbr, "mlb");
 
   return `
     <div class="sb-row sb-row-live sb-row-hero mlb-live-panel" data-team="phillies">
-      <div class="mlb-header">
-        ${teamLogo("phillies")}
-        <div class="mlb-title-wrap">
-          <div class="mlb-title-team">PHILLIES ${record}</div>
-          <div class="mlb-live-badge"><span class="sb-live-dot"></span>LIVE · ${period}</div>
+
+      <!-- Topbar: team name · LIVE badge · record -->
+      <div class="mlb-topbar">
+        <div class="mlb-topbar-left">
+          <span class="mlb-title-team">PHILLIES</span>
+          <span class="mlb-live-badge"><span class="sb-live-dot"></span>LIVE</span>
+        </div>
+        ${team.record ? `<span class="mlb-topbar-record">${team.record}</span>` : ""}
+      </div>
+
+      <!-- Scoreboard: PHI [left] | game state [center] | OPP [right] -->
+      <div class="mlb-scoreboard-wide">
+        <div class="mlb-team-side mlb-team-mine">
+          ${teamLogo("phillies")}
+          <div class="mlb-team-info">
+            <span class="mlb-team-abbr">PHI</span>
+            <span class="mlb-team-score mlb-score-mine">${myScore}</span>
+          </div>
+        </div>
+        <div class="mlb-center-state">${gameState}</div>
+        <div class="mlb-team-side mlb-team-opp">
+          <div class="mlb-team-info mlb-team-info-right">
+            <span class="mlb-team-score">${oppScore}</span>
+            <span class="mlb-team-abbr">${oppAbbr || g.opponent || "OPP"}</span>
+          </div>
+          ${oppLogoHtml}
         </div>
       </div>
-      <div class="mlb-scoreboard">
-        <div class="mlb-sb-row">
-          <span class="mlb-sb-label">PHI</span>
-          <span class="mlb-sb-score mlb-sb-mine">${myScore}</span>
+
+      <!-- Diamond (left) | batter/pitcher (right) -->
+      <div class="mlb-detail-grid">
+        <div class="mlb-diamond-wrap">
+          <div class="mlb-diamond-large">
+            <div class="base base-2b ${b2}"></div>
+            <div class="base base-1b ${b1}"></div>
+            <div class="base base-3b ${b3}"></div>
+            <div class="base base-home"></div>
+          </div>
         </div>
-        <div class="mlb-sb-row">
-          <span class="mlb-sb-label">${oppAbbr || g.opponent || "OPP"}</span>
-          <span class="mlb-sb-score">${oppScore}</span>
-        </div>
-      </div>
-      <div class="mlb-game-state">${gameState}</div>
-      <div class="mlb-mid">
-        ${diamond}
-        <div class="mlb-players">
+        <div class="mlb-info-block">
           ${batterHtml}
           ${pitcherHtml}
         </div>
       </div>
+
       ${lastPlayHtml}
+
     </div>`;
 }
 
