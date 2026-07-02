@@ -271,7 +271,7 @@ body {
   overflow: hidden;
 }
 .ls-team-side.ls-home { flex-direction: row-reverse; }
-.ls-flag { font-size: 2.4rem; line-height: 1; flex-shrink: 0; }
+.ls-flag { font-size: 2.4rem; line-height: 1; flex-shrink: 0; display: inline-flex; align-items: center; }
 .ls-team-name {
   font-size: 2.2rem;
   font-weight: 700;
@@ -1212,6 +1212,16 @@ body {
   font-size: 2.6rem;
   line-height: 1;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+.wc-svg-flag {
+  display: inline-block;
+  width: 2.2em;
+  height: 1.5em;
+  vertical-align: middle;
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 .wc-name {
   font-size: 1.85rem;
@@ -1276,7 +1286,7 @@ body {
   font-size: 1.4rem;
   color: var(--text-2);
 }
-.wc-more-flag { font-size: 1.5rem; line-height: 1; flex-shrink: 0; }
+.wc-more-flag { font-size: 1.5rem; line-height: 1; flex-shrink: 0; display: inline-flex; align-items: center; }
 .wc-more-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wc-more-time { font-size: 1.3rem; color: var(--text-3); flex-shrink: 0; }
 .wc-more-live { font-size: 1.1rem; font-weight: 700; color: var(--red); flex-shrink: 0; letter-spacing: 0.06em; }
@@ -1297,7 +1307,7 @@ body {
   color: var(--text-2);
   line-height: 1.2;
 }
-.td-wc-flag { font-size: 1.7rem; line-height: 1; flex-shrink: 0; }
+.td-wc-flag { font-size: 1.7rem; line-height: 1; flex-shrink: 0; display: inline-flex; align-items: center; }
 .td-wc-teams { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .td-wc-time { font-size: 1.5rem; color: var(--blue); flex-shrink: 0; font-weight: 200; }
 .td-wc-live { font-size: 1.2rem; color: var(--red); font-weight: 700; flex-shrink: 0; letter-spacing: 0.06em; }

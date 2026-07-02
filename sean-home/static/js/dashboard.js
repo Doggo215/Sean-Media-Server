@@ -206,14 +206,14 @@ async function pollLiveStrip() {
         <div class="ls-badge"><span class="ls-live-dot"></span>LIVE</div>
         <div class="ls-wc-matchup">
           <div class="ls-team-side">
-            <span class="ls-flag">${getFlag(m.away)}</span>
+            <span class="ls-flag">${renderFlagByName(m.away)}</span>
             <span class="ls-team-name">${m.away}</span>
           </div>
           <div class="ls-score">${score}</div>
           <div class="ls-period">${period}</div>
           <div class="ls-team-side ls-home">
             <span class="ls-team-name">${m.home}</span>
-            <span class="ls-flag">${getFlag(m.home)}</span>
+            <span class="ls-flag">${renderFlagByName(m.home)}</span>
           </div>
         </div>
         <div class="ls-sport-label">World Cup</div>`;
@@ -270,9 +270,9 @@ async function pollToday() {
             ? `<span class="td-wc-live">LIVE</span>`
             : `<span class="td-wc-time">${wg.time}</span>`;
           return `<div class="td-wc-game">
-            <span class="td-wc-flag">${getFlag(m.away)}</span>
+            <span class="td-wc-flag">${renderFlag(wg.away_abbr)}</span>
             <span class="td-wc-teams">${m.away} vs ${m.home}</span>
-            <span class="td-wc-flag">${getFlag(m.home)}</span>
+            <span class="td-wc-flag">${renderFlag(wg.home_abbr)}</span>
             ${stateTag}
           </div>`;
         }).join("");
@@ -291,7 +291,7 @@ async function pollToday() {
       let opp = "";
       if (isWC) {
         const m = parseMatchup(g.opponent);
-        opp = `${getFlag(m.away)} ${m.away} vs ${m.home} ${getFlag(m.home)}`;
+        opp = `${renderFlagByName(m.away)} ${m.away} vs ${m.home} ${renderFlagByName(m.home)}`;
       } else if (g.opponent) {
         opp = `vs ${g.opponent}`;
       }
@@ -391,29 +391,33 @@ async function pollToday() {
 const SPORTS_ORDER = ["phillies", "eagles", "sixers", "flyers", "world_cup"];
 
 /* Country flag emoji lookup for World Cup matchups */
-const COUNTRY_FLAGS = {
-  "algeria":"🇩🇿","argentina":"🇦🇷","australia":"🇦🇺","austria":"🇦🇹","belgium":"🇧🇪",
-  "bolivia":"🇧🇴","brazil":"🇧🇷","cameroon":"🇨🇲","canada":"🇨🇦",
-  "chile":"🇨🇱","china":"🇨🇳","colombia":"🇨🇴","costa rica":"🇨🇷",
-  "croatia":"🇭🇷","cuba":"🇨🇺","denmark":"🇩🇰","ecuador":"🇪🇨",
-  "egypt":"🇪🇬","el salvador":"🇸🇻","england":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","fiji":"🇫🇯",
-  "france":"🇫🇷","germany":"🇩🇪","ghana":"🇬🇭","guatemala":"🇬🇹",
-  "haiti":"🇭🇹","honduras":"🇭🇳","hungary":"🇭🇺","indonesia":"🇮🇩",
-  "iran":"🇮🇷","ireland":"🇮🇪","ivory coast":"🇨🇮","côte d'ivoire":"🇨🇮",
-  "jamaica":"🇯🇲","japan":"🇯🇵","kenya":"🇰🇪","korea republic":"🇰🇷",
-  "mexico":"🇲🇽","morocco":"🇲🇦","netherlands":"🇳🇱","new zealand":"🇳🇿",
-  "nigeria":"🇳🇬","norway":"🇳🇴","panama":"🇵🇦","paraguay":"🇵🇾",
-  "peru":"🇵🇪","poland":"🇵🇱","portugal":"🇵🇹","qatar":"🇶🇦",
-  "romania":"🇷🇴","saudi arabia":"🇸🇦","scotland":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","senegal":"🇸🇳",
-  "serbia":"🇷🇸","slovakia":"🇸🇰","south africa":"🇿🇦","south korea":"🇰🇷",
-  "spain":"🇪🇸","sweden":"🇸🇪","switzerland":"🇨🇭","trinidad and tobago":"🇹🇹",
-  "turkey":"🇹🇷","ukraine":"🇺🇦","united states":"🇺🇸","usa":"🇺🇸",
-  "uruguay":"🇺🇾","venezuela":"🇻🇪","wales":"🏴󠁧󠁢󠁷󠁬󠁳󠁿",
+/* Inline SVG flags — no emoji, no external assets, works on Pi Chromium */
+const WC_FLAGS = {
+  AUT: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20" class="wc-svg-flag"><rect width="30" height="20" fill="#ED2939"/><rect y="6.67" width="30" height="6.66" fill="#fff"/></svg>`,
+  ESP: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20" class="wc-svg-flag"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></svg>`,
+  CRO: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20" class="wc-svg-flag"><rect width="30" height="6.67" fill="#FF0000"/><rect y="6.67" width="30" height="6.66" fill="#fff"/><rect y="13.33" width="30" height="6.67" fill="#0093DD"/><g transform="translate(11,3.5)"><rect width="1.14" height="1.14" fill="#FF0000"/><rect x="2.29" width="1.14" height="1.14" fill="#FF0000"/><rect x="4.57" width="1.14" height="1.14" fill="#FF0000"/><rect x="1.14" y="1.14" width="1.14" height="1.14" fill="#FF0000"/><rect x="3.43" y="1.14" width="1.14" height="1.14" fill="#FF0000"/><rect y="1.14" width="1.14" height="1.14" fill="#fff"/><rect x="2.29" y="1.14" width="1.14" height="1.14" fill="#fff"/><rect x="4.57" y="1.14" width="1.14" height="1.14" fill="#fff"/><rect x="1.14" y="2.29" width="1.14" height="1.14" fill="#fff"/><rect x="3.43" y="2.29" width="1.14" height="1.14" fill="#fff"/><rect y="2.29" width="1.14" height="1.14" fill="#FF0000"/><rect x="2.29" y="2.29" width="1.14" height="1.14" fill="#FF0000"/><rect x="4.57" y="2.29" width="1.14" height="1.14" fill="#FF0000"/></g></svg>`,
+  POR: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20" class="wc-svg-flag"><rect width="30" height="20" fill="#FF0000"/><rect width="12" height="20" fill="#006600"/><circle cx="12" cy="10" r="3.5" fill="none" stroke="#FFD700" stroke-width="1"/><rect x="10.25" y="8.5" width="3.5" height="3" fill="#FFD700" opacity="0.7"/></svg>`,
+  ALG: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20" class="wc-svg-flag"><rect width="30" height="20" fill="#fff"/><rect width="15" height="20" fill="#006233"/><circle cx="16" cy="10" r="3.8" fill="#D21034"/><circle cx="17.2" cy="10" r="3.8" fill="#fff"/><polygon points="18,6.5 18.9,9.2 21.7,9.2 19.4,10.9 20.3,13.6 18,11.9 15.7,13.6 16.6,10.9 14.3,9.2 17.1,9.2" fill="#D21034" transform="translate(-1.5,0) scale(0.6) translate(2.5,0)"/></svg>`,
+  SUI: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20" class="wc-svg-flag"><rect width="30" height="20" fill="#FF0000"/><rect x="13" y="5" width="4" height="10" fill="#fff"/><rect x="8" y="8" width="14" height="4" fill="#fff"/></svg>`,
 };
 
-function getFlag(name) {
-  if (!name) return "🌍";
-  return COUNTRY_FLAGS[(name || "").toLowerCase()] || "🌍";
+/* Name → abbr for the live strip where we only have the full country name */
+const WC_NAME_TO_ABBR = {
+  austria:"AUT", spain:"ESP", croatia:"CRO", portugal:"POR",
+  algeria:"ALG", switzerland:"SUI",
+};
+
+function renderFlag(abbr) {
+  if (!abbr) return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20" class="wc-svg-flag"><rect width="30" height="20" fill="#333"/></svg>`;
+  const svg = WC_FLAGS[abbr.toUpperCase()];
+  if (svg) return svg;
+  /* Fallback: dark rectangle with 3-letter code */
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20" class="wc-svg-flag"><rect width="30" height="20" fill="#333"/><text x="15" y="14" font-size="7" fill="#fff" text-anchor="middle" font-family="monospace">${abbr.toUpperCase()}</text></svg>`;
+}
+
+function renderFlagByName(name) {
+  const abbr = WC_NAME_TO_ABBR[(name || "").toLowerCase()];
+  return renderFlag(abbr || name);
 }
 
 /* "Ecuador @ Mexico" → { away: "Ecuador", home: "Mexico" } */
@@ -449,7 +453,7 @@ function renderWCRow(team) {
       <div class="sb-row sb-row-wc sb-row-wc-live" data-team="world_cup">
         <div class="wc-matchup-line">
           <div class="wc-team-away">
-            <span class="wc-flag">${getFlag(m.away)}</span>
+            <span class="wc-flag">${renderFlag(g.away_abbr)}</span>
             <span class="wc-name">${m.away}</span>
           </div>
           <div class="wc-score-center">
@@ -457,7 +461,7 @@ function renderWCRow(team) {
           </div>
           <div class="wc-team-home">
             <span class="wc-name">${m.home}</span>
-            <span class="wc-flag">${getFlag(m.home)}</span>
+            <span class="wc-flag">${renderFlag(g.home_abbr)}</span>
           </div>
         </div>
         ${goalHtml}
@@ -481,9 +485,9 @@ function renderWCRow(team) {
             ? `<span class="wc-more-live">LIVE</span>`
             : `<span class="wc-more-time">${tg.time}</span>`;
           return `<div class="wc-more-row">
-            <span class="wc-more-flag">${getFlag(tm.away)}</span>
+            <span class="wc-more-flag">${renderFlag(tg.away_abbr)}</span>
             <span class="wc-more-name">${tm.away} vs ${tm.home}</span>
-            <span class="wc-more-flag">${getFlag(tm.home)}</span>
+            <span class="wc-more-flag">${renderFlag(tg.home_abbr)}</span>
             ${stateTag}
           </div>`;
         }).join("")}
@@ -493,7 +497,7 @@ function renderWCRow(team) {
       <div class="sb-row sb-row-wc sb-row-wc-next" data-team="world_cup">
         <div class="wc-matchup-line">
           <div class="wc-team-away">
-            <span class="wc-flag">${getFlag(m.away)}</span>
+            <span class="wc-flag">${renderFlag(g.away_abbr)}</span>
             <span class="wc-name">${m.away}</span>
           </div>
           <div class="wc-score-center">
@@ -501,7 +505,7 @@ function renderWCRow(team) {
           </div>
           <div class="wc-team-home">
             <span class="wc-name">${m.home}</span>
-            <span class="wc-flag">${getFlag(m.home)}</span>
+            <span class="wc-flag">${renderFlag(g.home_abbr)}</span>
           </div>
         </div>
         <div class="wc-status-line wc-status-next">⚽ World Cup${round ? " · " : ""}${round}</div>
@@ -517,7 +521,7 @@ function renderWCRow(team) {
       <div class="sb-row sb-row-wc sb-row-wc-last" data-team="world_cup">
         <div class="wc-matchup-line">
           <div class="wc-team-away">
-            <span class="wc-flag">${getFlag(m.away)}</span>
+            <span class="wc-flag">${renderFlag(g.away_abbr)}</span>
             <span class="wc-name">${m.away}</span>
           </div>
           <div class="wc-score-center">
@@ -525,7 +529,7 @@ function renderWCRow(team) {
           </div>
           <div class="wc-team-home">
             <span class="wc-name">${m.home}</span>
-            <span class="wc-flag">${getFlag(m.home)}</span>
+            <span class="wc-flag">${renderFlag(g.home_abbr)}</span>
           </div>
         </div>
         <div class="wc-status-line wc-status-final">Final${round}</div>
