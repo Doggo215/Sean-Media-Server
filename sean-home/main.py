@@ -6,6 +6,7 @@ Phase 1B: weather (Open-Meteo, no auth, cached).
 """
 
 import asyncio
+import os
 import time
 import shutil
 import subprocess
@@ -80,6 +81,19 @@ EPIC_STATUS_URL = "https://status.epicgames.com/api/v2/summary.json"
 
 GAMING_CACHE_TTL = 1800  # 30 min — shop/news/status don't change minute to minute
 _gaming_cache = {"data": None, "fetched_at": 0}
+
+# ── Home Assistant / PSN config (all optional) ───────────────────────────────
+# Set these in .env to enable live PS5 status from Home Assistant.
+# Leave unset to keep the safe placeholder response.
+HA_URL   = os.environ.get("HOME_ASSISTANT_URL", "").rstrip("/")
+HA_TOKEN = os.environ.get("HOME_ASSISTANT_TOKEN", "")
+HA_PS5_STATUS_ENTITY       = os.environ.get("HA_PS5_STATUS_ENTITY", "")
+HA_PS5_ACTIVITY_ENTITY     = os.environ.get("HA_PS5_ACTIVITY_ENTITY", "")
+HA_PS5_CURRENT_GAME_ENTITY = os.environ.get("HA_PS5_CURRENT_GAME_ENTITY", "")
+HA_PS5_FRIENDS_ENTITY      = os.environ.get("HA_PS5_FRIENDS_ENTITY", "")
+
+GAMING_HA_CACHE_TTL = 30   # seconds — PS5 status can change quickly
+_gaming_ha_cache: dict = {"data": None, "fetched_at": 0}
 
 app = FastAPI(title="Sean Home", version="1.0.0")
 app.mount("/static", StaticFiles(directory="/home/sean/sean-home/static"), name="static")
@@ -314,8 +328,6 @@ async def weather():
 
 
 # ─── Media Server Status ─────────────────────────────────────────────────────
-
-import os
 
 MEDIA_SERVER_SERVICES = {
     "jellyfin": "Jellyfin",
@@ -909,23 +921,152 @@ def parse_epic_status(payload):
     return (payload.get("status") or {}).get("description")
 
 
-@app.get("/api/gaming")
-async def gaming():
-    # Stable placeholder shape — Home Assistant / PSN will populate this later.
-    # The cache and Fortnite fetch infrastructure above remains for future use.
+_HA_UNAVAILABLE = {"unavailable", "unknown", "none", ""}
+
+
+async def fetch_ha_state(client: httpx.AsyncClient, entity_id: str) -> dict | None:
+    """Fetch a single Home Assistant entity state. Returns None on any failure."""
+    if not entity_id:
+        return None
+    try:
+        resp = await client.get(
+            f"{HA_URL}/api/states/{entity_id}",
+            headers={"Authorization": f"Bearer {HA_TOKEN}"},
+        )
+        if resp.status_code == 200:
+            return resp.json()
+    except Exception:
+        pass
+    return None
+
+
+async def build_gaming_from_ha() -> dict:
+    """
+    Fetch PS5 state from Home Assistant and map to /api/gaming contract.
+
+    Entity IDs are configured via env vars:
+      HA_PS5_STATUS_ENTITY       — main power/online state (e.g. media_player.ps5)
+      HA_PS5_ACTIVITY_ENTITY     — optional activity state
+      HA_PS5_CURRENT_GAME_ENTITY — optional current game/app entity
+      HA_PS5_FRIENDS_ENTITY      — optional friends online entity
+
+    The exact entity IDs depend on which HA integration you use:
+      - PlayStation Network integration: media_player.ps5 (state = idle/playing/off)
+      - HACS PSN integration may expose separate game/friends sensors
+    """
+    async with httpx.AsyncClient(timeout=3.0) as client:
+        status_data  = await fetch_ha_state(client, HA_PS5_STATUS_ENTITY)
+        game_data    = await fetch_ha_state(client, HA_PS5_CURRENT_GAME_ENTITY)
+        friends_data = await fetch_ha_state(client, HA_PS5_FRIENDS_ENTITY)
+
+    # If the primary status entity returned nothing, treat as not connected
+    if not status_data:
+        return {
+            "connected": False,
+            "platform": "PS5",
+            "status": "Not connected",
+            "status_detail": "PS5 entity unavailable",
+            "current_game": None,
+            "last_game": None,
+            "friends_online": [],
+            "friends_count": 0,
+            "source": "error",
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "error": "Home Assistant entity not found or unavailable",
+        }
+
+    raw_state = str(status_data.get("state") or "").lower()
+    attrs = status_data.get("attributes") or {}
+
+    # Determine connected — any state other than off/unavailable/unknown
+    connected = raw_state not in _HA_UNAVAILABLE and raw_state != "off"
+
+    # Status label
+    if not connected:
+        status = "PS5 Offline"
+        status_detail = ""
+    elif raw_state == "idle":
+        status = "PS5 Online"
+        status_detail = "Idle"
+    elif raw_state in ("playing", "on"):
+        status = "PS5 Online"
+        status_detail = "Active"
+    else:
+        status = "PS5 Online"
+        status_detail = raw_state.capitalize()
+
+    # Current game — prefer dedicated entity, fall back to media_title attribute
+    current_game = None
+    if game_data:
+        game_state = str(game_data.get("state") or "")
+        if game_state.lower() not in _HA_UNAVAILABLE:
+            current_game = game_state
+    if not current_game:
+        media_title = attrs.get("media_title") or attrs.get("app_name") or attrs.get("source")
+        if media_title and str(media_title).lower() not in _HA_UNAVAILABLE:
+            current_game = str(media_title)
+
+    # Friends online — expect a list or comma-separated string from the entity
+    friends_online: list[str] = []
+    if friends_data:
+        f_state = friends_data.get("state") or ""
+        f_attrs = friends_data.get("attributes") or {}
+        friends_list = f_attrs.get("friends") or f_attrs.get("online_friends")
+        if isinstance(friends_list, list):
+            friends_online = [str(f) for f in friends_list if f]
+        elif f_state and f_state.lower() not in _HA_UNAVAILABLE:
+            # Some integrations return a comma-separated string as state
+            friends_online = [s.strip() for s in f_state.split(",") if s.strip()]
+
     return {
-        "connected": False,
+        "connected": connected,
         "platform": "PS5",
-        "status": "Not connected",
-        "status_detail": "Connect Home Assistant / PSN to enable",
-        "current_game": None,
+        "status": status,
+        "status_detail": status_detail,
+        "current_game": current_game if connected else None,
         "last_game": None,
-        "friends_online": [],
-        "friends_count": 0,
-        "source": "placeholder",
-        "updated_at": None,
+        "friends_online": friends_online,
+        "friends_count": len(friends_online),
+        "source": "home_assistant",
+        "updated_at": datetime.now(timezone.utc).isoformat(),
         "error": None,
     }
+
+
+_GAMING_PLACEHOLDER = {
+    "connected": False,
+    "platform": "PS5",
+    "status": "Not connected",
+    "status_detail": "Connect Home Assistant / PSN to enable",
+    "current_game": None,
+    "last_game": None,
+    "friends_online": [],
+    "friends_count": 0,
+    "source": "placeholder",
+    "updated_at": None,
+    "error": None,
+}
+
+
+@app.get("/api/gaming")
+async def gaming():
+    # If HA is not configured, return safe placeholder immediately
+    if not HA_URL or not HA_TOKEN:
+        return _GAMING_PLACEHOLDER
+
+    # Short-lived cache so PS5 state feels responsive
+    now = time.time()
+    if _gaming_ha_cache["data"] and (now - _gaming_ha_cache["fetched_at"]) < GAMING_HA_CACHE_TTL:
+        return _gaming_ha_cache["data"]
+
+    try:
+        result = await build_gaming_from_ha()
+    except Exception as exc:
+        result = {**_GAMING_PLACEHOLDER, "source": "error", "error": "Home Assistant fetch failed"}
+
+    _gaming_ha_cache["data"] = result
+    _gaming_ha_cache["fetched_at"] = now
+    return result
 
 
 # ─── Major News (RSS) ────────────────────────────────────────────────────────
