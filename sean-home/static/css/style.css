@@ -2127,6 +2127,24 @@ body {
   color: var(--text-2);
 }
 
+.gaming-source {
+  font-size: 1.1rem;
+  color: var(--text-3);
+  opacity: 0.55;
+  margin-top: 2px;
+}
+
+.gaming-friend-row {
+  font-size: 1.3rem;
+  color: var(--text-2);
+}
+
+.gaming-current-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-1);
+}
+
 @media (max-width:1100px) {
   :root { --h-pad:28px; }
   .tv-clock { font-size:4.5rem; }

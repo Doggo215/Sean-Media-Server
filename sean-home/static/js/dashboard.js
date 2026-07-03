@@ -1306,7 +1306,74 @@ async function pollSports() {
   setTimeout(pollSports, nextDelay);
 }
 
-/* Gaming is now rendered inside pollToday() via the tonight API */
+/* ── Gaming HQ ───────────────────────────────────────────────── */
+
+function gamingSafeText(value, fallback) {
+  if (value === null || value === undefined || value === "") return fallback;
+  return String(value).replace(/[<>&"']/g, c => ({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+function renderGaming(data) {
+  const body = document.getElementById("gaming-body");
+  if (!body) return;
+
+  const connected = data && data.connected;
+  const platform  = gamingSafeText(data && data.platform, "PS5");
+  const status    = gamingSafeText(data && data.status, "Not connected");
+  const detail    = gamingSafeText(data && data.status_detail, "Connect Home Assistant / PSN to enable");
+  const game      = data && data.current_game ? gamingSafeText(data.current_game, null) : null;
+  const friends   = Array.isArray(data && data.friends_online) ? data.friends_online : [];
+  const fcount    = (data && data.friends_count) || friends.length;
+
+  const statusCls = connected ? "gaming-status online" : "gaming-status offline";
+
+  let friendsHtml;
+  if (!connected) {
+    friendsHtml = `<div class="gaming-empty">Connect PSN to show friends</div>`;
+  } else if (friends.length === 0) {
+    friendsHtml = `<div class="gaming-empty">No friends online</div>`;
+  } else {
+    friendsHtml = friends.map(f =>
+      `<div class="gaming-friend-row">${gamingSafeText(f, "")}</div>`
+    ).join("");
+  }
+
+  let gameHtml;
+  if (!connected) {
+    gameHtml = `<div class="gaming-empty">Waiting for PS5 data</div>`;
+  } else if (!game) {
+    gameHtml = `<div class="gaming-empty">No game running</div>`;
+  } else {
+    gameHtml = `<div class="gaming-current-title">${game}</div>`;
+  }
+
+  body.innerHTML = `
+    <div class="gaming-console">${platform}</div>
+    <div class="${statusCls}">${status}</div>
+    ${detail && !connected ? `<div class="gaming-source">${detail}</div>` : ""}
+    <div class="gaming-section">
+      <div class="gaming-label">Friends Online${fcount > 0 ? ` · ${fcount}` : ""}</div>
+      ${friendsHtml}
+    </div>
+    <div class="gaming-section">
+      <div class="gaming-label">Current Game</div>
+      ${gameHtml}
+    </div>
+  `;
+}
+
+async function pollGaming() {
+  try {
+    const r = await fetch("/api/gaming");
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    renderGaming(data);
+  } catch (e) {
+    console.warn("Sean Home: gaming unavailable", e);
+    renderGaming(null);
+  }
+  setTimeout(pollGaming, 60_000);
+}
 
 /* ── Entertainment — poster artwork ──────────────────────────── */
 function jfThumbFail(img) {
@@ -1454,3 +1521,4 @@ pollSports();
 pollMajorNews();
 setInterval(pollMajorNews, 600000);
 pollMediaServer();
+pollGaming();

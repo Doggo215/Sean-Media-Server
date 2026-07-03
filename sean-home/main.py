@@ -911,53 +911,21 @@ def parse_epic_status(payload):
 
 @app.get("/api/gaming")
 async def gaming():
-    now = time.time()
-
-    if _gaming_cache["data"] and (now - _gaming_cache["fetched_at"]) < GAMING_CACHE_TTL:
-        return {**_gaming_cache["data"], "cached": True}
-
-    fortnite = {"available": False, "news": [], "shop": [], "status": None}
-    got_any = False
-
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        try:
-            fortnite["news"] = parse_fortnite_news(await fetch_fortnite_news(client))
-            got_any = True
-        except Exception:
-            pass
-
-        try:
-            fortnite["shop"] = parse_fortnite_shop(await fetch_fortnite_shop(client))
-            got_any = True
-        except Exception:
-            pass
-
-        try:
-            fortnite["status"] = parse_epic_status(await fetch_epic_status(client))
-            got_any = True
-        except Exception:
-            pass
-
-    fortnite["available"] = got_any
-
-    # PSN has no supported public API for friends/presence — these stay
-    # permanent placeholders until an official integration exists.
-    result = {
-        "available": True,
-        "fortnite": fortnite,
-        "playstation": {
-            "available": False,
-            "placeholder": "PlayStation status — coming soon (requires an official API)",
-        },
-        "friends_online": {
-            "available": False,
-            "placeholder": "Friends online — coming soon",
-        },
+    # Stable placeholder shape — Home Assistant / PSN will populate this later.
+    # The cache and Fortnite fetch infrastructure above remains for future use.
+    return {
+        "connected": False,
+        "platform": "PS5",
+        "status": "Not connected",
+        "status_detail": "Connect Home Assistant / PSN to enable",
+        "current_game": None,
+        "last_game": None,
+        "friends_online": [],
+        "friends_count": 0,
+        "source": "placeholder",
+        "updated_at": None,
+        "error": None,
     }
-
-    _gaming_cache["data"] = result
-    _gaming_cache["fetched_at"] = now
-    return {**result, "cached": False}
 
 
 # ─── Major News (RSS) ────────────────────────────────────────────────────────
