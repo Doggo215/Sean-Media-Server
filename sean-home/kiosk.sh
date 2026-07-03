@@ -51,6 +51,10 @@ rm -f "$PROFILE_DIR/Default/Last Tabs" 2>/dev/null || true
 find "$PROFILE_DIR/Default/Sessions" -type f -delete 2>/dev/null || true
 find "$PROFILE_DIR/Crash Reports" -type f -delete 2>/dev/null || true
 
+# Clear disk cache so version-bumped JS/CSS is always fetched fresh
+rm -rf "$PROFILE_DIR/Default/Cache" 2>/dev/null || true
+rm -rf "$PROFILE_DIR/Default/Code Cache" 2>/dev/null || true
+
 # Seed Preferences to disable session restore if not already present
 PREFS="$PROFILE_DIR/Default/Preferences"
 if [[ ! -f "$PREFS" ]]; then
@@ -82,6 +86,9 @@ while true; do
         --autoplay-policy=no-user-gesture-required \
         --password-store=basic \
         --ozone-platform=wayland \
+        --disk-cache-size=1 \
+        --media-cache-size=1 \
+        --disable-application-cache \
         "$KIOSK_URL" 2>/dev/null
 
     EXIT_CODE=$?
