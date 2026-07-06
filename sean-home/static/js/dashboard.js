@@ -953,6 +953,29 @@ function fmtCountdown(mins) {
   return `${m}m`;
 }
 
+/* Pitcher stat text from a parsed pitcher object — only real fields, never fabricated */
+function formatPitcherInfo(p) {
+  if (!p || !p.name || p.name === "TBD") return null;
+  const parts = [];
+  if (p.W && p.W !== "—" && p.L && p.L !== "—") parts.push(`${p.W}-${p.L}`);
+  if (p.ERA && p.ERA !== "—") parts.push(`${p.ERA} ERA`);
+  return { name: p.name, stat: parts.join(" · ") };
+}
+
+/* Compact probable-starters line for the Phillies countdown hero — hidden entirely if no real data */
+function buildPhilliesPitcherBlock(pitchers) {
+  if (!pitchers) return "";
+  const isPhiHome = (pitchers.home_abbr || "").toLowerCase() === "phi";
+  const us   = formatPitcherInfo(isPhiHome ? pitchers.home : pitchers.away);
+  const them = formatPitcherInfo(isPhiHome ? pitchers.away : pitchers.home);
+  if (!us && !them) return "";
+  const side = (info) => info
+    ? `<span class="phillies-pitcher-line"><span class="phillies-pitcher-name">${info.name}</span>${info.stat ? ` <span class="phillies-pitcher-stat">${info.stat}</span>` : ""}</span>`
+    : "";
+  const vs = (us && them) ? `<span class="phillies-pitcher-vs">vs</span>` : "";
+  return `<div class="phillies-pitchers">${side(us)}${vs}${side(them)}</div>`;
+}
+
 function renderPhillyCountdownHero(team, key, minsUntil) {
   const g = team.next;
   const homeAway  = g.home_away === "home" ? "vs" : "@";
@@ -960,6 +983,7 @@ function renderPhillyCountdownHero(team, key, minsUntil) {
   const countdown = fmtCountdown(minsUntil);
   const cdHtml    = countdown ? `<div class="shq-countdown">Starts in <span class="shq-countdown-time">${countdown}</span></div>` : "";
   const record    = team.record ? `<span class="shq-hero-record">${team.record}</span>` : "";
+  const pitcherHtml = key === "phillies" ? buildPhilliesPitcherBlock(team.pitchers) : "";
   return `
     <div class="shq-countdown-hero">
       <div class="shq-hero-teams">
@@ -978,6 +1002,7 @@ function renderPhillyCountdownHero(team, key, minsUntil) {
       </div>
       <div class="shq-hero-time">${g.time}${g.date !== new Date().toLocaleDateString("en-US", {weekday:"short",month:"short",day:"numeric"}) ? " · " + g.date : ""}</div>
       ${cdHtml}
+      ${pitcherHtml}
     </div>`;
 }
 

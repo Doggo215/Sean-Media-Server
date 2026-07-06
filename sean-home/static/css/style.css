@@ -1447,6 +1447,37 @@ body {
 }
 .shq-countdown-wc .shq-countdown-time { color: var(--c-worldcup); }
 
+/* Probable starting pitchers — Phillies countdown hero only */
+.phillies-pitchers {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+.phillies-pitcher-line {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.phillies-pitcher-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-2);
+}
+.phillies-pitcher-stat {
+  font-size: 1.15rem;
+  color: var(--text-3);
+}
+.phillies-pitcher-vs {
+  font-size: 1.1rem;
+  color: var(--text-3);
+  font-style: italic;
+}
+
 /* ── Soccer live panel (Sports HQ — World Cup live match) ─────── */
 .soccer-live-panel {
   flex-direction: column;
