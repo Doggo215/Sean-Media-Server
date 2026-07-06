@@ -521,7 +521,7 @@ def parse_team_events(payload, team_abbr):
                 if last_dt is None or event_dt > last_dt:
                     last_game, last_dt = entry, event_dt
             elif state == "pre":
-                if event_dt >= now and (next_dt is None or event_dt < next_dt):
+                if next_dt is None or event_dt < next_dt:
                     next_game, next_dt = entry, event_dt
         except Exception:
             continue
