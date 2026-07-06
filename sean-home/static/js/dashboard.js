@@ -796,16 +796,14 @@ function renderSportsRow(team, key) {
 
   if (team.next) {
     const g = team.next;
-    const opp      = oppLogo(g.opponent_abbr, league, g.opponent_id);
-    const haway    = g.home_away === "home" ? "vs" : "@";
-    // Record + standing (division rank etc.) when the API already has it —
-    // real context only, never fabricated.
-    const recordBits = [team.record, team.standing].filter(Boolean).join(" · ");
-    const record   = recordBits ? `${recordBits} · ` : "";
-    const oppRec   = g.opponent_record ? ` (${g.opponent_record})` : "";
-    const matchup  = g.opponent ? `${record}${haway} ${g.opponent}${oppRec}` : record;
-    // Date + time combined on one line so the opponent and game time read
-    // together at a glance, instead of the time being an isolated column.
+    const opp   = oppLogo(g.opponent_abbr, league, g.opponent_id);
+    const haway = g.home_away === "home" ? "vs" : "@";
+    // One big matchup line — team + opponent together, biggest text in the
+    // section. Record/standing dropped here: the upcoming game matters more
+    // and a busy multi-fact line defeats across-the-room readability.
+    const matchupPrimary = g.opponent
+      ? `${team.label.toUpperCase()} ${haway} ${g.opponent.toUpperCase()}`
+      : team.label.toUpperCase();
     const dateTimeLine = (g.date || g.time)
       ? `<div class="sb-sub sb-sub-date">${[g.date, g.time].filter(Boolean).join(" · ")}</div>`
       : "";
@@ -814,8 +812,7 @@ function renderSportsRow(team, key) {
       <div class="sb-row sb-row-mysports" ${teamAttr}>
         ${logo}
         <div class="sb-team-wrap">
-          <div class="sb-team">${team.label}</div>
-          ${matchup ? `<div class="sb-sub">${matchup}</div>` : ""}
+          <div class="sb-team sb-team-matchup">${matchupPrimary}</div>
           ${dateTimeLine}
           ${pitchers}
         </div>
@@ -823,16 +820,20 @@ function renderSportsRow(team, key) {
       </div>`;
   }
 
-  // No upcoming game — headline takes priority over stale last result (offseason)
-  if (team.headline) {
-    const standing = team.standing || "Offseason";
+  // No upcoming game — one compact status line, real data only, no headline
+  // clutter. "Offseason" when the backend already flagged it that way,
+  // otherwise "No upcoming" + real standing if available.
+  if (!team.last) {
+    const isOffseason = team.standing === "Offseason";
+    const label = isOffseason ? "Offseason" : "No upcoming";
+    const extra = isOffseason ? team.record : team.standing;
+    const statusLine = [label, extra].filter(Boolean).join(" · ");
     return `
       <div class="sb-row sb-row-collapsed" ${teamAttr}>
         ${logo}
         <div class="sb-team-wrap">
           <div class="sb-team">${team.label}</div>
-          <div class="sb-sub">${standing}${team.record ? " · " + team.record : ""}</div>
-          <div class="sb-headline">${team.headline}</div>
+          <div class="sb-sub">${statusLine}</div>
         </div>
       </div>`;
   }
