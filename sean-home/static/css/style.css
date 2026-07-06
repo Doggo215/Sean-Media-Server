@@ -22,8 +22,8 @@
 
   /* Text */
   --text:        #f2f2ff;
-  --text-2:      rgba(242,242,255,0.60);
-  --text-3:      rgba(242,242,255,0.26);
+  --text-2:      rgba(242,242,255,0.74);
+  --text-3:      rgba(242,242,255,0.42);
 
   /* Accents */
   --blue:        #4f8ef7;
@@ -368,7 +368,7 @@ body {
 
 /* Card label — dimmed, uppercase, never competes with content */
 .card-label {
-  font-size: 1.0rem;
+  font-size: 1.1rem;
   font-weight:700;
   letter-spacing:0.18em;
   text-transform:uppercase;
@@ -379,7 +379,7 @@ body {
 .card-placeholder {
   color: var(--text-2);
   font-size: 1.2rem;
-  opacity:0.5;
+  opacity:0.7;
   padding: 8px 0;
 }
 
@@ -403,7 +403,7 @@ body {
 .td-section { flex-shrink: 0; margin-top: 14px; }
 
 .td-section-label {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -530,7 +530,7 @@ body {
   border-bottom: 1px solid rgba(255,255,255,0.04);
 }
 .td-cal-row:last-of-type { border-bottom: none; }
-.td-cal-dim { opacity: 0.5; }
+.td-cal-dim { opacity: 0.65; }
 .td-cal-icon { font-size: 1.5rem; line-height: 1; flex-shrink: 0; }
 .td-cal-info { flex: 1; min-width: 0; }
 .td-cal-day {
@@ -555,7 +555,7 @@ body {
 .td-empty {
   font-size: 1.3rem;
   color: var(--text-2);
-  opacity: 0.5;
+  opacity: 0.7;
   padding: 4px 0;
 }
 
@@ -753,14 +753,14 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-style: italic;
-  opacity: 0.75;
+  opacity: 0.9;
 }
 
 .sb-placeholder {
   color: var(--text-2);
   font-size: 1.3rem;
   padding: 12px 0;
-  opacity:0.5;
+  opacity:0.7;
 }
 
 /* ── WEATHER DETAIL CARD (right bottom — header has current temp) */
@@ -790,7 +790,7 @@ body {
   overflow: hidden;
   min-height: 0;
 }
-.weather-unavailable { color: var(--text-2); font-size: 1.4rem; opacity: 0.55; padding: 20px; }
+.weather-unavailable { color: var(--text-2); font-size: 1.4rem; opacity: 0.75; padding: 20px; }
 
 /* ── SUMMARY ROW — icon left, details right ── */
 .wx-summary {
@@ -850,11 +850,11 @@ body {
 }
 .wx-dl-item {
   font-size: 1.6rem;
-  color: rgba(255, 255, 255, 0.52);
+  color: rgba(255, 255, 255, 0.66);
   white-space: nowrap;
 }
 .wx-dl-sun {
-  color: rgba(255, 200, 80, 0.65);
+  color: rgba(255, 200, 80, 0.8);
 }
 
 /* ── HOURLY SECTION — flex:1 fills remaining space ── */
@@ -878,7 +878,7 @@ body {
 }
 .wx-h-label {
   font-size: 1.85rem;
-  color: rgba(255, 255, 255, 0.48);
+  color: rgba(255, 255, 255, 0.62);
   font-weight: 600;
   min-width: 72px;
   white-space: nowrap;
@@ -989,7 +989,7 @@ body {
 
 /* News section sub-headers */
 .news-section-hdr {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -1163,7 +1163,7 @@ body {
 .jf-offline-hint {
   font-size: 1.4rem;
   color: var(--text-3);
-  opacity: 0.6;
+  opacity: 0.8;
   max-width: 280px;
   line-height: 1.5;
 }
@@ -1711,11 +1711,11 @@ body {
 
 /* ── Sports HQ — section headers ─────────────────────────────── */
 .shq-section-hdr {
-  font-size: 1.7rem;
+  font-size: 1.8rem;
   font-weight: 900;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255, 255, 255, 0.78);
   padding: 4px 14px 2px;
   display: flex;
   align-items: center;
@@ -1730,7 +1730,7 @@ body {
   text-shadow: 0 0 14px rgba(79, 142, 247, 0.45);
 }
 .shq-hdr-teams {
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.85);
 }
 .shq-hdr-recent {
   color: rgba(212, 175, 55, 0.90);
@@ -2088,7 +2088,7 @@ body {
 }
 .gaming-status.offline {
   color: var(--text-3);
-  opacity: 0.7;
+  opacity: 0.85;
 }
 .gaming-status.online {
   color: rgba(80, 220, 120, 0.90);
@@ -2102,7 +2102,7 @@ body {
 }
 
 .gaming-label {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -2112,7 +2112,7 @@ body {
 .gaming-empty {
   font-size: 1.3rem;
   color: var(--text-3);
-  opacity: 0.6;
+  opacity: 0.8;
   font-style: italic;
 }
 
@@ -2130,7 +2130,7 @@ body {
 .gaming-source {
   font-size: 1.1rem;
   color: var(--text-3);
-  opacity: 0.55;
+  opacity: 0.8;
   margin-top: 2px;
 }
 
