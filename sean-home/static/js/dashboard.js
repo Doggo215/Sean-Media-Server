@@ -628,10 +628,14 @@ const TEAM_LOGOS = {
   sixers:    "https://a.espncdn.com/i/teamlogos/nba/500/phi.png",
   flyers:    "https://a.espncdn.com/i/teamlogos/nhl/500/phi.png",
   world_cup: "https://a.espncdn.com/i/leaguelogos/soccer/500/68.png",
+  union:     "https://a.espncdn.com/i/teamlogos/soccer/500/10739.png",
+  chelsea:   "https://a.espncdn.com/i/teamlogos/soccer/500/363.png",
+  st_josephs_mlax: "https://a.espncdn.com/i/teamlogos/ncaa/500/2603.png",
 };
 
 const TEAM_LEAGUES = {
   phillies: "mlb", eagles: "nfl", sixers: "nba", flyers: "nhl",
+  union: "soccer", chelsea: "soccer", st_josephs_mlax: "ncaa",
 };
 
 function teamLogo(key) {
@@ -640,24 +644,14 @@ function teamLogo(key) {
   return `<img class="sb-logo" src="${url}" alt="" loading="lazy" onerror="this.style.display='none'">`;
 }
 
-function oppLogo(abbr, league) {
-  if (!abbr || !league) return "";
-  const src = `https://a.espncdn.com/i/teamlogos/${league}/500/${abbr}.png`;
+function oppLogo(abbr, league, id) {
+  if (!league) return "";
+  // ESPN's soccer logo CDN is keyed by numeric team id, not the 3-letter
+  // abbreviation (which 404s) — prefer id for soccer opponents when present.
+  const identifier = (league === "soccer" && id) ? id : abbr;
+  if (!identifier) return "";
+  const src = `https://a.espncdn.com/i/teamlogos/${league}/500/${identifier}.png`;
   return `<img class="sb-logo sb-logo-opp" src="${src}" alt="" loading="lazy" onerror="this.style.display='none'">`;
-}
-
-function buildPitcherRow(pitchers) {
-  const isPhiHome = (pitchers.home_abbr || "").toLowerCase() === "phi";
-  const us   = isPhiHome ? pitchers.home : pitchers.away;
-  const them = isPhiHome ? pitchers.away : pitchers.home;
-  const usStr   = us   ? `${us.name}  ${us.W}-${us.L}  ${us.ERA} ERA` : "TBD";
-  const themStr = them ? `${them.name}  ${them.W}-${them.L}  ${them.ERA} ERA` : "TBD";
-  return `
-    <div class="sb-pitcher-row">
-      <span class="sb-pitcher-us">${usStr}</span>
-      <span class="sb-pitcher-vs">vs</span>
-      <span class="sb-pitcher-them">${themStr}</span>
-    </div>`;
 }
 
 function renderPhilliesLiveDetail(team) {
@@ -700,7 +694,17 @@ function renderPhilliesLiveDetail(team) {
       ${d.pitcher.line ? `<span class="mlb-line">${d.pitcher.line}</span>` : ""}
     </div>` : "";
 
-  const lastPlayHtml = d.last_play
+  // Real scoring-play context from ESPN's play-by-play log — preferred over
+  // the generic last-play line when available; never inferred/paraphrased.
+  const sp = d.last_scoring_play;
+  const scoringPlayHtml = sp
+    ? `<div class="mlb-scoring-play">
+         <span class="mlb-scoring-label">Last Scoring Play</span>
+         <span class="mlb-scoring-text">${sp.period} · ${sp.text} · PHI ${sp.my_score}-${sp.opp_score}</span>
+       </div>`
+    : "";
+
+  const lastPlayHtml = (!sp && d.last_play)
     ? `<div class="mlb-last-play">Last: ${d.last_play}</div>` : "";
 
   const oppAbbr    = (g.opponent_abbr || "").toUpperCase();
@@ -753,6 +757,7 @@ function renderPhilliesLiveDetail(team) {
         </div>
       </div>
 
+      ${scoringPlayHtml}
       ${lastPlayHtml}
 
     </div>`;
@@ -775,7 +780,7 @@ function renderSportsRow(team, key) {
     const g = team.live;
     const score  = g.score || `${g.my_score ?? "—"}-${g.opp_score ?? "—"}`;
     const period = g.period || "Live";
-    const opp    = oppLogo(g.opponent_abbr, league);
+    const opp    = oppLogo(g.opponent_abbr, league, g.opponent_id);
     const record = team.record ? `<span class="sb-record">${team.record}</span>` : "";
     return `
       <div class="sb-row sb-row-live sb-row-hero" ${teamAttr}>
@@ -791,25 +796,30 @@ function renderSportsRow(team, key) {
 
   if (team.next) {
     const g = team.next;
-    const opp      = oppLogo(g.opponent_abbr, league);
+    const opp      = oppLogo(g.opponent_abbr, league, g.opponent_id);
     const haway    = g.home_away === "home" ? "vs" : "@";
-    const record   = team.record ? `${team.record} · ` : "";
+    // Record + standing (division rank etc.) when the API already has it —
+    // real context only, never fabricated.
+    const recordBits = [team.record, team.standing].filter(Boolean).join(" · ");
+    const record   = recordBits ? `${recordBits} · ` : "";
     const oppRec   = g.opponent_record ? ` (${g.opponent_record})` : "";
     const matchup  = g.opponent ? `${record}${haway} ${g.opponent}${oppRec}` : record;
-    // Date on its own line so it doesn't get truncated by long opponent names
-    const dateLine = g.date ? `<div class="sb-sub sb-sub-date">${g.date}</div>` : "";
-    const pitchers = (key === "phillies" && team.pitchers) ? buildPitcherRow(team.pitchers) : "";
+    // Date + time combined on one line so the opponent and game time read
+    // together at a glance, instead of the time being an isolated column.
+    const dateTimeLine = (g.date || g.time)
+      ? `<div class="sb-sub sb-sub-date">${[g.date, g.time].filter(Boolean).join(" · ")}</div>`
+      : "";
+    const pitchers = (key === "phillies" && team.pitchers) ? buildPhilliesPitcherBlock(team.pitchers) : "";
     return `
-      <div class="sb-row" ${teamAttr}>
+      <div class="sb-row sb-row-mysports" ${teamAttr}>
         ${logo}
         <div class="sb-team-wrap">
           <div class="sb-team">${team.label}</div>
           ${matchup ? `<div class="sb-sub">${matchup}</div>` : ""}
-          ${dateLine}
+          ${dateTimeLine}
           ${pitchers}
         </div>
         ${opp}
-        <div class="sb-time">${g.time || "TBD"}</div>
       </div>`;
   }
 
@@ -817,7 +827,7 @@ function renderSportsRow(team, key) {
   if (team.headline) {
     const standing = team.standing || "Offseason";
     return `
-      <div class="sb-row" ${teamAttr}>
+      <div class="sb-row sb-row-collapsed" ${teamAttr}>
         ${logo}
         <div class="sb-team-wrap">
           <div class="sb-team">${team.label}</div>
@@ -836,9 +846,9 @@ function renderSportsRow(team, key) {
     const record   = team.record ? ` · ${team.record}` : "";
     const subCls   = result === "W" ? "sb-sub-win" : result === "L" ? "sb-sub-loss" : "";
     const scoreCls = result === "W" ? "sb-score-win" : result === "L" ? "sb-score-loss" : "";
-    const opp      = oppLogo(g.opponent_abbr, league);
+    const opp      = oppLogo(g.opponent_abbr, league, g.opponent_id);
     return `
-      <div class="sb-row" ${teamAttr}>
+      <div class="sb-row sb-row-collapsed" ${teamAttr}>
         ${logo}
         <div class="sb-team-wrap">
           <div class="sb-team">${team.label}</div>
@@ -846,6 +856,19 @@ function renderSportsRow(team, key) {
         </div>
         ${opp}
         <div class="sb-score ${scoreCls}">${score}</div>
+      </div>`;
+  }
+
+  // Nothing live/upcoming/recent/headline — safe fallback so the team never
+  // just vanishes (e.g. a genuinely offseason team with no news source).
+  if (team.standing) {
+    return `
+      <div class="sb-row sb-row-collapsed" ${teamAttr}>
+        ${logo}
+        <div class="sb-team-wrap">
+          <div class="sb-team">${team.label}</div>
+          <div class="sb-sub">${team.standing}${team.record ? " · " + team.record : ""}</div>
+        </div>
       </div>`;
   }
 
@@ -996,7 +1019,7 @@ function renderPhillyCountdownHero(team, key, minsUntil) {
           <span class="shq-hero-vs">${homeAway}</span>
         </div>
         <div class="shq-hero-side shq-hero-them">
-          ${oppLogo(g.opponent_abbr, key === "phillies" ? "mlb" : key === "eagles" ? "nfl" : key === "sixers" ? "nba" : "nhl")}
+          ${oppLogo(g.opponent_abbr, TEAM_LEAGUES[key] || "nhl", g.opponent_id)}
           <span class="shq-hero-name">${oppName}</span>
         </div>
       </div>
@@ -1035,12 +1058,12 @@ function renderWCCountdownHero(wcTeam, minsUntil) {
 // Returns recent final items (today or within 12h, not currently live).
 // Priority: Philly teams first, then World Cup.
 function getRecentFinals(teams, todayLabel) {
-  const PHILLY_KEYS = ["phillies", "eagles", "sixers", "flyers"];
+  const MY_SPORTS_KEYS = ["phillies", "eagles", "sixers", "flyers", "union", "chelsea", "st_josephs_mlax"];
   const now = Date.now();
   const RECENT_WINDOW_MS = 12 * 60 * 60 * 1000;
   const results = [];
 
-  for (const k of PHILLY_KEYS) {
+  for (const k of MY_SPORTS_KEYS) {
     const t = teams[k];
     if (!t?.last || t.live) continue;
     const last = t.last;
@@ -1065,7 +1088,7 @@ function getRecentFinals(teams, todayLabel) {
 function renderRecentFinalHero(item, todayLabel) {
   if (item.type === "philly") {
     const { key, team, last } = item;
-    const sport   = key === "phillies" ? "mlb" : key === "eagles" ? "nfl" : key === "sixers" ? "nba" : "nhl";
+    const sport   = TEAM_LEAGUES[key] || "nhl";
     const myScore = last.my_score  ?? "—";
     const oppScore= last.opp_score ?? "—";
     const oppName = (last.opponent || "").toUpperCase();
@@ -1090,7 +1113,7 @@ function renderRecentFinalHero(item, todayLabel) {
             <span class="shq-final-score ${myCls}">${myScore}</span>
           </div>
           <div class="shq-final-team-row">
-            <div class="shq-final-logo">${oppLogo(last.opponent_abbr, sport)}</div>
+            <div class="shq-final-logo">${oppLogo(last.opponent_abbr, sport, last.opponent_id)}</div>
             <span class="shq-final-name">${oppName}</span>
             <span class="shq-final-score ${oppCls}">${oppScore}</span>
           </div>
@@ -1154,7 +1177,7 @@ function renderRecentFinalHero(item, todayLabel) {
 }
 
 function renderSportsHQ(teams) {
-  const PHILLY_KEYS = ["phillies", "eagles", "sixers", "flyers"];
+  const MY_SPORTS_KEYS = ["phillies", "eagles", "sixers", "flyers", "union", "chelsea", "st_josephs_mlax"];
 
   // Build today label matching backend format: "Thu Jul 2"
   const now = new Date();
@@ -1162,11 +1185,11 @@ function renderSportsHQ(teams) {
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const todayLabel = `${days[now.getDay()]} ${months[now.getMonth()]} ${now.getDate()}`;
 
-  const phillyLive  = PHILLY_KEYS.filter(k => teams[k]?.live);
+  const phillyLive  = MY_SPORTS_KEYS.filter(k => teams[k]?.live);
   const wcLive      = !!(teams.world_cup?.live);
   const hasAnyLive  = phillyLive.length > 0 || wcLive;
 
-  const phillyToday = PHILLY_KEYS.filter(k => {
+  const phillyToday = MY_SPORTS_KEYS.filter(k => {
     const t = teams[k];
     return !t?.live && t?.next && t.next.date === todayLabel;
   });
@@ -1174,10 +1197,6 @@ function renderSportsHQ(teams) {
   const wcTodayGames = (teams.world_cup?.today_games || []).filter(g => g.state !== "post");
   const hasWcToday   = !wcLive && wcTodayGames.length > 0;
   const wcLastToday  = !wcLive && !hasWcToday && !!(teams.world_cup?.last);
-
-  const phillyIdle = PHILLY_KEYS.filter(k =>
-    !phillyLive.includes(k) && !phillyToday.includes(k)
-  );
 
   // ── Recent Finals (today or within 12h) ────────────────────────────────
   // Philly finals shown even when WC is live; WC finals only when WC is not live.
@@ -1238,15 +1257,10 @@ function renderSportsHQ(teams) {
     }
   }
 
-  // ── UP NEXT (today schedule, no countdown) ──────────────────────────────
-  const phillyTodayRemaining = countdownCandidate?.type === "philly"
-    ? phillyToday.filter(k => k !== countdownCandidate.key)
-    : phillyToday;
-
-  if (phillyTodayRemaining.length > 0 || (hasWcToday && !countdownCandidate)) {
+  // ── WORLD CUP UP NEXT (World Cup logic untouched — kept separate) ───────
+  if (hasWcToday && !countdownCandidate) {
     html += `<div class="shq-section-hdr shq-hdr-next">Up Next</div>`;
-    for (const k of phillyTodayRemaining) html += renderSportsRow(teams[k], k);
-    if (hasWcToday && !countdownCandidate) html += renderWCRow(teams.world_cup);
+    html += renderWCRow(teams.world_cup);
   }
 
   // WC today games listed compactly below WC countdown hero
@@ -1273,13 +1287,47 @@ function renderSportsHQ(teams) {
     html += renderWCRow(teams.world_cup);
   }
 
-  // Philly idle — exclude any team already shown in a recent final hero
-  const phillyIdleFiltered = phillyIdle.filter(k => !recentFinalKeys.has(k));
-  const idleRows = phillyIdleFiltered.map(k => renderSportsRow(teams[k], k)).filter(Boolean).join("");
-  if (idleRows) {
-    const showHdr = hasAnyLive || phillyToday.length > 0 || hasWcToday || wcLastToday || countdownCandidate || recentFinals.length > 0;
-    html += (showHdr ? `<div class="shq-section-hdr shq-hdr-teams">Philly</div>` : "")
-          + `<div class="shq-idle-section">${idleRows}</div>`;
+  // ── MY SPORTS SECTION — every tracked team not already shown above
+  // (live / recent-final / countdown hero), sorted by soonest real upcoming
+  // game. Teams with no real upcoming game (offseason, no reliable source)
+  // sort to the bottom. Phillies gets its *next* game after whichever one is
+  // already shown in the hero, so it never duplicates the hero's own game.
+  let phillyHeroGameUtc = null;
+  if (phillyLive.includes("phillies")) {
+    phillyHeroGameUtc = teams.phillies?.live?.game_utc || null;
+  } else if (recentFinalKeys.has("phillies")) {
+    phillyHeroGameUtc = teams.phillies?.last?.game_utc || null;
+  } else if (countdownCandidate?.type === "philly" && countdownCandidate.key === "phillies") {
+    phillyHeroGameUtc = teams.phillies?.next?.game_utc || null;
+  }
+
+  const sectionRows = [];
+  for (const k of MY_SPORTS_KEYS) {
+    let team = teams[k];
+    if (!team) continue;
+
+    if (k === "phillies" && phillyHeroGameUtc) {
+      const nextAfter = (team.upcoming || []).find(g => g.game_utc !== phillyHeroGameUtc);
+      if (!nextAfter) continue; // no real next-after-current game — hide the extra row
+      // Clear live/last so renderSportsRow falls through to the "next" branch
+      // using the substitute game, instead of re-showing the hero's own game.
+      team = { ...team, live: null, last: null, next: nextAfter, pitchers: nextAfter.pitchers };
+    } else {
+      if (phillyLive.includes(k)) continue;
+      if (recentFinalKeys.has(k)) continue;
+      if (countdownCandidate?.type === "philly" && countdownCandidate.key === k) continue;
+    }
+
+    const sortTime = team.next?.game_utc ? new Date(team.next.game_utc).getTime() : Infinity;
+    sectionRows.push({ key: k, team, sortTime });
+  }
+  sectionRows.sort((a, b) => a.sortTime - b.sortTime);
+
+  const sectionHtml = sectionRows.map(r => renderSportsRow(r.team, r.key)).filter(Boolean).join("");
+  if (sectionHtml) {
+    const showHdr = hasAnyLive || hasWcToday || wcLastToday || countdownCandidate || recentFinals.length > 0;
+    html += (showHdr ? `<div class="shq-section-hdr shq-hdr-teams">My Sports</div>` : "")
+          + `<div class="shq-idle-section">${sectionHtml}</div>`;
   }
 
   return html || `<div class="sb-placeholder">No games data</div>`;

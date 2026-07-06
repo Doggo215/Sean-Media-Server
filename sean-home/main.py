@@ -502,6 +502,7 @@ def parse_team_events(payload, team_abbr):
             entry = {
                 "opponent": opponent_name,
                 "opponent_abbr": opp_abbr,
+                "opponent_id": opp["team"].get("id", ""),
                 "opponent_record": opp_record,
                 "date": date_str,
                 "time": time_str,
@@ -666,6 +667,42 @@ async def fetch_team_info(client, sport, league, team_abbr):
     return {"record": record, "standing": standing}
 
 
+async def fetch_team_next_event(client, sport, league, team_id):
+    """Raw team-info fetch used only to read the 'nextEvent' field. Some ESPN
+    schedule endpoints (e.g. soccer) reliably return recent results but omit
+    not-yet-started games; team-info's nextEvent does not have that gap."""
+    url = f"https://site.api.espn.com/apis/site/v2/sports/{sport}/{league}/teams/{team_id}"
+    resp = await client.get(url)
+    resp.raise_for_status()
+    data = resp.json()
+    team = data.get("team") or {}
+    for ev in (team.get("nextEvent") or []):
+        try:
+            comp = ev["competitions"][0]
+            if comp["status"]["type"]["state"] != "pre":
+                continue
+            event_dt = datetime.fromisoformat(ev["date"].replace("Z", "+00:00"))
+            competitors = comp["competitors"]
+            me  = next((c for c in competitors if c["team"].get("id") == team_id), None)
+            opp = next((c for c in competitors if c["team"].get("id") != team_id), None)
+            if not me or not opp:
+                continue
+            date_str, time_str = _to_mt_strings(event_dt)
+            return {
+                "opponent": opp["team"].get("shortDisplayName") or opp["team"].get("abbreviation"),
+                "opponent_abbr": opp["team"].get("abbreviation", "").lower(),
+                "opponent_id": opp["team"].get("id", ""),
+                "opponent_record": "",
+                "date": date_str,
+                "time": time_str,
+                "home_away": me.get("homeAway"),
+                "game_utc": event_dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            }
+        except Exception:
+            continue
+    return None
+
+
 async def fetch_team_news(client, sport, league, team_abbr):
     """Returns the latest news headline for a team."""
     url = f"https://site.api.espn.com/apis/site/v2/sports/{sport}/{league}/news?team={team_abbr}&limit=1"
@@ -722,6 +759,60 @@ def find_phillies_pitchers(scoreboard_payload, phillies_abbr="PHI"):
     return None
 
 
+def parse_phillies_upcoming(schedule_payload, phillies_abbr="phi", limit=5):
+    """All future ('pre') Phillies games from the team schedule, sorted by start
+    time. Each includes probable-pitcher data directly from that event's own
+    'probables' field when ESPN has assigned one — real data only, and pitcher
+    fields fall back to placeholders (handled by the existing formatter) when
+    ESPN hasn't assigned a starter yet for a game that far out."""
+    events = schedule_payload.get("events", [])
+    now = datetime.now(timezone.utc)
+    upcoming = []
+
+    for ev in events:
+        try:
+            comp = ev["competitions"][0]
+            if comp["status"]["type"]["state"] != "pre":
+                continue
+            event_dt = datetime.fromisoformat(ev["date"].replace("Z", "+00:00"))
+            if event_dt < now:
+                continue
+            competitors = comp["competitors"]
+            me  = next((c for c in competitors if c["team"]["abbreviation"].lower() == phillies_abbr.lower()), None)
+            opp = next((c for c in competitors if c["team"]["abbreviation"].lower() != phillies_abbr.lower()), None)
+            if not me or not opp:
+                continue
+
+            date_str, time_str = _to_mt_strings(event_dt)
+            entry = {
+                "opponent": opp["team"].get("shortDisplayName") or opp["team"].get("abbreviation"),
+                "opponent_abbr": opp["team"].get("abbreviation", "").lower(),
+                "date": date_str,
+                "time": time_str,
+                "home_away": me.get("homeAway"),
+                "game_utc": event_dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            }
+
+            home_c = me if me.get("homeAway") == "home" else opp
+            away_c = opp if me.get("homeAway") == "home" else me
+            home_p = parse_pitcher(home_c.get("probables"))
+            away_p = parse_pitcher(away_c.get("probables"))
+            if home_p or away_p:
+                entry["pitchers"] = {
+                    "home": home_p,
+                    "away": away_p,
+                    "home_abbr": home_c["team"].get("abbreviation", "").lower(),
+                    "away_abbr": away_c["team"].get("abbreviation", "").lower(),
+                }
+
+            upcoming.append((event_dt, entry))
+        except Exception:
+            continue
+
+    upcoming.sort(key=lambda pair: pair[0])
+    return [entry for _, entry in upcoming[:limit]]
+
+
 def find_phillies_live_detail(scoreboard_payload, phillies_abbr="PHI"):
     """Extract rich situational data for a live Phillies game from the MLB scoreboard."""
     for ev in scoreboard_payload.get("events", []):
@@ -766,9 +857,58 @@ def find_phillies_live_detail(scoreboard_payload, phillies_abbr="PHI"):
                 "batter": batter,
                 "pitcher": pitcher,
                 "last_play": last_play_text,
+                "home_away": me.get("homeAway"),
             }
         except Exception:
             continue
+    return None
+
+
+def find_phillies_live_event_id(scoreboard_payload, phillies_abbr="PHI"):
+    """Event id for the live Phillies game, used to fetch the play-by-play summary."""
+    for ev in scoreboard_payload.get("events", []):
+        try:
+            comp = ev["competitions"][0]
+            if comp["status"]["type"]["state"] != "in":
+                continue
+            competitors = comp["competitors"]
+            if any(c["team"]["abbreviation"].upper() == phillies_abbr for c in competitors):
+                return ev.get("id")
+        except Exception:
+            continue
+    return None
+
+
+async def fetch_mlb_game_summary(client, event_id):
+    """Full play-by-play log for a game — used to find the most recent scoring play."""
+    url = f"https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/summary?event={event_id}"
+    resp = await client.get(url)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def find_last_scoring_play(summary_payload, is_home):
+    """Most recent real scoring play from the play-by-play log — ESPN's own
+    play text and score state only, never inferred or paraphrased."""
+    plays = summary_payload.get("plays", [])
+    for p in reversed(plays):
+        if not p.get("scoringPlay"):
+            continue
+        text = p.get("text")
+        if not text:
+            continue
+        period = p.get("period") or {}
+        ptype = "T" if period.get("type") == "Top" else "B"
+        pnum = period.get("number", "")
+        away = p.get("awayScore")
+        home = p.get("homeScore")
+        my_score, opp_score = (home, away) if is_home else (away, home)
+        return {
+            "period": f"{ptype}{pnum}",
+            "text": text,
+            "my_score": my_score,
+            "opp_score": opp_score,
+        }
     return None
 
 
@@ -823,6 +963,19 @@ async def sports():
                 phillies_pitchers = find_phillies_pitchers(mlb_scoreboard)
                 phillies_live_detail = find_phillies_live_detail(mlb_scoreboard)
 
+                # Last scoring play — only fetched while a Phillies game is live
+                if phillies_live_detail:
+                    event_id = find_phillies_live_event_id(mlb_scoreboard)
+                    if event_id:
+                        try:
+                            summary = await fetch_mlb_game_summary(client, event_id)
+                            is_home = phillies_live_detail.get("home_away") == "home"
+                            scoring_play = find_last_scoring_play(summary, is_home)
+                            if scoring_play:
+                                phillies_live_detail["last_scoring_play"] = scoring_play
+                        except Exception:
+                            pass
+
             for i, key in enumerate(team_keys):
                 cfg = team_cfgs[i]
                 schedule_payload = schedule_results[i] if not isinstance(schedule_results, Exception) else None
@@ -844,12 +997,13 @@ async def sports():
                 if news and not isinstance(news, Exception):
                     entry["headline"] = news
 
-                # Phillies only: attach probable pitchers + live detail
+                # Phillies only: attach probable pitchers + live detail + upcoming games
                 if key == "phillies":
                     if phillies_pitchers:
                         entry["pitchers"] = phillies_pitchers
                     if phillies_live_detail and entry.get("live"):
                         entry["live"]["detail"] = phillies_live_detail
+                    entry["upcoming"] = parse_phillies_upcoming(schedule_payload, cfg["team"])
 
                 if parsed["live"]:
                     any_live = True
@@ -864,6 +1018,98 @@ async def sports():
                     any_live = True
             else:
                 result["teams"]["world_cup"] = {"label": "World Cup", "available": False}
+
+            # Philadelphia Union (MLS) — the soccer schedule endpoint reliably returns
+            # recent results but often omits not-yet-started games, so "next" falls
+            # back to the team-info nextEvent field when the schedule has none.
+            try:
+                union_schedule, union_next, union_info = await asyncio.gather(
+                    fetch_team_schedule(client, "soccer", "usa.1", "10739"),
+                    fetch_team_next_event(client, "soccer", "usa.1", "10739"),
+                    fetch_team_info(client, "soccer", "usa.1", "10739"),
+                    return_exceptions=True,
+                )
+                if isinstance(union_schedule, Exception):
+                    result["teams"]["union"] = {"label": "Union", "available": False}
+                else:
+                    parsed = parse_team_events(union_schedule, "phi")
+                    entry = {
+                        "label": "Union",
+                        "available": True,
+                        "live": parsed["live"],
+                        "next": parsed["next"] or (union_next if not isinstance(union_next, Exception) else None),
+                        "last": parsed["last"],
+                    }
+                    if not isinstance(union_info, Exception):
+                        entry["record"] = union_info.get("record", "")
+                        entry["standing"] = union_info.get("standing", "")
+                    if parsed["live"]:
+                        any_live = True
+                    result["teams"]["union"] = entry
+            except Exception:
+                result["teams"]["union"] = {"label": "Union", "available": False}
+
+            # Chelsea FC (EPL) — same soccer quirk as Union: the schedule endpoint
+            # returns nothing between seasons, so "next" comes from team-info's
+            # nextEvent (real fixture once the new season schedule is published).
+            try:
+                che_schedule, che_next, che_info = await asyncio.gather(
+                    fetch_team_schedule(client, "soccer", "eng.1", "363"),
+                    fetch_team_next_event(client, "soccer", "eng.1", "363"),
+                    fetch_team_info(client, "soccer", "eng.1", "363"),
+                    return_exceptions=True,
+                )
+                if isinstance(che_schedule, Exception):
+                    result["teams"]["chelsea"] = {"label": "Chelsea FC", "available": False}
+                else:
+                    parsed = parse_team_events(che_schedule, "che")
+                    next_game = parsed["next"] or (che_next if not isinstance(che_next, Exception) else None)
+                    entry = {
+                        "label": "Chelsea FC",
+                        "available": True,
+                        "live": parsed["live"],
+                        "next": next_game,
+                        "last": parsed["last"],
+                    }
+                    if not isinstance(che_info, Exception):
+                        entry["record"] = che_info.get("record", "")
+                        entry["standing"] = che_info.get("standing", "")
+                    if not next_game and not parsed["live"]:
+                        entry["standing"] = entry.get("standing") or "Offseason"
+                    if parsed["live"]:
+                        any_live = True
+                    result["teams"]["chelsea"] = entry
+            except Exception:
+                result["teams"]["chelsea"] = {"label": "Chelsea FC", "available": False}
+
+            # Saint Joseph's Men's Lacrosse (NCAA D1) — season runs roughly Jan-Jun;
+            # real ESPN data only, shows a clean offseason state rather than a fake schedule.
+            try:
+                sjmlax_schedule, sjmlax_info = await asyncio.gather(
+                    fetch_team_schedule(client, "lacrosse", "mens-college-lacrosse", "2603"),
+                    fetch_team_info(client, "lacrosse", "mens-college-lacrosse", "2603"),
+                    return_exceptions=True,
+                )
+                if isinstance(sjmlax_schedule, Exception):
+                    result["teams"]["st_josephs_mlax"] = {"label": "Saint Joseph's MLAX", "available": False}
+                else:
+                    parsed = parse_team_events(sjmlax_schedule, "saint joseph's")
+                    entry = {
+                        "label": "Saint Joseph's MLAX",
+                        "available": True,
+                        "live": parsed["live"],
+                        "next": parsed["next"],
+                        "last": None,
+                    }
+                    if not parsed["next"] and not parsed["live"]:
+                        entry["standing"] = "Offseason"
+                    if not isinstance(sjmlax_info, Exception):
+                        entry["record"] = sjmlax_info.get("record", "")
+                    if parsed["live"]:
+                        any_live = True
+                    result["teams"]["st_josephs_mlax"] = entry
+            except Exception:
+                result["teams"]["st_josephs_mlax"] = {"label": "Saint Joseph's MLAX", "available": False}
 
     except Exception:
         if _sports_cache["data"]:

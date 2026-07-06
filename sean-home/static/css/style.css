@@ -589,7 +589,7 @@ body {
   display:flex;
   flex-direction:column;
   justify-content:flex-start;
-  gap: 2px;
+  gap: 5px;
   padding: 4px 24px 12px;
   overflow:hidden;
 }
@@ -622,6 +622,54 @@ body {
   object-fit: contain;
   flex-shrink: 0;
   opacity: 0.95;
+}
+
+/* My Sports section rows — active/upcoming teams get more room and bigger
+   text/logos; readable from across the room without overflowing the card. */
+.sb-row-mysports {
+  padding: 11px 14px 11px 12px;
+}
+.sb-row-mysports .sb-logo {
+  width: 96px;
+  height: 96px;
+}
+.sb-row-mysports .sb-logo-opp {
+  width: 54px;
+  height: 54px;
+}
+.sb-row-mysports .sb-team {
+  font-size: 3.05rem;
+}
+.sb-row-mysports .sb-sub {
+  font-size: 2.5rem;
+}
+.sb-row-mysports .sb-sub-date {
+  font-size: 1.95rem;
+}
+.sb-row-mysports .phillies-pitcher-name {
+  font-size: 1.55rem;
+}
+.sb-row-mysports .phillies-pitcher-stat {
+  font-size: 1.35rem;
+}
+
+/* Out-of-season / no-upcoming-game teams — kept visible but compact so they
+   don't compete with active teams or the live hero for space. */
+.sb-row-collapsed {
+  padding: 5px 14px 5px 12px;
+}
+.sb-row-collapsed .sb-logo {
+  width: 54px;
+  height: 54px;
+}
+.sb-row-collapsed .sb-team {
+  font-size: 2.0rem;
+}
+.sb-row-collapsed .sb-sub {
+  font-size: 1.4rem;
+}
+.sb-row-collapsed .sb-headline {
+  font-size: 1.3rem;
 }
 
 /* Team name + context stacked vertically */
@@ -1703,11 +1751,11 @@ body {
 .wc-goals-sep  { color: var(--text-3); flex-shrink: 0; }
 
 /* ── LIVE SPORTS HERO ────────────────────────────────────────── */
-/* When a Philly team goes live, their row expands               */
-.sb-row-hero { padding: 14px 14px 14px 12px; }
-.sb-row-hero .sb-logo  { width: 88px; height: 88px; }
-.sb-row-hero .sb-team  { font-size: 3.2rem; }
-.sb-row-hero .sb-score { font-size: 6rem; min-width: 140px; }
+/* When a Philly team goes live, their row expands — biggest, first */
+.sb-row-hero { padding: 16px 14px 16px 12px; }
+.sb-row-hero .sb-logo  { width: 96px; height: 96px; }
+.sb-row-hero .sb-team  { font-size: 3.5rem; }
+.sb-row-hero .sb-score { font-size: 6.4rem; min-width: 148px; }
 
 /* Compress other rows when a hero is displayed */
 .scoreboard.has-hero .sb-row:not(.sb-row-hero):not(.sb-row-wc) {
@@ -1726,6 +1774,24 @@ body {
 .scoreboard.has-hero .shq-idle-section .sb-row .sb-sub   { font-size: 1.4rem; }
 .scoreboard.has-hero .shq-idle-section .sb-row .sb-score { font-size: 3.4rem; min-width: 88px; }
 .scoreboard.has-hero .shq-idle-section .sb-row .sb-time  { font-size: 2.7rem; min-width: 104px; }
+
+/* My Sports rows with a real upcoming game stay bigger than the generic idle
+   compression above (but below the live hero) even while a hero is active. */
+.scoreboard.has-hero .shq-idle-section .sb-row-mysports { padding: 9px 14px 9px 12px; }
+.scoreboard.has-hero .shq-idle-section .sb-row-mysports .sb-logo { width: 76px; height: 76px; }
+.scoreboard.has-hero .shq-idle-section .sb-row-mysports .sb-logo-opp { width: 44px; height: 44px; }
+.scoreboard.has-hero .shq-idle-section .sb-row-mysports .sb-team { font-size: 2.55rem; }
+.scoreboard.has-hero .shq-idle-section .sb-row-mysports .sb-sub { font-size: 1.85rem; }
+.scoreboard.has-hero .shq-idle-section .sb-row-mysports .sb-sub-date { font-size: 1.5rem; }
+.scoreboard.has-hero .shq-idle-section .sb-row-mysports .phillies-pitcher-name { font-size: 1.25rem; }
+.scoreboard.has-hero .shq-idle-section .sb-row-mysports .phillies-pitcher-stat { font-size: 1.1rem; }
+
+/* Out-of-season/no-upcoming teams collapse further still under a live hero */
+.scoreboard.has-hero .shq-idle-section .sb-row-collapsed { padding: 4px 14px 4px 12px; }
+.scoreboard.has-hero .shq-idle-section .sb-row-collapsed .sb-logo { width: 40px; height: 40px; }
+.scoreboard.has-hero .shq-idle-section .sb-row-collapsed .sb-team { font-size: 1.5rem; }
+.scoreboard.has-hero .shq-idle-section .sb-row-collapsed .sb-sub { font-size: 1.05rem; }
+.scoreboard.has-hero .shq-idle-section .sb-row-collapsed .sb-headline { font-size: 1.0rem; }
 
 /* Grid widens sports column when any live game is active */
 .tv-content-grid.sports-hero {
@@ -1762,6 +1828,7 @@ body {
 }
 .shq-hdr-teams {
   color: rgba(255, 255, 255, 0.85);
+  font-size: 2.05rem;
 }
 .shq-hdr-recent {
   color: rgba(212, 175, 55, 0.90);
@@ -1910,8 +1977,8 @@ body {
 }
 .mlb-team-side .sb-logo,
 .mlb-live-panel .sb-logo {
-  width: 70px;
-  height: 70px;
+  width: 96px;
+  height: 96px;
   flex-shrink: 0;
 }
 .mlb-team-mine { flex-direction: row; }
@@ -2037,6 +2104,30 @@ body {
   white-space: nowrap;
   padding-top: 4px;
   border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* Real scoring-play context — how the last run(s) happened, from ESPN's own
+   play-by-play text. Readable but secondary to the score/diamond above. */
+.mlb-scoring-play {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 5px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+.mlb-scoring-label {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(245, 197, 24, 0.85);
+}
+.mlb-scoring-text {
+  font-size: 1.6rem;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ── Responsive — Mac browser / narrower screens ────────────── */
