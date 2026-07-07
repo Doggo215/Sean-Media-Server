@@ -823,7 +823,12 @@ function renderSportsRow(team, key) {
   // No upcoming game — one compact status line, real data only, no headline
   // clutter. "Offseason" when the backend already flagged it that way,
   // otherwise "No upcoming" + real standing if available.
-  if (!team.last) {
+  // A stale last result (older than 12h) is treated the same as no last result —
+  // showing an end-of-season loss is not useful when there's no game coming up.
+  const STALE_MS = 12 * 60 * 60 * 1000;
+  const lastIsStale = !team.last || !team.last.game_utc ||
+    (Date.now() - new Date(team.last.game_utc).getTime()) > STALE_MS;
+  if (lastIsStale) {
     const isOffseason = team.standing === "Offseason";
     const label = isOffseason ? "Offseason" : "No upcoming";
     const extra = isOffseason ? team.record : team.standing;
