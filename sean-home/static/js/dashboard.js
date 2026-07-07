@@ -1481,6 +1481,26 @@ function renderGaming(data) {
     </div>` : ""}
   ` : "";
 
+  // Friends online — only render if at least 1 friend is online
+  const friendsList = Array.isArray(data && data.friends_online) ? data.friends_online : [];
+  const friendsCount = (data && data.friends_online_count) || friendsList.length;
+  let friendsHtml = "";
+  if (friendsList.length > 0) {
+    const rows = friendsList.slice(0, 3).map(f => {
+      const name = gamingSafeText(f.name, "Unknown");
+      const game = f.game ? gamingSafeText(f.game, null) : null;
+      const plat = f.platform ? gamingSafeText(f.platform, null) : null;
+      const parts = [game || "Online", plat].filter(Boolean);
+      return `<div class="gm-friend-row">${name} · ${parts.join(" · ")}</div>`;
+    }).join("");
+    const more = friendsCount > 3 ? `<div class="gm-friend-more">+${friendsCount - 3} more</div>` : "";
+    friendsHtml = `
+      <div class="gm-friends-section">
+        <div class="gm-row"><span class="gm-label">Friends Online</span><span class="gm-value">${friendsCount}</span></div>
+        ${rows}${more}
+      </div>`;
+  }
+
   body.innerHTML = `
     <div class="${statusCls}">${status}</div>
     ${psnStatus ? `<div class="gm-row"><span class="gm-label">PSN Doggo215</span><span class="gm-value">${psnStatus}</span></div>` : ""}
@@ -1489,6 +1509,7 @@ function renderGaming(data) {
       ${gameHtml}
     </div>
     ${lastOnline ? `<div class="gm-row"><span class="gm-label">Last Online</span><span class="gm-value gm-dim">${lastOnline}</span></div>` : ""}
+    ${friendsHtml}
     ${trophyHtml}
   `;
 }

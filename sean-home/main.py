@@ -116,6 +116,11 @@ HA_PS5_BRONZE_ENTITY       = os.environ.get("HA_PS5_BRONZE_ENTITY", "")
 GAMING_HA_CACHE_TTL = 30   # seconds — PS5 status can change quickly
 _gaming_ha_cache: dict = {"data": None, "fetched_at": 0}
 
+# ── Direct PSN friends presence (PSNAWP, optional) ────────────────────────────
+PSN_NPSSO = os.environ.get("PSN_NPSSO", "").strip()
+PSN_FRIENDS_CACHE_TTL = int(os.environ.get("PSN_FRIENDS_CACHE_TTL", "300"))
+_psn_friends_cache: dict = {"data": None, "fetched_at": 0}
+
 app = FastAPI(title="Sean Home", version="1.0.0")
 app.mount("/static", StaticFiles(directory="/home/sean/sean-home/static"), name="static")
 templates = Jinja2Templates(directory="/home/sean/sean-home/templates")
@@ -1352,6 +1357,86 @@ async def build_gaming_from_ha() -> dict:
     }
 
 
+async def build_psn_friends() -> dict:
+    """
+    Fetch online friends from PSN directly via PSNAWP.
+    Returns a dict with friends_source, friends_online_count, friends_online, friends_error.
+    Never logs or exposes PSN_NPSSO.
+    Returns safe empty result if token missing, invalid, or API fails.
+    """
+    _empty = {
+        "friends_source": None,
+        "friends_online_count": 0,
+        "friends_online": [],
+        "friends_error": None,
+    }
+
+    if not PSN_NPSSO:
+        return _empty
+
+    # Serve from cache if fresh
+    now = time.time()
+    if _psn_friends_cache["data"] and (now - _psn_friends_cache["fetched_at"]) < PSN_FRIENDS_CACHE_TTL:
+        return _psn_friends_cache["data"]
+
+    try:
+        import asyncio
+        from psnawp_api import PSNAWP
+
+        def _fetch_sync():
+            psnawp = PSNAWP(PSN_NPSSO)
+            me = psnawp.me()
+            friends = list(me.friends_list())
+            online = []
+            for friend in friends:
+                try:
+                    presence = friend.get_presence()
+                    bp = presence.get("basicPresence", {}) if isinstance(presence, dict) else {}
+                    availability = bp.get("availability", "")
+                    if availability not in ("availableToPlay", "availableToCommunicate", "busy", "online"):
+                        continue
+                    game_title = None
+                    platform = None
+                    titles = bp.get("gameTitleInfoList") or []
+                    if titles:
+                        t = titles[0]
+                        game_title = t.get("titleName") or None
+                        np_id = t.get("npTitleId", "")
+                        if np_id.startswith("PPSA"):
+                            platform = "PS5"
+                        elif np_id.startswith("CUSA"):
+                            platform = "PS4"
+                    online.append({
+                        "name": getattr(friend, "online_id", None) or "Unknown",
+                        "online_status": availability,
+                        "game": game_title,
+                        "platform": platform,
+                    })
+                    if len(online) >= 5:
+                        break
+                except Exception:
+                    continue
+            return online
+
+        friends_online = await asyncio.to_thread(_fetch_sync)
+        result = {
+            "friends_source": "psn_direct",
+            "friends_online_count": len(friends_online),
+            "friends_online": friends_online,
+            "friends_error": None,
+        }
+    except Exception as exc:
+        safe_msg = str(exc)
+        if PSN_NPSSO in safe_msg:
+            safe_msg = safe_msg.replace(PSN_NPSSO, "[REDACTED]")
+        print(f"[Gaming] PSN friends fetch failed: {safe_msg}")
+        result = {**_empty, "friends_error": "PSN friends unavailable"}
+
+    _psn_friends_cache["data"] = result
+    _psn_friends_cache["fetched_at"] = time.time()
+    return result
+
+
 _GAMING_PLACEHOLDER = {
     "connected": False,
     "platform": "PS5",
@@ -1368,6 +1453,10 @@ _GAMING_PLACEHOLDER = {
     "source": "placeholder",
     "updated_at": None,
     "error": None,
+    "friends_source": None,
+    "friends_online_count": 0,
+    "friends_online": [],
+    "friends_error": None,
 }
 
 
@@ -1384,8 +1473,15 @@ async def gaming():
 
     try:
         result = await build_gaming_from_ha()
-    except Exception as exc:
+    except Exception:
         result = {**_GAMING_PLACEHOLDER, "source": "error", "error": "Home Assistant fetch failed"}
+
+    # Merge PSN friends (runs independently; never blocks HA data)
+    try:
+        friends = await build_psn_friends()
+        result = {**result, **friends}
+    except Exception:
+        result = {**result, "friends_source": None, "friends_online_count": 0, "friends_online": [], "friends_error": None}
 
     _gaming_ha_cache["data"] = result
     _gaming_ha_cache["fetched_at"] = now
