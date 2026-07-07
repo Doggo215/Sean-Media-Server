@@ -1781,6 +1781,103 @@ async def _fetch_mls_east(client: httpx.AsyncClient) -> dict | None:
     return None
 
 
+_GAMES_TODAY_TTL = 120  # 2 min — scoreboard changes frequently
+_games_today_cache: dict = {"data": None, "fetched_at": 0}
+
+
+def _parse_scoreboard_games(payload: dict, max_games: int = 3) -> list[dict]:
+    """Parse an ESPN scoreboard payload into compact game dicts, live first then soonest."""
+    now_utc = datetime.now(timezone.utc)
+    today_mt = now_utc.astimezone(DENVER).strftime("%Y-%m-%d")
+    live, upcoming, finished = [], [], []
+
+    for ev in payload.get("events", []):
+        try:
+            comp = ev["competitions"][0]
+            status = comp["status"]["type"]
+            state = status.get("state", "")  # "pre" / "in" / "post"
+            event_dt = datetime.fromisoformat(ev["date"].replace("Z", "+00:00"))
+            # Only include games on today's MT date
+            if event_dt.astimezone(DENVER).strftime("%Y-%m-%d") != today_mt:
+                continue
+            competitors = comp["competitors"]
+            away_c = next((c for c in competitors if c["homeAway"] == "away"), competitors[0])
+            home_c = next((c for c in competitors if c["homeAway"] == "home"), competitors[1])
+            _, time_mt = _to_mt_strings(event_dt)
+            game = {
+                "away": away_c["team"].get("abbreviation", "?"),
+                "home": home_c["team"].get("abbreviation", "?"),
+                "away_name": away_c["team"].get("shortDisplayName") or away_c["team"].get("abbreviation"),
+                "home_name": home_c["team"].get("shortDisplayName") or home_c["team"].get("abbreviation"),
+                "away_logo": away_c["team"].get("logo", ""),
+                "home_logo": home_c["team"].get("logo", ""),
+                "time": time_mt,
+                "status": state,
+                "detail": status.get("shortDetail", ""),
+                "away_score": _score_str(away_c) if state != "pre" else None,
+                "home_score": _score_str(home_c) if state != "pre" else None,
+            }
+            if state == "in":
+                live.append(game)
+            elif state == "post":
+                finished.append(game)
+            else:
+                upcoming.append((event_dt, game))
+        except Exception:
+            continue
+
+    upcoming_sorted = [g for _, g in sorted(upcoming, key=lambda x: x[0])]
+    # Live first, then soonest upcoming, skip finished
+    combined = live + upcoming_sorted
+    return combined[:max_games]
+
+
+@app.get("/api/games_today")
+async def games_today():
+    now = time.time()
+    if _games_today_cache["data"] and (now - _games_today_cache["fetched_at"]) < _GAMES_TODAY_TTL:
+        return {**_games_today_cache["data"], "cached": True}
+
+    leagues: list[dict] = []
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            mlb_raw, wc_raw, nfl_raw, nba_raw = await asyncio.gather(
+                fetch_mlb_scoreboard(client),
+                fetch_world_cup_scoreboard(client),
+                client.get("https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"),
+                client.get("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"),
+                return_exceptions=True,
+            )
+        # World Cup
+        if isinstance(wc_raw, dict):
+            wc_games = _parse_scoreboard_games(wc_raw, max_games=3)
+            if wc_games:
+                leagues.append({"name": "World Cup", "sport": "soccer", "games": wc_games})
+        # MLB
+        if isinstance(mlb_raw, dict):
+            mlb_games = _parse_scoreboard_games(mlb_raw, max_games=3)
+            if mlb_games:
+                leagues.append({"name": "MLB", "sport": "baseball", "games": mlb_games})
+        # NFL — only include if today's date matches
+        if not isinstance(nfl_raw, Exception) and nfl_raw.status_code == 200:
+            nfl_games = _parse_scoreboard_games(nfl_raw.json(), max_games=3)
+            if nfl_games:
+                leagues.append({"name": "NFL", "sport": "football", "games": nfl_games})
+        # NBA — only Summer League or playoffs if any games today
+        if not isinstance(nba_raw, Exception) and nba_raw.status_code == 200:
+            nba_games = _parse_scoreboard_games(nba_raw.json(), max_games=3)
+            if nba_games:
+                leagues.append({"name": "NBA", "sport": "basketball", "games": nba_games})
+    except Exception as exc:
+        return {"leagues": [], "source": "error", "error": str(exc)}
+
+    result = {"leagues": leagues, "source": "api"}
+    if leagues:
+        _games_today_cache["data"] = result
+        _games_today_cache["fetched_at"] = now
+    return result
+
+
 @app.get("/api/standings")
 async def standings_route():
     now = time.time()

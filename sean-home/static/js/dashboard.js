@@ -349,116 +349,52 @@ async function pollToday() {
   if (!bodyEl) return;
 
   try {
-    const res = await fetch("/api/tonight");
+    const res = await fetch("/api/games_today");
     if (!res.ok) throw new Error();
     const d = await res.json();
 
-    const upcoming = (d.available && d.sports?.upcoming) ? d.sports.upcoming : [];
-    const finals   = (d.available && d.sports?.finals)   ? d.sports.finals   : [];
-    const gaming   = d.gaming || null;
-
+    const leagues = d.leagues || [];
     const parts = [];
 
-    // ── Tonight's schedule ──────────────────────────────────────
-    const events = [];
-    for (const g of upcoming.slice(0, 4)) {
-      // World Cup multi-game block
-      if (g.team === "World Cup" && g.wc_games && g.wc_games.length) {
-        const gameLines = g.wc_games.map(wg => {
-          const m = parseMatchup(wg.matchup);
-          const stateTag = wg.state === "in"
-            ? `<span class="td-wc-live">LIVE</span>`
-            : `<span class="td-wc-time">${wg.time}</span>`;
-          return `<div class="td-wc-game">
-            <span class="td-wc-flag">${renderFlag(wg.away_abbr)}</span>
-            <span class="td-wc-teams">${m.away} vs ${m.home}</span>
-            <span class="td-wc-flag">${renderFlag(wg.home_abbr)}</span>
-            ${stateTag}
-          </div>`;
-        }).join("");
-        events.push(`
-          <div class="td-event td-wc-block">
-            <div class="td-event-body">
-              <div class="td-event-team">World Cup</div>
-              <div class="td-wc-games">${gameLines}</div>
-            </div>
-          </div>`);
-        continue;
-      }
-
-      // Standard single-game event
-      const isWC = g.team === "World Cup" && (g.opponent || "").includes("@");
-      let opp = "";
-      if (isWC) {
-        const m = parseMatchup(g.opponent);
-        opp = `${renderFlagByName(m.away)} ${m.away} vs ${m.home} ${renderFlagByName(m.home)}`;
-      } else if (g.opponent) {
-        opp = `vs ${g.opponent}`;
-      }
-      events.push(`
-        <div class="td-event">
-          <div class="td-event-body">
-            <div class="td-event-team">${g.team}</div>
-            ${opp ? `<div class="td-event-opp">${opp}</div>` : ""}
+    // ── GAME ON TODAY ────────────────────────────────────────────
+    const leagueBlocks = leagues.map(league => {
+      const gameRows = league.games.map(g => {
+        const isLive = g.status === "in";
+        const connector = league.sport === "soccer" ? "vs" : "at";
+        const awayLogo = g.away_logo ? `<img class="td-gt-logo" src="${g.away_logo}" alt="" loading="lazy" onerror="this.style.display='none'">` : "";
+        const homeLogo = g.home_logo ? `<img class="td-gt-logo" src="${g.home_logo}" alt="" loading="lazy" onerror="this.style.display='none'">` : "";
+        const statusLine = isLive
+          ? `<div class="td-gt-status-line"><span class="td-gt-live">LIVE</span><span class="td-gt-detail"> · ${g.detail}</span></div>`
+          : `<div class="td-gt-status-line"><span class="td-gt-time">${g.time}</span></div>`;
+        return `<div class="td-gt-game${isLive ? " td-gt-live-row" : ""}">
+          <div class="td-gt-matchup-row">
+            ${awayLogo}
+            <span class="td-gt-matchup">${g.away_name} <span class="td-gt-connector">${connector}</span> ${g.home_name}</span>
+            ${homeLogo}
           </div>
-          <div class="td-event-time">${g.time || "TBD"}</div>
-        </div>`);
-    }
+          ${statusLine}
+        </div>`;
+      }).join("");
 
-    // If no upcoming, show most recent final
-    if (!events.length && finals.length) {
-      const g = finals[0];
-      const rCls = g.result === "W" ? "td-result-win" : g.result === "L" ? "td-result-loss" : "";
-      events.push(`
-        <div class="td-event">
-          <div class="td-event-body">
-            <div class="td-event-team ${rCls}">${g.team}</div>
-            <div class="td-event-opp">vs ${g.opponent}</div>
-          </div>
-          <div class="td-event-time td-event-score ${rCls}">${g.score || "–"}</div>
-        </div>`);
-    }
+      return `<div class="td-gt-league">
+        <div class="td-gt-league-label">${league.name}</div>
+        ${gameRows}
+      </div>`;
+    });
 
-    if (events.length) {
-      parts.push(`
-        <div class="td-section">
-          <div class="td-section-label">Tonight</div>
-          ${events.join("")}
-        </div>`);
-    } else {
-      parts.push(`
-        <div class="td-section">
-          <div class="td-section-label">Tonight</div>
-          <div class="td-empty">No games tonight</div>
-        </div>`);
-    }
+    const sportsHtml = leagueBlocks.length
+      ? leagueBlocks.join("")
+      : `<div class="td-empty">No major games today</div>`;
 
-    // Calendar is now rendered by pollCalendar() into #calendar-section (below today-body)
-
-    // ── Gaming ──────────────────────────────────────────────────
-    if (gaming && gaming.available) {
-      const status   = gaming.fortnite_status || "Online";
-      const headline = gaming.headline || "";
-      parts.push(`
-        <div class="td-divider"></div>
-        <div class="td-section">
-          <div class="td-section-label">Gaming</div>
-          <div class="td-gaming">
-            <span class="td-gaming-name">Fortnite</span>
-            <span class="td-gaming-badge">${status}</span>
-          </div>
-          ${headline ? `<div class="td-gaming-headline">${headline}</div>` : ""}
-          <div class="td-gaming" style="margin-top:8px">
-            <span class="td-gaming-name">PS5</span>
-            <span class="td-gaming-badge td-gaming-badge-dim">Friends · Soon</span>
-          </div>
-        </div>`);
-    }
+    parts.push(`<div class="td-section td-section-games">
+      <div class="td-section-label">Game On Today</div>
+      ${sportsHtml}
+    </div>`);
 
     bodyEl.innerHTML = parts.join("");
 
   } catch {
-    console.warn("Sean Home: today unavailable");
+    console.warn("Sean Home: games_today unavailable");
     bodyEl.innerHTML = `<div class="td-empty">Unavailable</div>`;
   }
 
