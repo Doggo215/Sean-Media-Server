@@ -106,6 +106,12 @@ HA_PS5_STATUS_ENTITY       = os.environ.get("HA_PS5_STATUS_ENTITY", "")
 HA_PS5_ACTIVITY_ENTITY     = os.environ.get("HA_PS5_ACTIVITY_ENTITY", "")
 HA_PS5_CURRENT_GAME_ENTITY = os.environ.get("HA_PS5_CURRENT_GAME_ENTITY", "")
 HA_PS5_FRIENDS_ENTITY      = os.environ.get("HA_PS5_FRIENDS_ENTITY", "")
+HA_PS5_PSN_STATUS_ENTITY   = os.environ.get("HA_PS5_PSN_STATUS_ENTITY", "")
+HA_PS5_LAST_ONLINE_ENTITY  = os.environ.get("HA_PS5_LAST_ONLINE_ENTITY", "")
+HA_PS5_TROPHY_ENTITY       = os.environ.get("HA_PS5_TROPHY_ENTITY", "")
+HA_PS5_GOLD_ENTITY         = os.environ.get("HA_PS5_GOLD_ENTITY", "")
+HA_PS5_SILVER_ENTITY       = os.environ.get("HA_PS5_SILVER_ENTITY", "")
+HA_PS5_BRONZE_ENTITY       = os.environ.get("HA_PS5_BRONZE_ENTITY", "")
 
 GAMING_HA_CACHE_TTL = 30   # seconds — PS5 status can change quickly
 _gaming_ha_cache: dict = {"data": None, "fetched_at": 0}
@@ -1216,9 +1222,14 @@ async def build_gaming_from_ha() -> dict:
       - HACS PSN integration may expose separate game/friends sensors
     """
     async with httpx.AsyncClient(timeout=3.0) as client:
-        status_data  = await fetch_ha_state(client, HA_PS5_STATUS_ENTITY)
-        game_data    = await fetch_ha_state(client, HA_PS5_CURRENT_GAME_ENTITY)
-        friends_data = await fetch_ha_state(client, HA_PS5_FRIENDS_ENTITY)
+        status_data      = await fetch_ha_state(client, HA_PS5_STATUS_ENTITY)
+        game_data        = await fetch_ha_state(client, HA_PS5_CURRENT_GAME_ENTITY)
+        psn_status_data  = await fetch_ha_state(client, HA_PS5_PSN_STATUS_ENTITY)
+        last_online_data = await fetch_ha_state(client, HA_PS5_LAST_ONLINE_ENTITY)
+        trophy_data      = await fetch_ha_state(client, HA_PS5_TROPHY_ENTITY)
+        gold_data        = await fetch_ha_state(client, HA_PS5_GOLD_ENTITY)
+        silver_data      = await fetch_ha_state(client, HA_PS5_SILVER_ENTITY)
+        bronze_data      = await fetch_ha_state(client, HA_PS5_BRONZE_ENTITY)
 
     # If the primary status entity returned nothing, treat as not connected
     if not status_data:
@@ -1229,8 +1240,12 @@ async def build_gaming_from_ha() -> dict:
             "status_detail": "PS5 entity unavailable",
             "current_game": None,
             "last_game": None,
-            "friends_online": [],
-            "friends_count": 0,
+            "psn_status": None,
+            "last_online": None,
+            "trophy_level": None,
+            "gold_trophies": None,
+            "silver_trophies": None,
+            "bronze_trophies": None,
             "source": "error",
             "updated_at": datetime.now(timezone.utc).isoformat(),
             "error": "Home Assistant entity not found or unavailable",
@@ -1267,17 +1282,56 @@ async def build_gaming_from_ha() -> dict:
         if media_title and str(media_title).lower() not in _HA_UNAVAILABLE:
             current_game = str(media_title)
 
-    # Friends online — expect a list or comma-separated string from the entity
-    friends_online: list[str] = []
-    if friends_data:
-        f_state = friends_data.get("state") or ""
-        f_attrs = friends_data.get("attributes") or {}
-        friends_list = f_attrs.get("friends") or f_attrs.get("online_friends")
-        if isinstance(friends_list, list):
-            friends_online = [str(f) for f in friends_list if f]
-        elif f_state and f_state.lower() not in _HA_UNAVAILABLE:
-            # Some integrations return a comma-separated string as state
-            friends_online = [s.strip() for s in f_state.split(",") if s.strip()]
+    # PSN online status (sensor.doggo215_online_status)
+    psn_status_raw = None
+    if psn_status_data:
+        s = str(psn_status_data.get("state") or "").lower()
+        if s not in _HA_UNAVAILABLE:
+            psn_status_map = {
+                "offline": "Offline",
+                "availabletoplay": "Available to Play",
+                "availabletocommunicate": "Available",
+                "busy": "Busy",
+                "online": "Online",
+            }
+            psn_status_raw = psn_status_map.get(s, s.capitalize())
+
+    # Last online — parse ISO timestamp and convert to Mountain Time
+    last_online_str = None
+    if last_online_data:
+        lo_state = str(last_online_data.get("state") or "")
+        if lo_state and lo_state.lower() not in _HA_UNAVAILABLE:
+            try:
+                from zoneinfo import ZoneInfo
+                lo_dt = datetime.fromisoformat(lo_state.replace("Z", "+00:00"))
+                lo_mt = lo_dt.astimezone(ZoneInfo("America/Denver"))
+                now_mt = datetime.now(ZoneInfo("America/Denver"))
+                delta = now_mt - lo_mt
+                if delta.total_seconds() < 60:
+                    last_online_str = "Just now"
+                elif delta.total_seconds() < 3600:
+                    mins = int(delta.total_seconds() // 60)
+                    last_online_str = f"{mins}m ago"
+                elif delta.days == 0:
+                    hrs = int(delta.total_seconds() // 3600)
+                    last_online_str = f"{hrs}h ago"
+                elif delta.days == 1:
+                    last_online_str = f"Yesterday {lo_mt.strftime('%-I:%M %p')}"
+                else:
+                    last_online_str = lo_mt.strftime("%-m/%-d %-I:%M %p")
+            except Exception:
+                last_online_str = lo_state
+
+    # Trophy stats
+    def _safe_int(d):
+        if not d: return None
+        try: return int(str(d.get("state") or ""))
+        except (ValueError, TypeError): return None
+
+    trophy_level   = _safe_int(trophy_data)
+    gold_trophies  = _safe_int(gold_data)
+    silver_trophies = _safe_int(silver_data)
+    bronze_trophies = _safe_int(bronze_data)
 
     return {
         "connected": connected,
@@ -1286,8 +1340,12 @@ async def build_gaming_from_ha() -> dict:
         "status_detail": status_detail,
         "current_game": current_game if connected else None,
         "last_game": None,
-        "friends_online": friends_online,
-        "friends_count": len(friends_online),
+        "psn_status": psn_status_raw,
+        "last_online": last_online_str,
+        "trophy_level": trophy_level,
+        "gold_trophies": gold_trophies,
+        "silver_trophies": silver_trophies,
+        "bronze_trophies": bronze_trophies,
         "source": "home_assistant",
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "error": None,
@@ -1301,8 +1359,12 @@ _GAMING_PLACEHOLDER = {
     "status_detail": "Connect Home Assistant / PSN to enable",
     "current_game": None,
     "last_game": None,
-    "friends_online": [],
-    "friends_count": 0,
+    "psn_status": None,
+    "last_online": None,
+    "trophy_level": None,
+    "gold_trophies": None,
+    "silver_trophies": None,
+    "bronze_trophies": None,
     "source": "placeholder",
     "updated_at": None,
     "error": None,

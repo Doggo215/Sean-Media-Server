@@ -1452,48 +1452,44 @@ function renderGaming(data) {
   const body = document.getElementById("gaming-body");
   if (!body) return;
 
-  const connected = data && data.connected;
-  const platform  = gamingSafeText(data && data.platform, "PS5");
-  const status    = gamingSafeText(data && data.status, "Not connected");
-  const detail    = gamingSafeText(data && data.status_detail, "Connect Home Assistant / PSN to enable");
-  const game      = data && data.current_game ? gamingSafeText(data.current_game, null) : null;
-  const friends   = Array.isArray(data && data.friends_online) ? data.friends_online : [];
-  const fcount    = (data && data.friends_count) || friends.length;
+  const connected   = data && data.connected;
+  const status      = gamingSafeText(data && data.status, "Not connected");
+  const psnStatus   = gamingSafeText(data && data.psn_status, null);
+  const game        = data && data.current_game ? gamingSafeText(data.current_game, null) : null;
+  const lastOnline  = gamingSafeText(data && data.last_online, null);
+  const trophyLevel = (data && data.trophy_level != null) ? data.trophy_level : null;
+  const gold        = (data && data.gold_trophies != null) ? data.gold_trophies : null;
+  const silver      = (data && data.silver_trophies != null) ? data.silver_trophies : null;
+  const bronze      = (data && data.bronze_trophies != null) ? data.bronze_trophies : null;
 
   const statusCls = connected ? "gaming-status online" : "gaming-status offline";
 
-  let friendsHtml;
-  if (!connected) {
-    friendsHtml = `<div class="gaming-empty">Connect PSN to show friends</div>`;
-  } else if (friends.length === 0) {
-    friendsHtml = `<div class="gaming-empty">No friends online</div>`;
-  } else {
-    friendsHtml = friends.map(f =>
-      `<div class="gaming-friend-row">${gamingSafeText(f, "")}</div>`
-    ).join("");
-  }
+  const gameHtml = game
+    ? `<div class="gm-value">${game}</div>`
+    : `<div class="gm-value gm-dim">${connected ? "No game running" : "PS5 offline"}</div>`;
 
-  let gameHtml;
-  if (!connected) {
-    gameHtml = `<div class="gaming-empty">Waiting for PS5 data</div>`;
-  } else if (!game) {
-    gameHtml = `<div class="gaming-empty">No game running</div>`;
-  } else {
-    gameHtml = `<div class="gaming-current-title">${game}</div>`;
-  }
+  const trophyHtml = trophyLevel != null ? `
+    <div class="gm-row">
+      <span class="gm-label">Trophy Level</span>
+      <span class="gm-value">${trophyLevel}</span>
+    </div>
+    ${gold != null || silver != null || bronze != null ? `
+    <div class="gm-trophy-row">
+      ${gold   != null ? `<span class="gm-trophy gm-gold">G ${gold}</span>`   : ""}
+      ${silver != null ? `<span class="gm-trophy gm-silver">S ${silver}</span>` : ""}
+      ${bronze != null ? `<span class="gm-trophy gm-bronze">B ${bronze}</span>` : ""}
+    </div>` : ""}
+  ` : "";
 
   body.innerHTML = `
-    <div class="gaming-console">${platform}</div>
     <div class="${statusCls}">${status}</div>
-    ${detail && !connected ? `<div class="gaming-source">${detail}</div>` : ""}
-    <div class="gaming-section">
-      <div class="gaming-label">Friends Online${fcount > 0 ? ` · ${fcount}` : ""}</div>
-      ${friendsHtml}
-    </div>
-    <div class="gaming-section">
-      <div class="gaming-label">Current Game</div>
+    ${psnStatus ? `<div class="gm-row"><span class="gm-label">PSN Doggo215</span><span class="gm-value">${psnStatus}</span></div>` : ""}
+    <div class="gm-row">
+      <span class="gm-label">Now Playing</span>
       ${gameHtml}
     </div>
+    ${lastOnline ? `<div class="gm-row"><span class="gm-label">Last Online</span><span class="gm-value gm-dim">${lastOnline}</span></div>` : ""}
+    ${trophyHtml}
   `;
 }
 

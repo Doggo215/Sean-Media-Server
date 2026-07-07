@@ -2528,18 +2528,11 @@ body {
   flex: 1;
 }
 
-.gaming-console {
-  font-size: 2.2rem;
-  font-weight: 900;
-  color: rgba(0, 168, 255, 0.85);
-  letter-spacing: 0.08em;
-  line-height: 1;
-}
-
 .gaming-status {
-  font-size: 1.4rem;
-  font-weight: 600;
+  font-size: 1.6rem;
+  font-weight: 700;
   color: var(--text-2);
+  margin-bottom: 6px;
 }
 .gaming-status.offline {
   color: var(--text-3);
@@ -2549,55 +2542,41 @@ body {
   color: rgba(80, 220, 120, 0.90);
 }
 
-.gaming-section {
+.gm-row {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  align-items: baseline;
+  gap: 8px;
   margin-top: 4px;
 }
-
-.gaming-label {
-  font-size: 1.2rem;
+.gm-label {
+  font-size: 1.15rem;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-3);
+  flex-shrink: 0;
 }
-
-.gaming-empty {
-  font-size: 1.3rem;
+.gm-value {
+  font-size: 1.45rem;
+  font-weight: 600;
+  color: var(--text-1);
+  flex: 1;
+  text-align: right;
+}
+.gm-dim {
   color: var(--text-3);
-  opacity: 0.8;
+  font-weight: 400;
   font-style: italic;
 }
-
-.gaming-game {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-1);
-}
-
-.gaming-friends {
-  font-size: 1.35rem;
-  color: var(--text-2);
-}
-
-.gaming-source {
-  font-size: 1.1rem;
-  color: var(--text-3);
-  opacity: 0.8;
+.gm-trophy-row {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
   margin-top: 2px;
 }
-
-.gaming-friend-row {
+.gm-trophy {
   font-size: 1.3rem;
   color: var(--text-2);
-}
-
-.gaming-current-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-1);
 }
 
 @media (max-width:1100px) {
