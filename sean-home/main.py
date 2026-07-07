@@ -85,6 +85,9 @@ SPORTS_CACHE_TTL_LIVE = 60    # poll faster while a tracked game is in progress
 SPORTS_CACHE_TTL_IDLE = 600   # otherwise match the weather cache cadence
 _sports_cache = {"data": None, "fetched_at": 0, "ttl": SPORTS_CACHE_TTL_IDLE}
 
+STANDINGS_CACHE_TTL = 600  # 10 min — standings don't change rapidly
+_standings_cache: dict = {"data": None, "fetched_at": 0}
+
 # fortnite-api.com — free, public, no auth required
 FORTNITE_NEWS_URL = "https://fortnite-api.com/v2/news/br"
 FORTNITE_SHOP_URL = "https://fortnite-api.com/v2/shop"
@@ -1650,6 +1653,141 @@ async def tonight():
         "available": False,
         "note": "Calendar — coming soon",
     }
+
+    return result
+
+
+# ─── Standings ───────────────────────────────────────────────────────────────
+
+async def _fetch_mlb_nl_east(client: httpx.AsyncClient) -> dict | None:
+    """Return NL East standings rows with Phillies highlighted, or None on failure."""
+    resp = await client.get(
+        "https://site.api.espn.com/apis/v2/sports/baseball/mlb/standings",
+        params={"type": "2", "level": "3"},
+    )
+    resp.raise_for_status()
+    d = resp.json()
+    for league in d.get("children", []):
+        for div in league.get("children", []):
+            entries = div.get("standings", {}).get("entries", [])
+            abbrs = [e.get("team", {}).get("abbreviation", "") for e in entries]
+            if "PHI" not in abbrs:
+                continue
+            rows = []
+            phi_rank = phi_record = phi_gb = None
+            for i, e in enumerate(entries):
+                abbr = e.get("team", {}).get("abbreviation", "?")
+                stats = {s["name"]: s["displayValue"] for s in e.get("stats", [])}
+                w = stats.get("wins", "?")
+                l = stats.get("losses", "?")
+                gb = stats.get("gamesBehind", "-")
+                rows.append({"rank": i + 1, "abbr": abbr, "w": w, "l": l, "gb": gb, "highlight": abbr == "PHI"})
+                if abbr == "PHI":
+                    phi_rank, phi_record, phi_gb = i + 1, f"{w}-{l}", gb
+            return {
+                "team_key": "phillies",
+                "label": "PHILLIES",
+                "league_label": "NL EAST",
+                "rank": phi_rank,
+                "record": phi_record,
+                "gb": phi_gb,
+                "rows": rows,
+            }
+    return None
+
+
+async def _fetch_mls_east(client: httpx.AsyncClient) -> dict | None:
+    """Return MLS Eastern Conference compact slice with Union highlighted, or None on failure."""
+    resp = await client.get("https://site.api.espn.com/apis/v2/sports/soccer/usa.1/standings")
+    resp.raise_for_status()
+    d = resp.json()
+    for conf in d.get("children", []):
+        if conf.get("abbreviation", "").lower() not in ("east", "eastern"):
+            continue
+        entries = conf.get("standings", {}).get("entries", [])
+
+        def _rank_key(e):
+            s = {x["name"]: x["displayValue"] for x in e.get("stats", [])}
+            try:
+                return int(s.get("rank", "999") or "999")
+            except (ValueError, TypeError):
+                try:
+                    return -int(s.get("points", "0") or "0")
+                except (ValueError, TypeError):
+                    return 999
+
+        sorted_entries = sorted(entries, key=_rank_key)
+        phi_idx = next(
+            (i for i, e in enumerate(sorted_entries)
+             if "Philadelphia" in e.get("team", {}).get("displayName", "")
+             or e.get("team", {}).get("abbreviation", "") == "PHI"),
+            None,
+        )
+        if phi_idx is None:
+            continue
+
+        # Show: leader + window of 2-above/union/1-below (max ~5 rows)
+        show_idx: set[int] = {0}
+        for off in range(-2, 2):
+            idx = phi_idx + off
+            if 0 <= idx < len(sorted_entries):
+                show_idx.add(idx)
+
+        rows = []
+        prev = -1
+        for i, e in enumerate(sorted_entries):
+            if i not in show_idx:
+                continue
+            if i > prev + 1 and prev >= 0:
+                rows.append({"gap": True})
+            prev = i
+            stats = {s["name"]: s["displayValue"] for s in e.get("stats", [])}
+            abbr = e.get("team", {}).get("abbreviation", "?")
+            rows.append({
+                "rank": i + 1,
+                "abbr": abbr,
+                "overall": stats.get("overall", ""),
+                "points": stats.get("points", "?"),
+                "highlight": i == phi_idx,
+            })
+
+        phi_stats = {s["name"]: s["displayValue"] for s in sorted_entries[phi_idx].get("stats", [])}
+        return {
+            "team_key": "union",
+            "label": "UNION",
+            "league_label": "MLS EAST",
+            "rank": phi_idx + 1,
+            "overall": phi_stats.get("overall", ""),
+            "points": phi_stats.get("points", "?"),
+            "rows": rows,
+        }
+    return None
+
+
+@app.get("/api/standings")
+async def standings_route():
+    now = time.time()
+    if _standings_cache["data"] and (now - _standings_cache["fetched_at"]) < STANDINGS_CACHE_TTL:
+        return {**_standings_cache["data"], "cached": True}
+
+    result: dict = {"source": "api", "sections": []}
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            mlb_sec, mls_sec = await asyncio.gather(
+                _fetch_mlb_nl_east(client),
+                _fetch_mls_east(client),
+                return_exceptions=True,
+            )
+        if mlb_sec and not isinstance(mlb_sec, Exception):
+            result["sections"].append(mlb_sec)
+        if mls_sec and not isinstance(mls_sec, Exception):
+            result["sections"].append(mls_sec)
+    except Exception:
+        result["source"] = "error"
+
+    if result["sections"]:
+        _standings_cache["data"] = result
+        _standings_cache["fetched_at"] = now
 
     return result
 

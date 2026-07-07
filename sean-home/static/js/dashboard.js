@@ -968,88 +968,107 @@ function renderSportsRow(team, key) {
   return "";
 }
 
-/* ── News Card — team headlines drawn from sports data ────────── */
-const NEWS_ORDER  = ["eagles", "sixers", "flyers", "phillies"];
-const NEWS_COLORS = {
-  phillies: "#e81828",
-  eagles:   "#00b140",
-  sixers:   "#006bb6",
-  flyers:   "#f74902",
-};
-const NEWS_NAMES = {
-  phillies: "Phillies", eagles: "Eagles", sixers: "Sixers", flyers: "Flyers",
-};
+/* ── IN SEASON standings card ────────────────────────────────── */
 
-/* Major news rotation state */
-let _majorNews = [];
-let _majorNewsIdx = 0;
-let _majorRotateInterval = null;
-
-function renderMajorNewsSlice() {
-  const el = document.getElementById("news-major-body");
-  if (!el) return;
-  if (!_majorNews.length) {
-    el.innerHTML = `<p class="card-placeholder">Major news unavailable</p>`;
-    return;
-  }
-  const slice = _majorNews.slice(_majorNewsIdx, _majorNewsIdx + 3);
-  el.innerHTML = slice.map(item => `
-    <div class="news-major-item">
-      <div class="news-major-cat">${item.category}</div>
-      <div class="news-major-headline">${item.headline}</div>
-    </div>`).join("");
-}
-
-async function pollMajorNews() {
-  try {
-    const res = await fetch("/api/news");
-    if (!res.ok) throw new Error();
-    const d = await res.json();
-    _majorNews = (d.available && d.major && d.major.length) ? d.major : [];
-    _majorNewsIdx = 0;
-  } catch {
-    _majorNews = [];
-  }
-  renderMajorNewsSlice();
-  if (_majorRotateInterval) clearInterval(_majorRotateInterval);
-  if (_majorNews.length > 3) {
-    _majorRotateInterval = setInterval(() => {
-      _majorNewsIdx = (_majorNewsIdx + 3) % _majorNews.length;
-      renderMajorNewsSlice();
-    }, 25000);
-  }
-}
-
-function renderNewsCard(teams) {
-  const bodyEl = document.getElementById("news-body");
+function renderStandings(data) {
+  const bodyEl = document.getElementById("standings-body");
   if (!bodyEl) return;
 
-  const sportItems = [];
-  for (const key of NEWS_ORDER) {
-    const team = teams && teams[key];
-    if (!team) continue;
-    const headline = team.headline || "";
-    if (!headline) continue;
-    const color = NEWS_COLORS[key] || "var(--text-3)";
-    const name  = NEWS_NAMES[key]  || key;
-    sportItems.push(`
-      <div class="news-item">
-        <div class="news-accent" style="background:${color}"></div>
-        <div class="news-team-info">
-          <div class="news-team-name" style="color:${color}">${name}</div>
-          <div class="news-headline">${headline}</div>
-        </div>
-      </div>`);
+  if (!data || !data.sections || !data.sections.length) {
+    bodyEl.innerHTML = `<p class="card-placeholder">Standings unavailable</p>`;
+    return;
   }
 
-  bodyEl.innerHTML = `
-    <div class="news-section-hdr">Sports News</div>
-    ${sportItems.length ? sportItems.join("") : '<p class="card-placeholder">No sports news</p>'}
-    <div class="news-section-hdr news-section-hdr-major">Major News</div>
-    <div id="news-major-body"><p class="card-placeholder">Loading…</p></div>`;
+  const sectionsHtml = data.sections.map(sec => {
+    const logoImg = TEAM_LOGOS[sec.team_key]
+      ? `<img class="stg-logo" src="${TEAM_LOGOS[sec.team_key]}" alt="" loading="lazy" onerror="this.style.display='none'">`
+      : "";
 
-  /* Re-populate major section (may already have data from a prior poll) */
-  renderMajorNewsSlice();
+    // Main status line: "2nd NL East · 50-41 · 3 GB"
+    const statusParts = [];
+    if (sec.rank) {
+      const rankLabel = sec.league_label
+        ? `${ordinal(sec.rank)} ${sec.league_label}`
+        : ordinal(sec.rank);
+      statusParts.push(rankLabel);
+    }
+    if (sec.record) statusParts.push(sec.record);
+    if (sec.overall && !sec.record) statusParts.push(sec.overall);
+    if (sec.gb && sec.gb !== "-") statusParts.push(`${sec.gb} GB`);
+    if (sec.points !== undefined && !sec.gb) statusParts.push(`${sec.points} pts`);
+    const statusLine = statusParts.join(" · ");
+
+    // Build mini-standings rows — trimmed, TV-readable
+    // MLB: leader + our team + one below (max 3)
+    // MLS: all non-gap rows returned by API (max 4)
+    const dataRows = (sec.rows || []).filter(r => !r.gap);
+    const ourIdx   = dataRows.findIndex(r => r.highlight);
+    let showRows;
+    if (sec.record !== undefined && ourIdx >= 0) {
+      // MLB division (5 teams) — show all
+      showRows = dataRows;
+    } else {
+      // MLS — top 3 + Union's neighbors (Union ±1), deduped, in order
+      const idxSet = new Set();
+      for (let i = 0; i < Math.min(3, dataRows.length); i++) idxSet.add(i);
+      if (ourIdx >= 0) {
+        [ourIdx - 1, ourIdx, ourIdx + 1].forEach(i => {
+          if (i >= 0 && i < dataRows.length) idxSet.add(i);
+        });
+      }
+      showRows = dataRows.filter((_, i) => idxSet.has(i));
+    }
+
+    const rowsHtml = showRows.map(row => {
+      const cls = row.highlight ? "stg-row stg-row-highlight" : "stg-row";
+      if (row.w !== undefined) {
+        // MLB: abbr  W-L  GB
+        const gbStr = row.gb && row.gb !== "-" ? row.gb : "";
+        return `<div class="${cls}">
+          <span class="stg-abbr">${row.abbr}</span>
+          <span class="stg-record">${row.w}-${row.l}</span>
+          ${gbStr ? `<span class="stg-gb">${gbStr}</span>` : ""}
+        </div>`;
+      }
+      // MLS: abbr  pts
+      return `<div class="${cls}">
+        <span class="stg-abbr">${row.abbr}</span>
+        <span class="stg-record">${row.overall || ""}</span>
+        <span class="stg-pts">${row.points} pts</span>
+      </div>`;
+    }).join("");
+
+    return `
+      <div class="stg-section">
+        <div class="stg-section-title">
+          ${logoImg}
+          <div class="stg-title-text">
+            <div class="stg-team-name">${sec.label}</div>
+          </div>
+        </div>
+        <div class="stg-status">${statusLine}</div>
+        <div class="stg-rows">${rowsHtml}</div>
+      </div>`;
+  }).join("");
+
+  bodyEl.innerHTML = sectionsHtml;
+}
+
+function ordinal(n) {
+  const s = ["th","st","nd","rd"], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+async function pollStandings() {
+  try {
+    const res = await fetch("/api/standings");
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    renderStandings(data);
+  } catch {
+    renderStandings(null);
+  }
+  setTimeout(pollStandings, 600000);
 }
 
 // ── Sports HQ countdown helpers ──────────────────────────────────────────────
@@ -1462,12 +1481,10 @@ async function pollSports() {
       const gridEl = document.querySelector(".tv-content-grid");
       if (gridEl) gridEl.classList.toggle("sports-hero", hasAnyLive);
 
-      renderNewsCard(d.teams);
     }
   } catch {
     console.warn("Sean Home: sports unavailable");
     listEl.innerHTML = `<div class="sb-placeholder">Sports unavailable</div>`;
-    renderNewsCard(null);
   }
 
   setTimeout(pollSports, nextDelay);
@@ -1687,7 +1704,6 @@ pollCalendar();
 pollGmail();
 pollToday();
 pollSports();
-pollMajorNews();
-setInterval(pollMajorNews, 600000);
+pollStandings();
 pollMediaServer();
 pollGaming();
