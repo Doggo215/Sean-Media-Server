@@ -39,6 +39,9 @@
   --c-sixers:    #006bb6;
   --c-flyers:    #f74902;
   --c-worldcup:  #d4af37;
+  --c-union:     #5a8fc2;
+  --c-chelsea:   #5ba3e0;
+  --c-stjoephs:  #9d2235;
 
   /* Layout */
   --h-pad:  80px;
@@ -609,11 +612,14 @@ body {
 }
 
 /* Team color borders */
-.sb-row[data-team="phillies"] { border-left-color: var(--c-phillies); }
-.sb-row[data-team="eagles"]   { border-left-color: var(--c-eagles); }
-.sb-row[data-team="sixers"]   { border-left-color: var(--c-sixers); }
-.sb-row[data-team="flyers"]   { border-left-color: var(--c-flyers); }
-.sb-row[data-team="world_cup"]{ border-left-color: var(--c-worldcup); }
+.sb-row[data-team="phillies"]        { border-left-color: var(--c-phillies); }
+.sb-row[data-team="eagles"]          { border-left-color: var(--c-eagles); }
+.sb-row[data-team="sixers"]          { border-left-color: var(--c-sixers); }
+.sb-row[data-team="flyers"]          { border-left-color: var(--c-flyers); }
+.sb-row[data-team="world_cup"]       { border-left-color: var(--c-worldcup); }
+.sb-row[data-team="union"]           { border-left-color: var(--c-union); }
+.sb-row[data-team="chelsea"]         { border-left-color: var(--c-chelsea); }
+.sb-row[data-team="st_josephs_mlax"] { border-left-color: var(--c-stjoephs); }
 
 /* Logo — large enough to recognize at 10 ft */
 .sb-logo {
@@ -634,8 +640,8 @@ body {
   height: 104px;
 }
 .sb-row-mysports .sb-logo-opp {
-  width: 58px;
-  height: 58px;
+  width: 84px;
+  height: 84px;
 }
 /* Matchup line ("PHILLIES @ REDS") — the biggest text in My Sports */
 .sb-row-mysports .sb-team-matchup {
@@ -648,7 +654,7 @@ body {
 .sb-row-mysports .sb-sub-date {
   font-size: 2.6rem;
   font-weight: 600;
-  color: var(--text);
+  color: var(--text-2);
 }
 .sb-row-mysports .phillies-pitcher-name {
   font-size: 1.9rem;
@@ -1911,6 +1917,11 @@ body {
   background: var(--red);
   flex-shrink: 0;
   animation: scorePulse 1.5s ease-in-out infinite;
+}
+.shq-idle-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 .shq-idle-section .sb-row {
   padding-top: 8px;
