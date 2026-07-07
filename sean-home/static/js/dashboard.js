@@ -99,44 +99,48 @@ async function pollWeather() {
       card.className = `card card-weather${wClass ? " " + wClass : ""}`;
     }
 
-    // ── SUMMARY ROW — icon left, current info right ──────────────
+    // ── SUMMARY — hero icon + temp, details strip below ──────────
     const mainIcon = useSvg ? getWeatherIcon(d.condition) : d.icon;
+    const detailParts = [];
+    if (d.feels_like_f  !== undefined) detailParts.push(`Feels ${d.feels_like_f}°`);
+    if (d.wind_mph      !== undefined) detailParts.push(`Wind ${d.wind_mph} mph`);
+    if (d.precip_chance !== undefined) detailParts.push(`Rain ${d.precip_chance}%`);
+    if (d.humidity_pct  !== undefined) detailParts.push(`Humidity ${d.humidity_pct}%`);
     const summaryHtml = `
       <div class="wx-summary">
-        <div class="wx-summary-left">
+        <div class="wx-hero">
           <span class="wx-main-icon">${mainIcon}</span>
-          <span class="wx-main-condition">${d.condition}</span>
-        </div>
-        <div class="wx-summary-right">
-          ${d.temperature_f !== undefined ? `<div class="wx-current-temp">${d.temperature_f}°</div>` : ""}
-          <div class="wx-hilo-line">H ${d.high_f}°&nbsp;/&nbsp;L ${d.low_f}°</div>
-          <div class="wx-details-list">
-            ${d.feels_like_f  !== undefined ? `<span class="wx-dl-item">Feels ${d.feels_like_f}°</span>` : ""}
-            ${d.wind_mph      !== undefined ? `<span class="wx-dl-item">Wind ${d.wind_mph} mph</span>` : ""}
-            ${d.precip_chance !== undefined ? `<span class="wx-dl-item">Rain ${d.precip_chance}%</span>` : ""}
-            ${d.humidity_pct  !== undefined ? `<span class="wx-dl-item">Humidity ${d.humidity_pct}%</span>` : ""}
-            ${d.sunrise && d.sunset ? `<span class="wx-dl-item wx-dl-sun">Rise ${d.sunrise} · Set ${d.sunset}</span>` : ""}
+          <div class="wx-hero-info">
+            ${d.temperature_f !== undefined ? `<div class="wx-current-temp">${d.temperature_f}°</div>` : ""}
+            <div class="wx-main-condition">${d.condition}</div>
+            <div class="wx-hilo-line">H ${d.high_f}°&nbsp;/&nbsp;L ${d.low_f}°</div>
           </div>
+        </div>
+        <div class="wx-details-strip">
+          ${detailParts.map(p => `<span class="wx-dl-item">${p}</span>`).join('<span class="wx-dl-sep">·</span>')}
+          ${d.sunrise && d.sunset ? `<span class="wx-dl-sep">·</span><span class="wx-dl-item wx-dl-sun">☀ ${d.sunrise} – ${d.sunset}</span>` : ""}
         </div>
       </div>`;
 
-    // ── HOURLY SECTION ───────────────────────────────────────────
+    // ── HOURLY — horizontal chips ─────────────────────────────────
     const hourlyHtml = `
       <div class="wx-hourly-section">
-        ${(d.hourly || []).slice(0, 5).map(h => {
+        ${(d.hourly || []).slice(0, 6).map(h => {
           const hIcon = useSvg
-            ? `<span class="wx-h-icon-svg">${getWeatherIcon(h.condition)}</span>`
-            : `<span class="wx-h-icon">${h.icon}</span>`;
-          return `<div class="wx-hour-row">
-            <span class="wx-h-label">${h.label}</span>
+            ? `<span class="wx-hc-icon-svg">${getWeatherIcon(h.condition)}</span>`
+            : `<span class="wx-hc-icon">${h.icon}</span>`;
+          const rainBadge = h.precip_chance >= 20
+            ? `<span class="wx-hc-rain">${h.precip_chance}%</span>` : "";
+          return `<div class="wx-hour-chip">
+            <span class="wx-hc-label">${h.label}</span>
             ${hIcon}
-            <span class="wx-h-temp">${h.temp_f}°</span>
-            ${h.precip_chance >= 20 ? `<span class="wx-h-rain">${h.precip_chance}%</span>` : ""}
+            <span class="wx-hc-temp">${h.temp_f}°</span>
+            ${rainBadge}
           </div>`;
         }).join("")}
       </div>`;
 
-    // ── FORECAST SECTION ─────────────────────────────────────────
+    // ── FORECAST — 5-day compact row ──────────────────────────────
     const forecastHtml = (d.daily && d.daily.length) ? `
       <div class="wx-forecast-section">
         ${d.daily.slice(0, 5).map(day => {
@@ -146,7 +150,7 @@ async function pollWeather() {
           return `<div class="wx-forecast-day">
             <span class="wx-fd-label">${day.label}</span>
             ${dIcon}
-            <span class="wx-fd-temps">${day.high_f}° / ${day.low_f}°</span>
+            <span class="wx-fd-temps">${day.high_f}°<span class="wx-fd-lo"> / ${day.low_f}°</span></span>
           </div>`;
         }).join("")}
       </div>` : "";
