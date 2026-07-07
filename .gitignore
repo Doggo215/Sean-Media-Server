@@ -15,6 +15,11 @@ exports/
 *.pem
 secrets/
 
+# Google OAuth credentials — never commit these
+sean-home/credentials.json
+sean-home/token.json
+sean-home/secrets/
+
 # Editor
 .vscode/
 *.swp
