@@ -768,18 +768,47 @@ body {
   width: 84px;
   height: 84px;
 }
-/* Matchup line ("PHILLIES @ REDS") — the biggest text in My Sports */
+/* Matchup line ("PHILLIES at REDS") — the biggest text in My Sports */
 .sb-row-mysports .sb-team-matchup {
-  font-size: 3.6rem;
-  line-height: 1.05;
+  font-size: 3.2rem;
+  line-height: 1.1;
   white-space: normal;
   overflow: visible;
   text-overflow: clip;
 }
+
+/* Connector word ("at" / "vs") — secondary within matchup line */
+.sb-matchup-connector {
+  font-size: 2.2rem;
+  font-weight: 400;
+  color: var(--text-3);
+  letter-spacing: 0.01em;
+  vertical-align: middle;
+}
+
+/* Record badge — secondary, same line as matchup */
+.sb-matchup-record {
+  font-size: 2.2rem;
+  font-weight: 500;
+  color: var(--text-3);
+  letter-spacing: 0.01em;
+}
+
+/* Subtle team-color row band on upcoming MY SPORTS rows */
+.sb-row-mysports[data-team="phillies"] { background: rgba(232, 24, 40, 0.07); }
+.sb-row-mysports[data-team="eagles"]   { background: rgba(0, 177, 64, 0.07); }
+.sb-row-mysports[data-team="sixers"]   { background: rgba(0, 107, 182, 0.05); }
+.sb-row-mysports[data-team="flyers"]   { background: rgba(247, 73, 2, 0.05); }
+.sb-row-mysports[data-team="union"]    { background: rgba(90, 143, 194, 0.07); }
+.sb-row-mysports[data-team="chelsea"]  { background: rgba(91, 163, 224, 0.07); }
+.sb-row-mysports[data-team="st_josephs_mlax"] { background: rgba(99, 0, 0, 0.05); }
 .sb-row-mysports .sb-sub-date {
-  font-size: 2.6rem;
-  font-weight: 600;
-  color: var(--text-2);
+  font-size: 2.0rem;
+  font-weight: 400;
+  color: var(--text-3);
+  letter-spacing: 0.01em;
+  margin-top: 3px;
+  text-shadow: none;
 }
 .sb-row-mysports .phillies-pitcher-name {
   font-size: 1.9rem;

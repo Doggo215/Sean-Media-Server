@@ -885,12 +885,14 @@ function renderSportsRow(team, key) {
   if (team.next) {
     const g = team.next;
     const opp   = oppLogo(g.opponent_abbr, league, g.opponent_id);
-    const haway = g.home_away === "home" ? "vs" : "@";
-    // One big matchup line — team + opponent + record.
-    const rec = team.record ? ` (${team.record})` : " (0-0)";
+    const hawayWord = g.home_away === "home" ? "vs" : "at";
+    const connector = `<span class="sb-matchup-connector">${hawayWord}</span>`;
+    // Matchup line — team + opponent; record is dimmed secondary span.
+    const recText = team.record ? team.record : "0-0";
+    const recSpan = `<span class="sb-matchup-record">(${recText})</span>`;
     const matchupPrimary = g.opponent
-      ? `${team.label.toUpperCase()} ${haway} ${g.opponent.toUpperCase()}${rec}`
-      : `${team.label.toUpperCase()}${rec}`;
+      ? `${team.label.toUpperCase()} ${connector} ${g.opponent.toUpperCase()} ${recSpan}`
+      : `${team.label.toUpperCase()} ${recSpan}`;
     const dateTimeLine = (g.date || g.time)
       ? `<div class="sb-sub sb-sub-date">${[g.date, g.time].filter(Boolean).join(" · ")}</div>`
       : "";
