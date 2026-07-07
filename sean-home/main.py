@@ -26,6 +26,12 @@ try:
 except ImportError:
     _CALENDAR_AVAILABLE = False
 
+try:
+    from google_gmail_sync import fetch_gmail_summary as _fetch_gmail
+    _GMAIL_AVAILABLE = True
+except ImportError:
+    _GMAIL_AVAILABLE = False
+
 DENVER = ZoneInfo("America/Denver")
 START_TIME = time.time()
 
@@ -1661,6 +1667,18 @@ def calendar():
             "error": None,
         }
     return _fetch_calendar()
+
+
+@app.get("/api/gmail")
+def gmail():
+    if not _GMAIL_AVAILABLE:
+        return {
+            "source": "placeholder",
+            "unread_count": 0,
+            "important": [],
+            "error": None,
+        }
+    return _fetch_gmail()
 
 
 @app.get("/", response_class=HTMLResponse)

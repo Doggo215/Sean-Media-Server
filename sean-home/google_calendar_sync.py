@@ -1,36 +1,19 @@
 """
 Google Calendar sync for Sean Home.
 
+Auth is handled by google_auth.py (shared with Gmail).
 Run once to authenticate:
-    python3 google_calendar_sync.py auth
+    python3 google_auth.py auth
 
 After that, /api/calendar calls fetch_calendar_events() without needing a browser.
-
-Credential files (never committed — gitignored):
-    sean-home/credentials.json   OAuth client secret from Google Cloud Console
-    sean-home/token.json         Access/refresh token written after first auth
 """
 
 import json
-import os
 import sys
-from datetime import datetime, timezone, timedelta
-from pathlib import Path
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 MOUNTAIN = ZoneInfo("America/Denver")
-SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
-
-# Credential paths — checked in order so both Pi and local dev work
-_HERE = Path(__file__).parent
-CRED_PATHS = [
-    Path("/home/sean/sean-home/credentials.json"),
-    _HERE / "credentials.json",
-]
-TOKEN_PATHS = [
-    Path("/home/sean/sean-home/token.json"),
-    _HERE / "token.json",
-]
 
 PLACEHOLDER = {
     "source": "placeholder",
@@ -41,48 +24,7 @@ PLACEHOLDER = {
 }
 
 
-def _find(paths):
-    for p in paths:
-        if p.exists():
-            return p
-    return None
-
-
-def _token_path():
-    cred = _find(CRED_PATHS)
-    if cred:
-        return cred.parent / "token.json"
-    return TOKEN_PATHS[0]
-
-
-def _load_creds():
-    """Load and refresh Google credentials. Returns None if not available."""
-    try:
-        from google.oauth2.credentials import Credentials
-        from google.auth.transport.requests import Request
-
-        token_file = _find(TOKEN_PATHS)
-        if not token_file:
-            return None
-
-        creds = Credentials.from_authorized_user_file(str(token_file), SCOPES)
-
-        if creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-            # Save refreshed token (token contents are not printed)
-            token_file.write_text(creds.to_json())
-
-        if not creds.valid:
-            return None
-
-        return creds
-
-    except Exception:
-        return None
-
-
 def _fmt_time(dt_str, all_day=False):
-    """Parse an ISO datetime string and format as '3:00 PM'."""
     if all_day:
         return "All day"
     try:
@@ -118,7 +60,12 @@ def _parse_event(event):
 
 def fetch_calendar_events():
     """Return today's and tomorrow's events in Mountain Time. Safe — no tokens printed."""
-    creds = _load_creds()
+    try:
+        from google_auth import load_creds
+    except ImportError:
+        return PLACEHOLDER.copy()
+
+    creds = load_creds()
     if creds is None:
         return PLACEHOLDER.copy()
 
@@ -156,7 +103,6 @@ def fetch_calendar_events():
             elif day == tomorrow_str:
                 events_tomorrow.append(clean)
 
-        # Next event = first future event today (skip all-day and already-past)
         next_event = None
         for e in parsed:
             if e["_dt"].strftime("%Y-%m-%d") != today_str:
@@ -185,38 +131,11 @@ def fetch_calendar_events():
         }
 
 
-# ── CLI auth bootstrap ──────────────────────────────────────────────────────
-def run_auth():
-    """
-    One-time OAuth flow. Run on the Pi:
-        python3 google_calendar_sync.py auth
-    Writes token.json next to credentials.json. Do not share that file.
-    """
-    cred_file = _find(CRED_PATHS)
-    if not cred_file:
-        print("ERROR: credentials.json not found. Copy it from Google Cloud Console.")
-        print("  Expected at one of:")
-        for p in CRED_PATHS:
-            print(f"    {p}")
-        sys.exit(1)
-
-    from google_auth_oauthlib.flow import InstalledAppFlow
-
-    flow = InstalledAppFlow.from_client_secrets_file(str(cred_file), SCOPES)
-    # run_console() prints a URL — open it in your browser, paste the code back
-    creds = flow.run_console()
-
-    token_file = cred_file.parent / "token.json"
-    token_file.write_text(creds.to_json())
-    print(f"token.json saved to {token_file}")
-    print("Auth complete. Restart sean-home.service.")
-
-
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "auth":
-        run_auth()
-    else:
-        result = fetch_calendar_events()
-        # Print safe subset — never print token fields
-        safe = {k: v for k, v in result.items() if k != "error" or v}
-        print(json.dumps(safe, indent=2, default=str))
+        print("Auth is now handled by google_auth.py. Run:")
+        print("  python3 google_auth.py auth")
+        sys.exit(0)
+    result = fetch_calendar_events()
+    safe = {k: v for k, v in result.items() if k != "error" or v}
+    print(json.dumps(safe, indent=2, default=str))

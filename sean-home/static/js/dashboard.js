@@ -276,6 +276,62 @@ async function pollCalendar() {
   setTimeout(pollCalendar, 300000); // refresh every 5 min
 }
 
+/* ── GMAIL section — inside Today card ──────────────────────── */
+function renderGmail(data) {
+  const el = document.getElementById("gmail-section");
+  if (!el) return;
+
+  if (data.source === "placeholder" || data.source === "error") {
+    el.innerHTML = `
+      <div class="gmail-header">Gmail</div>
+      <div class="gmail-empty">${data.source === "error" ? "Gmail unavailable" : "Connect Gmail"}</div>`;
+    return;
+  }
+
+  const count = data.unread_count || 0;
+  const msgs = (data.important || []).slice(0, 5);
+
+  if (count === 0 && msgs.length === 0) {
+    el.innerHTML = `
+      <div class="gmail-header">Gmail</div>
+      <div class="gmail-empty">Inbox clear</div>`;
+    return;
+  }
+
+  const countHtml = count > 0
+    ? `<span class="gmail-count">${count} unread</span>`
+    : "";
+
+  const msgRows = msgs.map(m => {
+    const from = (m.from || "").substring(0, 22);
+    const subj = (m.subject || "").substring(0, 40);
+    return `<div class="gmail-msg">
+      <span class="gmail-from">${from}</span>
+      <span class="gmail-subj">${subj}</span>
+    </div>`;
+  }).join("");
+
+  el.innerHTML = `
+    <div class="gmail-header-row">
+      <span class="gmail-header">Gmail</span>
+      ${countHtml}
+    </div>
+    ${msgRows}`;
+}
+
+async function pollGmail() {
+  try {
+    const res = await fetch("/api/gmail");
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    renderGmail(data);
+  } catch {
+    const el = document.getElementById("gmail-section");
+    if (el) el.innerHTML = "";
+  }
+  setTimeout(pollGmail, 300000); // refresh every 5 min
+}
+
 /* ── TODAY card — "what matters today?" ─────────────────────── */
 async function pollToday() {
   const bodyEl = document.getElementById("today-body");
@@ -1644,6 +1700,7 @@ setInterval(pollWeather, 600000);
 // Live strip retired — Sports HQ is the live center
 // pollLiveStrip();
 pollCalendar();
+pollGmail();
 pollToday();
 pollSports();
 pollMajorNews();
