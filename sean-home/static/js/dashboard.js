@@ -886,12 +886,11 @@ function renderSportsRow(team, key) {
     const g = team.next;
     const opp   = oppLogo(g.opponent_abbr, league, g.opponent_id);
     const haway = g.home_away === "home" ? "vs" : "@";
-    // One big matchup line — team + opponent together, biggest text in the
-    // section. Record/standing dropped here: the upcoming game matters more
-    // and a busy multi-fact line defeats across-the-room readability.
+    // One big matchup line — team + opponent + record.
+    const rec = team.record ? ` (${team.record})` : " (0-0)";
     const matchupPrimary = g.opponent
-      ? `${team.label.toUpperCase()} ${haway} ${g.opponent.toUpperCase()}`
-      : team.label.toUpperCase();
+      ? `${team.label.toUpperCase()} ${haway} ${g.opponent.toUpperCase()}${rec}`
+      : `${team.label.toUpperCase()}${rec}`;
     const dateTimeLine = (g.date || g.time)
       ? `<div class="sb-sub sb-sub-date">${[g.date, g.time].filter(Boolean).join(" · ")}</div>`
       : "";
