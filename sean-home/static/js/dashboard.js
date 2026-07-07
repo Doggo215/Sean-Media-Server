@@ -982,8 +982,10 @@ function renderStandings(data) {
   }
 
   const sectionsHtml = data.sections.map(sec => {
-    const logoImg = TEAM_LOGOS[sec.team_key]
-      ? `<img class="stg-logo" src="${TEAM_LOGOS[sec.team_key]}" alt="" loading="lazy" onerror="this.style.display='none'">`
+    // Header logo — prefer API-supplied URL, fall back to TEAM_LOGOS constant
+    const headerLogoSrc = sec.logo_url || TEAM_LOGOS[sec.team_key] || "";
+    const headerLogoImg = headerLogoSrc
+      ? `<img class="stg-logo stg-header-logo" src="${headerLogoSrc}" alt="" loading="lazy" onerror="this.style.display='none'">`
       : "";
 
     // Main status line: "2nd NL East · 50-41 · 3 GB"
@@ -1023,17 +1025,23 @@ function renderStandings(data) {
 
     const rowsHtml = showRows.map(row => {
       const cls = row.highlight ? "stg-row stg-row-highlight" : "stg-row";
+      const rowLogoImg = row.logo_url
+        ? `<img class="stg-row-logo-img" src="${row.logo_url}" alt="" loading="lazy" onerror="this.style.display='none'">`
+        : "";
+      const logoCell = `<span class="stg-row-logo">${rowLogoImg}</span>`;
       if (row.w !== undefined) {
-        // MLB: abbr  W-L  GB
+        // MLB: logo  abbr  W-L  GB
         const gbStr = row.gb && row.gb !== "-" ? row.gb : "";
-        return `<div class="${cls}">
+        return `<div class="${cls}" data-abbr="${row.abbr}">
+          ${logoCell}
           <span class="stg-abbr">${row.abbr}</span>
           <span class="stg-record">${row.w}-${row.l}</span>
           ${gbStr ? `<span class="stg-gb">${gbStr}</span>` : ""}
         </div>`;
       }
-      // MLS: abbr  pts
-      return `<div class="${cls}">
+      // MLS: logo  abbr  record  pts
+      return `<div class="${cls}" data-abbr="${row.abbr}">
+        ${logoCell}
         <span class="stg-abbr">${row.abbr}</span>
         <span class="stg-record">${row.overall || ""}</span>
         <span class="stg-pts">${row.points} pts</span>
@@ -1041,11 +1049,12 @@ function renderStandings(data) {
     }).join("");
 
     return `
-      <div class="stg-section">
+      <div class="stg-section" data-team="${sec.team_key}">
         <div class="stg-section-title">
-          ${logoImg}
+          ${headerLogoImg}
           <div class="stg-title-text">
             <div class="stg-team-name">${sec.label}</div>
+            <div class="stg-league-label">${sec.league_label || ""}</div>
           </div>
         </div>
         <div class="stg-status">${statusLine}</div>

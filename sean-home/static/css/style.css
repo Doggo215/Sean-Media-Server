@@ -1165,28 +1165,27 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
   border-radius: 8px;
-  padding: 16px 18px;
+  overflow: hidden;
   min-height: 0;
+  border: 1px solid rgba(255,255,255,0.07);
 }
 .stg-section + .stg-section { margin-top: 10px; }
 
-/* Logo + team name row */
+/* Soft team-color header band — replaces left-border accent */
+.stg-section[data-team="phillies"] { background: rgba(232, 24, 40, 0.08); border-color: rgba(232, 24, 40, 0.2); }
+.stg-section[data-team="union"]    { background: rgba(90, 143, 194, 0.08); border-color: rgba(90, 143, 194, 0.2); }
+.stg-section[data-team="eagles"]   { background: rgba(0, 177, 64, 0.08); border-color: rgba(0, 177, 64, 0.2); }
+.stg-section[data-team="flyers"]   { background: rgba(247, 73, 2, 0.08); border-color: rgba(247, 73, 2, 0.2); }
+.stg-section[data-team="sixers"]   { background: rgba(0, 107, 182, 0.08); border-color: rgba(0, 107, 182, 0.2); }
+
+/* Team name header row */
 .stg-section-title {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 10px;
-}
-
-.stg-logo {
-  width: 64px;
-  height: 64px;
-  object-fit: contain;
-  flex-shrink: 0;
-  opacity: 0.93;
+  gap: 0;
+  padding: 14px 18px 0;
+  margin-bottom: 6px;
 }
 
 .stg-title-text { min-width: 0; }
@@ -1200,31 +1199,42 @@ body {
   line-height: 1;
 }
 
+.stg-league-label {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text-3);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+
 /* Main rank/record/GB line */
 .stg-status {
   font-size: 1.85rem;
   font-weight: 700;
   color: var(--text-2);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   letter-spacing: 0.02em;
   line-height: 1.2;
+  padding: 0 18px;
 }
 
 /* Mini standings rows */
 .stg-rows {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-top: 8px;
+  gap: 2px;
+  margin-top: 4px;
+  padding: 0 10px 14px;
 }
 
 .stg-row {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
-  padding: 4px 8px;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
   border-radius: 5px;
-  font-size: 1.6rem;
+  font-size: 1.9rem;
   color: var(--text-2);
 }
 
@@ -1234,9 +1244,50 @@ body {
   font-weight: 700;
 }
 
+/* Logo cell in every standings row */
+.stg-row-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 38px;
+}
+.stg-row-logo-img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  opacity: 0.85;
+}
+.stg-row-highlight .stg-row-logo-img { opacity: 1; }
+
+/* Per-team row color bands — MLB NL East */
+.stg-row[data-abbr="ATL"] { background: rgba(206,17,65,0.10); }
+.stg-row[data-abbr="PHI"] { background: rgba(232,24,40,0.10); }
+.stg-row[data-abbr="MIA"] { background: rgba(0,163,224,0.10); }
+.stg-row[data-abbr="WSH"] { background: rgba(171,0,3,0.10); }
+.stg-row[data-abbr="NYM"] { background: rgba(0,45,114,0.10); }
+
+/* Per-team row color bands — MLS East common teams */
+.stg-row[data-abbr="NSH"] { background: rgba(236,232,58,0.10); }
+.stg-row[data-abbr="TOR"] { background: rgba(184,17,55,0.10); }
+.stg-row[data-abbr="CLB"] { background: rgba(251,203,24,0.10); }
+.stg-row[data-abbr="NE"]  { background: rgba(198,32,36,0.10); }
+.stg-row[data-abbr="MTL"] { background: rgba(0,98,152,0.10); }
+.stg-row[data-abbr="NYC"] { background: rgba(100,160,200,0.10); }
+.stg-row[data-abbr="NYRB"] { background: rgba(237,36,36,0.10); }
+.stg-row[data-abbr="DCU"] { background: rgba(16,24,32,0.15); }
+.stg-row[data-abbr="CHI"] { background: rgba(102,0,0,0.12); }
+.stg-row[data-abbr="CIN"] { background: rgba(241,90,36,0.10); }
+.stg-row[data-abbr="CLT"] { background: rgba(27,117,187,0.10); }
+.stg-row[data-abbr="ATL"] { background: rgba(128,0,10,0.10); } /* ATL United (MLS) — same abbr as Braves; color wins by cascade */
+
+/* Highlighted row override — stronger tint so highlight still reads clearly */
+.stg-row-highlight[data-abbr="PHI"] { background: rgba(232,24,40,0.18); }
+.stg-row-highlight[data-abbr="ATL"] { background: rgba(206,17,65,0.18); }
+
 .stg-abbr {
   font-weight: 700;
-  min-width: 52px;
+  min-width: 48px;
   flex-shrink: 0;
   letter-spacing: 0.04em;
 }
@@ -1246,18 +1297,28 @@ body {
 }
 
 .stg-gb {
-  font-size: 1.35rem;
+  font-size: 1.55rem;
   color: var(--text-3);
   flex-shrink: 0;
 }
 .stg-row-highlight .stg-gb { color: var(--text-2); }
 
 .stg-pts {
-  font-size: 1.35rem;
+  font-size: 1.55rem;
   color: var(--text-3);
   flex-shrink: 0;
 }
 .stg-row-highlight .stg-pts { color: var(--text-2); }
+
+/* Section header logo */
+.stg-logo {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  flex-shrink: 0;
+  opacity: 0.93;
+  margin-right: 12px;
+}
 
 /* ── ENTERTAINMENT CARD (kept for reference, replaced by .card-news) */
 .card-entertainment {

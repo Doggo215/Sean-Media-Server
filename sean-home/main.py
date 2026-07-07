@@ -1674,16 +1674,19 @@ async def _fetch_mlb_nl_east(client: httpx.AsyncClient) -> dict | None:
             if "PHI" not in abbrs:
                 continue
             rows = []
-            phi_rank = phi_record = phi_gb = None
+            phi_rank = phi_record = phi_gb = phi_logo = None
             for i, e in enumerate(entries):
-                abbr = e.get("team", {}).get("abbreviation", "?")
+                team = e.get("team", {})
+                abbr = team.get("abbreviation", "?")
                 stats = {s["name"]: s["displayValue"] for s in e.get("stats", [])}
                 w = stats.get("wins", "?")
                 l = stats.get("losses", "?")
                 gb = stats.get("gamesBehind", "-")
-                rows.append({"rank": i + 1, "abbr": abbr, "w": w, "l": l, "gb": gb, "highlight": abbr == "PHI"})
+                logos = team.get("logos", [])
+                logo_url = logos[0]["href"] if logos else None
+                rows.append({"rank": i + 1, "abbr": abbr, "w": w, "l": l, "gb": gb, "highlight": abbr == "PHI", "logo_url": logo_url})
                 if abbr == "PHI":
-                    phi_rank, phi_record, phi_gb = i + 1, f"{w}-{l}", gb
+                    phi_rank, phi_record, phi_gb, phi_logo = i + 1, f"{w}-{l}", gb, logo_url
             return {
                 "team_key": "phillies",
                 "label": "PHILLIES",
@@ -1691,6 +1694,7 @@ async def _fetch_mlb_nl_east(client: httpx.AsyncClient) -> dict | None:
                 "rank": phi_rank,
                 "record": phi_record,
                 "gb": phi_gb,
+                "logo_url": phi_logo,
                 "rows": rows,
             }
     return None
@@ -1726,13 +1730,19 @@ async def _fetch_mls_east(client: httpx.AsyncClient) -> dict | None:
         if phi_idx is None:
             continue
 
-        # Show: leader + window of 2-above/union/1-below (max ~5 rows)
-        show_idx: set[int] = {0}
-        for off in range(-2, 2):
+        # Show 5 rows: top 2 + window around Union (Union ±1), deduped, in order
+        show_idx: set[int] = {0, 1}
+        for off in range(-1, 2):
             idx = phi_idx + off
             if 0 <= idx < len(sorted_entries):
                 show_idx.add(idx)
+        # If we have fewer than 5, pull in more from the top
+        for i in range(len(sorted_entries)):
+            if len(show_idx) >= 5:
+                break
+            show_idx.add(i)
 
+        phi_logo: str | None = None
         rows = []
         prev = -1
         for i, e in enumerate(sorted_entries):
@@ -1741,14 +1751,20 @@ async def _fetch_mls_east(client: httpx.AsyncClient) -> dict | None:
             if i > prev + 1 and prev >= 0:
                 rows.append({"gap": True})
             prev = i
+            team = e.get("team", {})
             stats = {s["name"]: s["displayValue"] for s in e.get("stats", [])}
-            abbr = e.get("team", {}).get("abbreviation", "?")
+            abbr = team.get("abbreviation", "?")
+            logos = team.get("logos", [])
+            logo_url = logos[0]["href"] if logos else None
+            if i == phi_idx:
+                phi_logo = logo_url
             rows.append({
                 "rank": i + 1,
                 "abbr": abbr,
                 "overall": stats.get("overall", ""),
                 "points": stats.get("points", "?"),
                 "highlight": i == phi_idx,
+                "logo_url": logo_url,
             })
 
         phi_stats = {s["name"]: s["displayValue"] for s in sorted_entries[phi_idx].get("stats", [])}
@@ -1759,6 +1775,7 @@ async def _fetch_mls_east(client: httpx.AsyncClient) -> dict | None:
             "rank": phi_idx + 1,
             "overall": phi_stats.get("overall", ""),
             "points": phi_stats.get("points", "?"),
+            "logo_url": phi_logo,
             "rows": rows,
         }
     return None
