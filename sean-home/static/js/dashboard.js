@@ -229,6 +229,53 @@ async function pollLiveStrip() {
   setTimeout(pollLiveStrip, isActive ? 60000 : 120000);
 }
 
+/* ── CALENDAR section — inside Today card ───────────────────── */
+function renderCalendar(data) {
+  const el = document.getElementById("calendar-section");
+  if (!el) return;
+
+  // Placeholder / not yet authenticated
+  if (data.source === "placeholder" || (!data.events_today.length && !data.next_event)) {
+    el.innerHTML = `
+      <div class="cal-header">Calendar</div>
+      <div class="cal-empty">${data.error ? "Calendar unavailable" : "No events today"}</div>`;
+    return;
+  }
+
+  const rows = data.events_today.map(e => {
+    const loc = e.location ? `<span class="cal-loc"> · ${e.location}</span>` : "";
+    return `<div class="cal-event">
+      <span class="cal-time">${e.time}</span>
+      <span class="cal-title">${e.title}</span>${loc}
+    </div>`;
+  }).join("");
+
+  const tomorrowRows = data.events_tomorrow.slice(0, 2).map(e =>
+    `<div class="cal-event cal-event-tomorrow">
+      <span class="cal-time">${e.time}</span>
+      <span class="cal-title">${e.title}</span>
+    </div>`
+  ).join("");
+
+  el.innerHTML = `
+    <div class="cal-header">Calendar</div>
+    ${rows || '<div class="cal-empty">No more events today</div>'}
+    ${tomorrowRows ? `<div class="cal-divider">Tomorrow</div>${tomorrowRows}` : ""}`;
+}
+
+async function pollCalendar() {
+  try {
+    const res = await fetch("/api/calendar");
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    renderCalendar(data);
+  } catch {
+    const el = document.getElementById("calendar-section");
+    if (el) el.innerHTML = "";
+  }
+  setTimeout(pollCalendar, 300000); // refresh every 5 min
+}
+
 /* ── TODAY card — "what matters today?" ─────────────────────── */
 async function pollToday() {
   const bodyEl = document.getElementById("today-body");
@@ -1596,6 +1643,7 @@ setInterval(pollWeather, 600000);
 
 // Live strip retired — Sports HQ is the live center
 // pollLiveStrip();
+pollCalendar();
 pollToday();
 pollSports();
 pollMajorNews();

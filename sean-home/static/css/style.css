@@ -338,8 +338,8 @@ body {
   grid-template-columns: 1.3fr 2.0fr 1.4fr;
   grid-template-rows: 1fr 1fr;
   grid-template-areas:
-    "today  sports entertainment"
-    "gaming sports weather";
+    "left sports entertainment"
+    "left sports weather";
   gap: var(--gap);
   padding: var(--gap) var(--h-pad);
   flex:1;
@@ -387,11 +387,25 @@ body {
 }
 
 /* ── TODAY CARD ──────────────────────────────────────────────── */
+.left-col {
+  grid-area: left;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  min-height: 0;
+}
+
 .card-today {
-  grid-area: today;
+  flex: 2;
+  min-height: 0;
   animation:
     rise 0.55s var(--ease-out) 0.06s both,
     cardBreathe 22s ease-in-out 3s infinite;
+}
+
+.card-gaming {
+  flex: 1;
+  min-height: 0;
 }
 
 .today-body {
@@ -401,6 +415,65 @@ body {
   padding: 4px 24px 20px;
   overflow: hidden;
   min-height: 0;
+}
+
+/* ── Calendar section — lives at top of Today card ─────────── */
+.cal-section {
+  flex-shrink: 0;
+  padding: 8px 24px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.cal-section:empty { display: none; }
+.cal-header {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 6px;
+}
+.cal-event {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 3px 0;
+}
+.cal-time {
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: var(--text-2);
+  flex-shrink: 0;
+  min-width: 72px;
+}
+.cal-title {
+  font-size: 1.65rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cal-loc {
+  font-size: 1.3rem;
+  color: var(--text-3);
+}
+.cal-divider {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 8px 0 4px;
+}
+.cal-event-tomorrow .cal-time,
+.cal-event-tomorrow .cal-title {
+  color: var(--text-2);
+  font-size: 1.45rem;
+}
+.cal-empty {
+  font-size: 1.5rem;
+  color: var(--text-3);
+  padding: 2px 0 4px;
 }
 
 .td-section { flex-shrink: 0; margin-top: 14px; }

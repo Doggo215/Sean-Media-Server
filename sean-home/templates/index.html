@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sean Home</title>
-  <link rel="stylesheet" href="/static/css/style.css?v=20260707b">
+  <link rel="stylesheet" href="/static/css/style.css?v=20260707c">
 </head>
 <body>
 
@@ -37,33 +37,39 @@
   <!-- ── Main content grid ────────────────────────────────── -->
   <div class="tv-content-grid">
 
-    <!-- Today — left column, full height, "what matters today?" -->
-    <section class="card card-today" id="today-card">
-      <h2 class="card-label">Today</h2>
-      <div class="today-body" id="today-body">
-        <p class="card-placeholder">Loading…</p>
-      </div>
-    </section>
+    <!-- Left column — Today/Calendar (2/3) + Gaming HQ (1/3) -->
+    <div class="left-col">
 
-    <!-- Gaming HQ — bottom left -->
-    <section class="card card-gaming" id="gaming-card">
-      <div class="gaming-header-row">
-        <h2 class="card-label">Gaming HQ</h2>
-        <span class="gaming-pill">PS5</span>
-      </div>
-      <div class="gaming-body" id="gaming-body">
-        <div class="gaming-console">PS5</div>
-        <div class="gaming-status offline" id="gaming-status">Not connected</div>
-        <div class="gaming-section">
-          <div class="gaming-label">Friends Online</div>
-          <div class="gaming-empty">Connect PSN to show friends</div>
+      <!-- Today — calendar + tonight's schedule -->
+      <section class="card card-today" id="today-card">
+        <h2 class="card-label">Today</h2>
+        <div class="cal-section" id="calendar-section"></div>
+        <div class="today-body" id="today-body">
+          <p class="card-placeholder">Loading…</p>
         </div>
-        <div class="gaming-section">
-          <div class="gaming-label">Current Game</div>
-          <div class="gaming-empty">Waiting for PS5 data</div>
+      </section>
+
+      <!-- Gaming HQ -->
+      <section class="card card-gaming" id="gaming-card">
+        <div class="gaming-header-row">
+          <h2 class="card-label">Gaming HQ</h2>
+          <span class="gaming-pill">PS5</span>
         </div>
-      </div>
-    </section>
+        <div class="gaming-body" id="gaming-body">
+          <div class="gaming-console">PS5</div>
+          <div class="gaming-status offline" id="gaming-status">Not connected</div>
+          <div class="gaming-section">
+            <div class="gaming-label">Friends Online</div>
+            <div class="gaming-empty">Connect PSN to show friends</div>
+          </div>
+          <div class="gaming-section">
+            <div class="gaming-label">Current Game</div>
+            <div class="gaming-empty">Waiting for PS5 data</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
 
     <!-- Sports — center column, full height -->
     <section class="card card-sports" id="sports-card">
@@ -130,6 +136,6 @@
   </div>
 
   <script src="/static/js/weather-icons.js?v=20260703h"></script>
-  <script src="/static/js/dashboard.js?v=20260707a"></script>
+  <script src="/static/js/dashboard.js?v=20260707c"></script>
 </body>
 </html>

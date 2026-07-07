@@ -20,6 +20,12 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+try:
+    from google_calendar_sync import fetch_calendar_events as _fetch_calendar
+    _CALENDAR_AVAILABLE = True
+except ImportError:
+    _CALENDAR_AVAILABLE = False
+
 DENVER = ZoneInfo("America/Denver")
 START_TIME = time.time()
 
@@ -1643,6 +1649,19 @@ async def tonight():
 
 
 # ─── Dashboard ───────────────────────────────────────────────────────────────
+
+@app.get("/api/calendar")
+def calendar():
+    if not _CALENDAR_AVAILABLE:
+        return {
+            "source": "placeholder",
+            "next_event": None,
+            "events_today": [],
+            "events_tomorrow": [],
+            "error": None,
+        }
+    return _fetch_calendar()
+
 
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request):
