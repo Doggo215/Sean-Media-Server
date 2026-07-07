@@ -235,10 +235,17 @@ function renderCalendar(data) {
   if (!el) return;
 
   // Placeholder / not yet authenticated
-  if (data.source === "placeholder" || (!data.events_today.length && !data.next_event)) {
+  if (data.source === "placeholder") {
     el.innerHTML = `
-      <div class="cal-header">Calendar</div>
-      <div class="cal-empty">${data.error ? "Calendar unavailable" : "No events today"}</div>`;
+      <div class="cal-header">My Day</div>
+      <div class="cal-empty">Connect Google Calendar</div>`;
+    return;
+  }
+
+  if (data.source === "error") {
+    el.innerHTML = `
+      <div class="cal-header">My Day</div>
+      <div class="cal-empty">Calendar unavailable</div>`;
     return;
   }
 
@@ -250,7 +257,7 @@ function renderCalendar(data) {
     </div>`;
   }).join("");
 
-  const tomorrowRows = data.events_tomorrow.slice(0, 2).map(e =>
+  const tomorrowRows = data.events_tomorrow.slice(0, 4).map(e =>
     `<div class="cal-event cal-event-tomorrow">
       <span class="cal-time">${e.time}</span>
       <span class="cal-title">${e.title}</span>
@@ -258,8 +265,8 @@ function renderCalendar(data) {
   ).join("");
 
   el.innerHTML = `
-    <div class="cal-header">Calendar</div>
-    ${rows || '<div class="cal-empty">No more events today</div>'}
+    <div class="cal-header">My Day</div>
+    ${rows || '<div class="cal-empty">No events today</div>'}
     ${tomorrowRows ? `<div class="cal-divider">Tomorrow</div>${tomorrowRows}` : ""}`;
 }
 
@@ -289,7 +296,7 @@ function renderGmail(data) {
   }
 
   const count = data.unread_count || 0;
-  const msgs = (data.important || []).slice(0, 5);
+  const msgs = (data.important || []).slice(0, 3);
 
   if (count === 0 && msgs.length === 0) {
     el.innerHTML = `
@@ -422,29 +429,7 @@ async function pollToday() {
         </div>`);
     }
 
-    // ── Calendar ────────────────────────────────────────────────
-    const now = new Date();
-    const todayStr = now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
-    const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1);
-    const tomorrowStr = tomorrow.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
-    parts.push(`
-      <div class="td-divider"></div>
-      <div class="td-section">
-        <div class="td-section-label">Calendar</div>
-        <div class="td-cal-row">
-          <div class="td-cal-info">
-            <div class="td-cal-day">Today</div>
-            <div class="td-cal-date">${todayStr}</div>
-          </div>
-        </div>
-        <div class="td-cal-row td-cal-dim">
-          <div class="td-cal-info">
-            <div class="td-cal-day">Tomorrow</div>
-            <div class="td-cal-date">${tomorrowStr}</div>
-          </div>
-        </div>
-        <div class="td-cal-note">Google Calendar · coming soon</div>
-      </div>`);
+    // Calendar is now rendered by pollCalendar() into #calendar-section (below today-body)
 
     // ── Gaming ──────────────────────────────────────────────────
     if (gaming && gaming.available) {

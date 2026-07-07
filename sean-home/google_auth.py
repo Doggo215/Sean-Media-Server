@@ -82,8 +82,26 @@ def run_auth():
     from google_auth_oauthlib.flow import InstalledAppFlow
 
     flow = InstalledAppFlow.from_client_secrets_file(str(cred_file), SCOPES)
-    # run_console() prints a URL — open in browser, paste the code back
-    creds = flow.run_console()
+    flow.redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
+
+    # Call the underlying OAuth2 session directly to skip PKCE (code_challenge).
+    # PKCE ties the code to a specific flow instance; without it the code can be
+    # exchanged in any single run without a matching verifier.
+    auth_url, _ = flow.oauth2session.authorization_url(
+        flow.client_config["auth_uri"],
+        access_type="offline",
+        prompt="consent",
+    )
+
+    print("\n── Google Auth ─────────────────────────────────────────")
+    print("Open this URL in your browser:")
+    print(f"\n  {auth_url}\n")
+    print("After approving, Google will show you an authorization code.")
+    print("────────────────────────────────────────────────────────")
+    code = input("Paste the authorization code here: ").strip()
+
+    flow.fetch_token(code=code)
+    creds = flow.credentials
 
     token_file = cred_file.parent / "token.json"
     token_file.write_text(creds.to_json())

@@ -412,16 +412,16 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 4px 24px 20px;
+  padding: 4px 24px 8px;
   overflow: hidden;
   min-height: 0;
 }
 
-/* ── Calendar section — lives at top of Today card ─────────── */
+/* ── MY DAY — Calendar + Gmail personal zone below sports ───── */
 .cal-section {
   flex-shrink: 0;
-  padding: 8px 24px 4px;
-  border-bottom: 1px solid var(--border);
+  padding: 10px 24px 4px;
+  border-top: 1px solid var(--border);
 }
 .cal-section:empty { display: none; }
 .cal-header {
@@ -436,7 +436,7 @@ body {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  padding: 3px 0;
+  padding: 5px 0;
 }
 .cal-time {
   font-size: 1.55rem;
@@ -480,7 +480,7 @@ body {
 .gmail-section {
   flex-shrink: 0;
   padding: 6px 24px 4px;
-  border-bottom: 1px solid var(--border);
+  border-top: 1px solid var(--border);
 }
 .gmail-section:empty { display: none; }
 .gmail-header-row {
