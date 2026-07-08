@@ -2546,8 +2546,8 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 10px 20px 16px;
-  gap: 10px;
+  padding: 12px 20px 16px;
+  gap: 13px;
   overflow: hidden;
   min-height: 0;
 }
@@ -2578,7 +2578,7 @@ body {
 }
 
 .gaming-status {
-  font-size: 1.6rem;
+  font-size: 1.9rem;
   font-weight: 700;
   color: var(--text-2);
   margin-bottom: 6px;
@@ -2595,10 +2595,10 @@ body {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 .gm-label {
-  font-size: 1.15rem;
+  font-size: 1.3rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -2606,7 +2606,7 @@ body {
   flex-shrink: 0;
 }
 .gm-value {
-  font-size: 1.45rem;
+  font-size: 1.85rem;
   font-weight: 600;
   color: var(--text-1);
   flex: 1;
@@ -2619,25 +2619,25 @@ body {
 }
 .gm-trophy-row {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   justify-content: flex-end;
   margin-top: 2px;
 }
 .gm-trophy {
-  font-size: 1.3rem;
+  font-size: 1.55rem;
   color: var(--text-2);
 }
 .gm-friends-section {
   margin-top: 4px;
 }
 .gm-friend-row {
-  font-size: 1.3rem;
+  font-size: 1.55rem;
   color: var(--text-2);
   text-align: right;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 .gm-friend-more {
-  font-size: 1.2rem;
+  font-size: 1.4rem;
   color: var(--text-3);
   text-align: right;
   margin-top: 2px;
