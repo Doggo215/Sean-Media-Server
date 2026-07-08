@@ -1653,6 +1653,26 @@ async function pollMediaServer() {
   setTimeout(pollMediaServer, 60000);
 }
 
+/* ── Daily midnight reload ───────────────────────────────────── */
+// Reloads the page once after midnight so the date header and asset version
+// stay current without a manual kiosk restart.
+(function startDailyReloadWatcher() {
+  function localDateStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  }
+  const loadedDate = localDateStr();
+  let reloaded = false;
+  setInterval(function () {
+    if (reloaded) return;
+    if (localDateStr() !== loadedDate) {
+      reloaded = true;
+      console.log("Sean Home: date rolled over — reloading dashboard");
+      window.location.reload(true);
+    }
+  }, 60000);
+})();
+
 /* ── Boot ────────────────────────────────────────────────────── */
 setTimeOfDayScene();
 setInterval(setTimeOfDayScene, 3600000);
