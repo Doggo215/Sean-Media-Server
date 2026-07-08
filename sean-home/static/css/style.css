@@ -581,7 +581,7 @@ body {
 .td-section-games { margin-top: 0; }
 
 .td-section-label {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -594,7 +594,7 @@ body {
   margin-bottom: 6px;
 }
 .td-gt-league-label {
-  font-size: 1.3rem;
+  font-size: 1.5rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -606,8 +606,8 @@ body {
 .td-gt-game {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 10px 10px;
+  gap: 3px;
+  padding: 12px 11px;
   border-radius: 7px;
   margin-bottom: 6px;
   background: rgba(255,255,255,0.035);
@@ -621,14 +621,14 @@ body {
   min-width: 0;
 }
 .td-gt-logo {
-  width: 40px;
-  height: 40px;
+  width: 46px;
+  height: 46px;
   object-fit: contain;
   flex-shrink: 0;
   opacity: 0.9;
 }
 .td-gt-matchup {
-  font-size: 2.1rem;
+  font-size: 2.45rem;
   font-weight: 700;
   color: var(--text);
   white-space: nowrap;
@@ -637,7 +637,7 @@ body {
   flex: 1;
 }
 .td-gt-connector {
-  font-size: 1.65rem;
+  font-size: 1.9rem;
   font-weight: 400;
   color: var(--text-3);
 }
@@ -648,7 +648,7 @@ body {
   gap: 4px;
 }
 .td-gt-time {
-  font-size: 1.85rem;
+  font-size: 2.0rem;
   font-weight: 500;
   color: var(--text-2);
   white-space: nowrap;
@@ -661,7 +661,7 @@ body {
   animation: pulse 1.4s ease-in-out infinite;
 }
 .td-gt-detail {
-  font-size: 1.75rem;
+  font-size: 1.95rem;
   color: var(--text-2);
   white-space: nowrap;
 }
