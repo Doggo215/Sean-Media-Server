@@ -476,6 +476,55 @@ body {
   padding: 2px 0 4px;
 }
 
+/* ── Calendar event states ──────────────────────────────────── */
+.cal-event-completed {
+  opacity: 0.38;
+}
+.cal-event-completed .cal-title {
+  text-decoration: line-through;
+  text-decoration-color: var(--text-3);
+}
+.cal-event-completed .cal-time {
+  text-decoration: line-through;
+  text-decoration-color: var(--text-3);
+}
+
+.cal-event-soon {
+  border-left: 3px solid var(--accent-blue, #4a9eff);
+  padding-left: 8px;
+  animation: cal-soon-pulse 2.5s ease-in-out infinite;
+}
+.cal-event-soon .cal-time,
+.cal-event-soon .cal-title {
+  color: var(--accent-blue, #4a9eff);
+}
+
+.cal-event-active {
+  border-left: 3px solid var(--accent-green, #3ecf8e);
+  padding-left: 8px;
+}
+.cal-event-active .cal-time,
+.cal-event-active .cal-title {
+  color: var(--accent-green, #3ecf8e);
+}
+
+.cal-now-badge {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--accent-green, #3ecf8e);
+  background: rgba(62, 207, 142, 0.12);
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+@keyframes cal-soon-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.65; }
+}
+
 /* ── Gmail section — inside Today card, below Calendar ──────── */
 .gmail-section {
   flex-shrink: 0;

@@ -234,11 +234,28 @@ async function pollLiveStrip() {
 }
 
 /* ── CALENDAR section — inside Today card ───────────────────── */
+function getCalendarEventState(e) {
+  const now = Date.now();
+  if (e.all_day) return "upcoming";
+  const start = e.start_iso ? new Date(e.start_iso).getTime() : null;
+  // end_iso from backend; if absent fall back to start + 60 min
+  const end = e.end_iso
+    ? new Date(e.end_iso).getTime()
+    : (start ? start + 60 * 60000 : null);
+  if (!start) return "upcoming";
+  if (end && now > end) return "completed";
+  if (now >= start) return "active";
+  if (start - now <= 30 * 60000) return "soon";
+  return "upcoming";
+}
+
+// Kept separately so the 1-min state timer can re-render without a network fetch
+let _lastCalendarData = null;
+
 function renderCalendar(data) {
   const el = document.getElementById("calendar-section");
   if (!el) return;
 
-  // Placeholder / not yet authenticated
   if (data.source === "placeholder") {
     el.innerHTML = `
       <div class="cal-header">My Day</div>
@@ -253,11 +270,15 @@ function renderCalendar(data) {
     return;
   }
 
+  _lastCalendarData = data;
+
   const rows = data.events_today.map(e => {
-    const loc = e.location ? `<span class="cal-loc"> · ${e.location}</span>` : "";
-    return `<div class="cal-event">
+    const state = getCalendarEventState(e);
+    const loc   = e.location ? `<span class="cal-loc"> · ${e.location}</span>` : "";
+    const nowBadge = state === "active" ? `<span class="cal-now-badge">NOW</span>` : "";
+    return `<div class="cal-event cal-event-${state}">
       <span class="cal-time">${e.time}</span>
-      <span class="cal-title">${e.title}</span>${loc}
+      <span class="cal-title">${e.title}${nowBadge}</span>${loc}
     </div>`;
   }).join("");
 
@@ -286,6 +307,11 @@ async function pollCalendar() {
   }
   setTimeout(pollCalendar, 300000); // refresh every 5 min
 }
+
+// Re-render calendar state every minute without a network fetch
+setInterval(() => {
+  if (_lastCalendarData) renderCalendar(_lastCalendarData);
+}, 60000);
 
 /* ── GMAIL section — inside Today card ──────────────────────── */
 function renderGmail(data) {

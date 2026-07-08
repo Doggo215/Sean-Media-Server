@@ -40,20 +40,27 @@ def _fmt_time(dt_str, all_day=False):
 
 def _parse_event(event):
     start = event.get("start", {})
+    end   = event.get("end",   {})
     all_day = "date" in start and "dateTime" not in start
 
     if all_day:
         raw_start = start.get("date", "")
         dt_start = datetime.fromisoformat(raw_start).replace(tzinfo=MOUNTAIN)
+        dt_end   = None
+        raw_end  = end.get("date", "")
     else:
         raw_start = start.get("dateTime", "")
-        dt_start = datetime.fromisoformat(raw_start).astimezone(MOUNTAIN)
+        raw_end   = end.get("dateTime", "")
+        dt_start  = datetime.fromisoformat(raw_start).astimezone(MOUNTAIN)
+        dt_end    = datetime.fromisoformat(raw_end).astimezone(MOUNTAIN) if raw_end else None
 
     return {
         "time": _fmt_time(raw_start, all_day),
         "title": event.get("summary", "Untitled"),
         "location": event.get("location", "") or "",
         "all_day": all_day,
+        "start_iso": dt_start.isoformat() if dt_start else None,
+        "end_iso":   dt_end.isoformat()   if dt_end   else None,
         "_dt": dt_start,
     }
 
