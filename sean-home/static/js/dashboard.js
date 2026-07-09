@@ -1542,14 +1542,30 @@ function renderGaming(data) {
   const friendsCount = (data && data.friends_online_count) || friendsList.length;
   let friendsHtml = "";
   if (friendsList.length > 0) {
-    const rows = friendsList.slice(0, 3).map(f => {
+    const FAVORITES = new Set(["gonzo_29", "jspada41383"]);
+    const sorted = [...friendsList].sort((a, b) => {
+      const aGame = a.game ? 1 : 0, bGame = b.game ? 1 : 0;
+      if (bGame !== aGame) return bGame - aGame;
+      const aFav = FAVORITES.has((a.name || "").toLowerCase()) ? 1 : 0;
+      const bFav = FAVORITES.has((b.name || "").toLowerCase()) ? 1 : 0;
+      if (bFav !== aFav) return bFav - aFav;
+      return (a.name || "").localeCompare(b.name || "");
+    });
+    const MAX_FRIENDS = 4;
+    const visible = sorted.slice(0, MAX_FRIENDS);
+    const rows = visible.map(f => {
       const name = gamingSafeText(f.name, "Unknown");
       const game = f.game ? gamingSafeText(f.game, null) : null;
       const plat = f.platform ? gamingSafeText(f.platform, null) : null;
-      const parts = [game || "Online", plat].filter(Boolean);
-      return `<div class="gm-friend-row">${name} · ${parts.join(" · ")}</div>`;
+      const isFav = FAVORITES.has((f.name || "").toLowerCase());
+      const dot = `<span class="gm-friend-dot${isFav ? " gm-friend-dot-fav" : ""}">●</span>`;
+      const statusLine = [game, plat].filter(Boolean).join(" · ") || "Online";
+      return `<div class="gm-friend-card">
+        <div class="gm-friend-name">${dot} ${name}</div>
+        <div class="gm-friend-status">${statusLine}</div>
+      </div>`;
     }).join("");
-    const more = friendsCount > 3 ? `<div class="gm-friend-more">+${friendsCount - 3} more</div>` : "";
+    const more = friendsCount > MAX_FRIENDS ? `<div class="gm-friend-more">+${friendsCount - MAX_FRIENDS} more</div>` : "";
     friendsHtml = `
       <div class="gm-friends-section">
         <div class="gm-row"><span class="gm-label">Friends Online</span><span class="gm-value">${friendsCount}</span></div>
