@@ -395,13 +395,17 @@ async function pollToday() {
         const connector = league.sport === "soccer" ? "vs" : "at";
         const awayLogo = g.away_logo ? `<img class="td-gt-logo" src="${g.away_logo}" alt="" loading="lazy" onerror="this.style.display='none'">` : "";
         const homeLogo = g.home_logo ? `<img class="td-gt-logo" src="${g.home_logo}" alt="" loading="lazy" onerror="this.style.display='none'">` : "";
+        const hasScore = isLive && g.away_score != null && g.home_score != null;
+        const matchupInner = hasScore
+          ? `${g.away_name} <span class="td-gt-score">${g.away_score}</span><span class="td-gt-connector"> – </span><span class="td-gt-score">${g.home_score}</span> ${g.home_name}`
+          : `${g.away_name} <span class="td-gt-connector">${connector}</span> ${g.home_name}`;
         const statusLine = isLive
           ? `<div class="td-gt-status-line"><span class="td-gt-live">LIVE</span><span class="td-gt-detail"> · ${g.detail}</span></div>`
           : `<div class="td-gt-status-line"><span class="td-gt-time">${g.time}</span></div>`;
         return `<div class="td-gt-game${isLive ? " td-gt-live-row" : ""}">
           <div class="td-gt-matchup-row">
             ${awayLogo}
-            <span class="td-gt-matchup">${g.away_name} <span class="td-gt-connector">${connector}</span> ${g.home_name}</span>
+            <span class="td-gt-matchup">${matchupInner}</span>
             ${homeLogo}
           </div>
           ${statusLine}

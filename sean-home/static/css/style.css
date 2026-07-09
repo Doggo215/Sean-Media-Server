@@ -665,6 +665,16 @@ body {
   color: var(--text-2);
   white-space: nowrap;
 }
+.td-gt-score {
+  font-size: 2.8rem;
+  font-weight: 900;
+  color: #fff;
+  background: rgba(255,255,255,0.12);
+  border-radius: 6px;
+  padding: 0px 8px;
+  line-height: 1.15;
+  display: inline-block;
+}
 
 /* A single tonight event row */
 .td-event {
