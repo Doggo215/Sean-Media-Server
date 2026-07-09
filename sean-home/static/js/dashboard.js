@@ -1283,7 +1283,18 @@ function renderSportsHQ(teams) {
   const todayLabel = `${days[now.getDay()]} ${months[now.getMonth()]} ${now.getDate()}`;
 
   const phillyLive  = MY_SPORTS_KEYS.filter(k => teams[k]?.live);
-  const wcLive      = !!(teams.world_cup?.live);
+  // Detect ESPN feed lag: game_utc has passed but state is still "pre" (up to 90 min window)
+  const wcLagGame = (() => {
+    if (teams.world_cup?.live) return null; // real live data already present
+    const nowMs = Date.now();
+    return (teams.world_cup?.today_games || []).find(g => {
+      if (g.state !== "pre" || !g.game_utc) return false;
+      const kickoff = new Date(g.game_utc).getTime();
+      const elapsed = (nowMs - kickoff) / 60000; // minutes since kickoff
+      return elapsed >= 0 && elapsed <= 90;
+    }) || null;
+  })();
+  const wcLive      = !!(teams.world_cup?.live) || !!wcLagGame;
   const hasAnyLive  = phillyLive.length > 0 || wcLive;
 
   const phillyToday = MY_SPORTS_KEYS.filter(k => {
@@ -1334,7 +1345,14 @@ function renderSportsHQ(teams) {
   if (wcLive) {
     const wcHdrLabel = phillyLive.length > 0 ? "World Cup Live" : "Live Now";
     html += `<div class="shq-section-hdr shq-hdr-live shq-hdr-wc"><span class="shq-live-dot"></span>${wcHdrLabel}</div>`;
-    html += renderWCRow(teams.world_cup);
+    // If feed lag is active, synthesize a live entry so renderWCRow shows the live panel
+    const wcForRender = (wcLagGame && !teams.world_cup?.live)
+      ? (() => {
+          const elapsedMin = Math.max(1, Math.floor((Date.now() - new Date(wcLagGame.game_utc).getTime()) / 60000));
+          return { ...teams.world_cup, live: { ...wcLagGame, score: "0-0", period: `${elapsedMin}'`, half: "", goals: [], status_name: "" } };
+        })()
+      : teams.world_cup;
+    html += renderWCRow(wcForRender);
   }
 
   // ── RECENT FINAL HEROES ─────────────────────────────────────────────────
