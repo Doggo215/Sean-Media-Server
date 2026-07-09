@@ -129,13 +129,19 @@ async function pollWeather() {
           const hIcon = useSvg
             ? `<span class="wx-hc-icon-svg">${getWeatherIcon(h.condition)}</span>`
             : `<span class="wx-hc-icon">${h.icon}</span>`;
-          const rainBadge = h.precip_chance >= 20
-            ? `<span class="wx-hc-rain">${h.precip_chance}%</span>` : "";
+          const rainBadge = h.precip_chance >= 5
+            ? `<span class="wx-hc-rain${h.precip_chance >= 20 ? ' wx-hc-rain-hi' : ''}">${h.precip_chance}%</span>` : "";
+          const windBadge = h.wind_mph != null
+            ? `<span class="wx-hc-wind">${h.wind_mph}mph</span>` : "";
+          const feelsBadge = h.feels_like_f != null
+            ? `<span class="wx-hc-feels">Feels ${h.feels_like_f}°</span>` : "";
           return `<div class="wx-hour-chip">
             <span class="wx-hc-label">${h.label}</span>
             ${hIcon}
             <span class="wx-hc-temp">${h.temp_f}°</span>
+            ${feelsBadge}
             ${rainBadge}
+            ${windBadge}
           </div>`;
         }).join("")}
       </div>`;

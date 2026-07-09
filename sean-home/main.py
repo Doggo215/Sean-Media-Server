@@ -204,7 +204,7 @@ async def fetch_weather():
             "temperature_2m,weather_code,apparent_temperature,"
             "relative_humidity_2m,precipitation_probability,wind_speed_10m"
         ),
-        "hourly": "temperature_2m,precipitation_probability,weather_code",
+        "hourly": "temperature_2m,precipitation_probability,weather_code,wind_speed_10m,apparent_temperature",
         "daily": (
             "temperature_2m_max,temperature_2m_min,weather_code,"
             "precipitation_probability_max,sunrise,sunset"
@@ -276,6 +276,8 @@ async def weather():
                 "icon": h_icon,
                 "condition": h_cond,
                 "precip_chance": round(hourly["precipitation_probability"][i]),
+                "wind_mph": round(hourly["wind_speed_10m"][i]),
+                "feels_like_f": round(hourly["apparent_temperature"][i]),
             })
 
         # Tomorrow (daily index 1)
