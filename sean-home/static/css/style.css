@@ -2301,7 +2301,7 @@ body {
 .shq-idle-section {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
 }
 .shq-idle-section .sb-row {
   padding-top: 8px;
