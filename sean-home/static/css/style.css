@@ -930,6 +930,18 @@ body {
   color: var(--text-3);
   letter-spacing: 0.01em;
 }
+.sb-sub-record {
+  font-size: 1.7rem;
+  font-weight: 500;
+  color: var(--text-3);
+  letter-spacing: 0.01em;
+}
+.sb-my-record {
+  font-size: 1.85rem;
+  font-weight: 500;
+  color: var(--text-3);
+  letter-spacing: 0.01em;
+}
 
 /* Subtle team-color row band on upcoming MY SPORTS rows */
 .sb-row-mysports[data-team="phillies"] { background: rgba(232, 24, 40, 0.07); }

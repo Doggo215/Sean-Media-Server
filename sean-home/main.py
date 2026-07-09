@@ -915,6 +915,54 @@ async def fetch_mlb_game_summary(client, event_id):
     return resp.json()
 
 
+def build_scoreboard_records(scoreboard_payload):
+    """Return {abbr.upper(): overall_record_str} for every team in a scoreboard payload."""
+    out = {}
+    for ev in scoreboard_payload.get("events", []):
+        try:
+            for c in ev["competitions"][0]["competitors"]:
+                abbr = c["team"].get("abbreviation", "").upper()
+                recs = c.get("records") or []
+                summary = next((r["summary"] for r in recs if r.get("name") == "overall"), "")
+                if abbr and summary:
+                    out[abbr] = summary
+        except Exception:
+            continue
+    return out
+
+
+def build_soccer_standings_records(standings_payload):
+    """Return {abbr.upper(): 'W-L-D'} for every team in a soccer standings payload."""
+    out = {}
+    def _walk(obj, depth=0):
+        if depth > 10 or not isinstance(obj, (dict, list)):
+            return
+        if isinstance(obj, list):
+            for item in obj:
+                _walk(item, depth + 1)
+        else:
+            abbr = None
+            if isinstance(obj.get("team"), dict):
+                abbr = obj["team"].get("abbreviation", "").upper()
+            stats = obj.get("stats", [])
+            if abbr and stats:
+                s = {x["name"]: x.get("displayValue", "") for x in stats}
+                w, l, d = s.get("wins", ""), s.get("losses", ""), s.get("ties", "")
+                if w != "" and l != "" and d != "":
+                    out[abbr] = f"{w}-{l}-{d}"
+            for v in obj.values():
+                _walk(v, depth + 1)
+    _walk(standings_payload)
+    return out
+
+
+async def fetch_soccer_standings(client, league):
+    url = f"https://site.api.espn.com/apis/v2/sports/soccer/{league}/standings"
+    resp = await client.get(url, timeout=8.0)
+    resp.raise_for_status()
+    return resp.json()
+
+
 def find_last_scoring_play(summary_payload, is_home):
     """Most recent real scoring play from the play-by-play log — ESPN's own
     play text and score state only, never inferred or paraphrased."""
@@ -975,21 +1023,34 @@ async def sports():
                 news_results,
                 wc_payload,
                 mlb_scoreboard,
+                mls_standings_payload,
+                epl_standings_payload,
             ) = await asyncio.gather(
                 asyncio.gather(*schedule_tasks, return_exceptions=True),
                 asyncio.gather(*info_tasks, return_exceptions=True),
                 asyncio.gather(*news_tasks, return_exceptions=True),
                 fetch_world_cup_scoreboard(client),
                 fetch_mlb_scoreboard(client),
+                fetch_soccer_standings(client, "usa.1"),
+                fetch_soccer_standings(client, "eng.1"),
                 return_exceptions=True,
             )
 
             # Phillies data from mlb scoreboard (pitchers + live situational detail)
             phillies_pitchers = None
             phillies_live_detail = None
+            mlb_records = {}  # abbr -> overall record string, from MLB scoreboard
+            mls_records = {}  # abbr -> W-L-D string, from MLS standings
             if not isinstance(mlb_scoreboard, Exception):
                 phillies_pitchers = find_phillies_pitchers(mlb_scoreboard)
                 phillies_live_detail = find_phillies_live_detail(mlb_scoreboard)
+                mlb_records = build_scoreboard_records(mlb_scoreboard)
+
+            epl_records = {}  # abbr -> W-L-D string, from EPL standings
+            if not isinstance(mls_standings_payload, Exception):
+                mls_records = build_soccer_standings_records(mls_standings_payload)
+            if not isinstance(epl_standings_payload, Exception):
+                epl_records = build_soccer_standings_records(epl_standings_payload)
 
                 # Last scoring play — only fetched while a Phillies game is live
                 if phillies_live_detail:
@@ -1025,13 +1086,30 @@ async def sports():
                 if news and not isinstance(news, Exception):
                     entry["headline"] = news
 
+                # Enrich next game opponent_record from available standings/scoreboard
+                if entry.get("next"):
+                    opp_abbr = entry["next"].get("opponent_abbr", "").upper()
+                    if opp_abbr and not entry["next"].get("opponent_record"):
+                        if cfg.get("sport") == "baseball" and mlb_records:
+                            entry["next"]["opponent_record"] = mlb_records.get(opp_abbr, "")
+                        elif cfg.get("league") == "usa.1" and mls_records:
+                            entry["next"]["opponent_record"] = mls_records.get(opp_abbr, "")
+                        elif cfg.get("league") == "eng.1" and epl_records:
+                            entry["next"]["opponent_record"] = epl_records.get(opp_abbr, "")
+
                 # Phillies only: attach probable pitchers + live detail + upcoming games
                 if key == "phillies":
                     if phillies_pitchers:
                         entry["pitchers"] = phillies_pitchers
                     if phillies_live_detail and entry.get("live"):
                         entry["live"]["detail"] = phillies_live_detail
-                    entry["upcoming"] = parse_phillies_upcoming(schedule_payload, cfg["team"])
+                    upcoming_games = parse_phillies_upcoming(schedule_payload, cfg["team"])
+                    if mlb_records:
+                        for ug in upcoming_games:
+                            opp_abbr = ug.get("opponent_abbr", "").upper()
+                            if opp_abbr and not ug.get("opponent_record"):
+                                ug["opponent_record"] = mlb_records.get(opp_abbr, "")
+                    entry["upcoming"] = upcoming_games
 
                 if parsed["live"]:
                     any_live = True
@@ -1071,6 +1149,10 @@ async def sports():
                     if not isinstance(union_info, Exception):
                         entry["record"] = union_info.get("record", "")
                         entry["standing"] = union_info.get("standing", "")
+                    if mls_records and entry.get("next"):
+                        opp_abbr = (entry["next"].get("opponent_abbr") or "").upper()
+                        if opp_abbr and not entry["next"].get("opponent_record"):
+                            entry["next"]["opponent_record"] = mls_records.get(opp_abbr, "")
                     if parsed["live"]:
                         any_live = True
                     result["teams"]["union"] = entry
@@ -1102,6 +1184,10 @@ async def sports():
                     if not isinstance(che_info, Exception):
                         entry["record"] = che_info.get("record", "")
                         entry["standing"] = che_info.get("standing", "")
+                    if epl_records and entry.get("next"):
+                        opp_abbr = (entry["next"].get("opponent_abbr") or "").upper()
+                        if opp_abbr and not entry["next"].get("opponent_record"):
+                            entry["next"]["opponent_record"] = epl_records.get(opp_abbr, "")
                     if not next_game and not parsed["live"]:
                         entry["standing"] = entry.get("standing") or "Offseason"
                     if parsed["live"]:

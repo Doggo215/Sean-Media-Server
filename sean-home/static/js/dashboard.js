@@ -865,12 +865,15 @@ function renderSportsRow(team, key) {
     const opp   = oppLogo(g.opponent_abbr, league, g.opponent_id);
     const hawayWord = g.home_away === "home" ? "vs" : "at";
     const connector = `<span class="sb-matchup-connector">${hawayWord}</span>`;
-    // Matchup line — team + opponent; record is dimmed secondary span.
-    const recText = team.record ? team.record : "0-0";
-    const recSpan = `<span class="sb-matchup-record">(${recText})</span>`;
+    // Matchup line — my team + record + connector + opponent + opponent record.
+    const recBadge = team.record
+      ? ` <span class="sb-my-record">${team.record}</span>` : "";
+    const oppRecBadge = g.opponent_record
+      ? ` <span class="sb-my-record">${g.opponent_record}</span>` : "";
     const matchupPrimary = g.opponent
-      ? `${team.label.toUpperCase()} ${connector} ${g.opponent.toUpperCase()} ${recSpan}`
-      : `${team.label.toUpperCase()} ${recSpan}`;
+      ? `${team.label.toUpperCase()}${recBadge} ${connector} ${g.opponent.toUpperCase()}${oppRecBadge}`
+      : `${team.label.toUpperCase()}${recBadge}`;
+    const recordLine = ""; // records inline in matchup
     const dateTimeLine = (g.date || g.time)
       ? `<div class="sb-sub sb-sub-date">${[g.date, g.time].filter(Boolean).join(" · ")}</div>`
       : "";
@@ -880,6 +883,7 @@ function renderSportsRow(team, key) {
         ${logo}
         <div class="sb-team-wrap">
           <div class="sb-team sb-team-matchup">${matchupPrimary}</div>
+          ${recordLine}
           ${dateTimeLine}
           ${pitchers}
         </div>
@@ -1107,6 +1111,7 @@ function renderPhillyCountdownHero(team, key, minsUntil) {
   const countdown = fmtCountdown(minsUntil);
   const cdHtml    = countdown ? `<div class="shq-countdown">Starts in <span class="shq-countdown-time">${countdown}</span></div>` : "";
   const record    = team.record ? `<span class="shq-hero-record">${team.record}</span>` : "";
+  const oppRecord = g.opponent_record ? `<span class="shq-hero-record">${g.opponent_record}</span>` : "";
   const pitcherHtml = key === "phillies" ? buildPhilliesPitcherBlock(team.pitchers) : "";
   return `
     <div class="shq-countdown-hero">
@@ -1122,6 +1127,7 @@ function renderPhillyCountdownHero(team, key, minsUntil) {
         <div class="shq-hero-side shq-hero-them">
           ${oppLogo(g.opponent_abbr, TEAM_LEAGUES[key] || "nhl", g.opponent_id)}
           <span class="shq-hero-name">${oppName}</span>
+          ${oppRecord}
         </div>
       </div>
       <div class="shq-hero-time">${g.time}${g.date !== new Date().toLocaleDateString("en-US", {weekday:"short",month:"short",day:"numeric"}) ? " · " + g.date : ""}</div>
