@@ -461,6 +461,7 @@ const WC_FLAGS = {
   GER: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20" class="wc-svg-flag"><rect width="30" height="6.67" fill="#000"/><rect y="6.67" width="30" height="6.66" fill="#DD0000"/><rect y="13.33" width="30" height="6.67" fill="#FFCE00"/></svg>`,
   DZA: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20" class="wc-svg-flag"><rect width="30" height="20" fill="#fff"/><rect width="15" height="20" fill="#006233"/><circle cx="16" cy="10" r="3.8" fill="#D21034"/><circle cx="17.2" cy="10" r="3.8" fill="#fff"/><polygon points="18,6.5 18.9,9.2 21.7,9.2 19.4,10.9 20.3,13.6 18,11.9 15.7,13.6 16.6,10.9 14.3,9.2 17.1,9.2" fill="#D21034" transform="translate(-1.5,0) scale(0.6) translate(2.5,0)"/></svg>`,
   BEL: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20" class="wc-svg-flag"><rect width="10" height="20" fill="#000"/><rect x="10" width="10" height="20" fill="#FAE042"/><rect x="20" width="10" height="20" fill="#ED2939"/></svg>`,
+  MAR: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20" class="wc-svg-flag"><rect width="30" height="20" fill="#C1272D"/><polygon points="15,5.5 16.2,9.1 20,9.1 17,11.3 18.1,14.9 15,12.7 11.9,14.9 13,11.3 10,9.1 13.8,9.1" fill="none" stroke="#006233" stroke-width="0.7"/></svg>`,
 };
 
 /* Name → abbr for the live strip where we only have the full country name */
@@ -472,6 +473,7 @@ const WC_NAME_TO_ABBR = {
   norway:"NOR", france:"FRA", sweden:"SWE",
   "united states":"USA", usa:"USA", mexico:"MEX",
   canada:"CAN", brazil:"BRA", germany:"GER", belgium:"BEL",
+  morocco:"MAR",
 };
 
 function renderFlag(abbr) {
