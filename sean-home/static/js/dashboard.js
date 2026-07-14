@@ -32,6 +32,12 @@ function svcDot(status) {
   const cls = status === "active" ? "svc-ok" : status === "inactive" ? "svc-warn" : "svc-err";
   return `<span class="svc-dot ${cls}"></span>`;
 }
+function gamingThemeClass(data) {
+  if (!data || !data.connected) return "gaming-idle";
+  if (data.current_game) return "gaming-active";
+  return "gaming-online";
+}
+
 function weatherClass(condition) {
   const c = (condition || "").toLowerCase();
   if (c.includes("thunder") || c.includes("storm")) return "weather-stormy";
@@ -1513,6 +1519,13 @@ function gamingSafeText(value, fallback) {
 function renderGaming(data) {
   const body = document.getElementById("gaming-body");
   if (!body) return;
+
+  const card = document.getElementById("gaming-card");
+  if (card) {
+    const theme = gamingThemeClass(data);
+    const hasFriends = (data && data.friends_online_count > 0) ? " gaming-has-friends" : "";
+    card.className = `card card-gaming ${theme}${hasFriends}`;
+  }
 
   const connected   = data && data.connected;
   const status      = gamingSafeText(data && data.status, "Not connected");

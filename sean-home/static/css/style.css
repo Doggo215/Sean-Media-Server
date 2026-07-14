@@ -2580,6 +2580,27 @@ body {
   border-color: rgba(0, 112, 209, 0.22);
   animation: rise 0.55s var(--ease-out) 0.18s both;
 }
+.card-gaming.gaming-idle {
+  background: linear-gradient(160deg, #0b0d14 0%, #0f1118 60%, #09090e 100%);
+  border-color: rgba(80, 90, 120, 0.18);
+}
+.card-gaming.gaming-online {
+  background:
+    radial-gradient(ellipse at 20% 10%, rgba(0,112,209,0.22) 0%, transparent 45%),
+    linear-gradient(160deg, #060e1f 0%, #0a1a36 55%, #060e1c 100%);
+  border-color: rgba(0, 112, 209, 0.38);
+}
+.card-gaming.gaming-active {
+  background:
+    radial-gradient(ellipse at 18% 12%, rgba(0,112,209,0.30) 0%, transparent 40%),
+    radial-gradient(ellipse at 82% 80%, rgba(120,60,220,0.18) 0%, transparent 40%),
+    linear-gradient(160deg, #060e22 0%, #0c1840 55%, #0a0e28 100%);
+  border-color: rgba(60, 130, 255, 0.45);
+}
+.card-gaming.gaming-has-friends .gm-friends-section {
+  border-left: 2px solid rgba(61, 220, 132, 0.35);
+  padding-left: 8px;
+}
 .card-gaming .card-label { padding: 14px 20px 0; }
 
 .gaming-body {
