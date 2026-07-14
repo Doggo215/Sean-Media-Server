@@ -1135,11 +1135,16 @@ body {
 }
 
 /* Dynamic sky tints — subtle, not full bleed */
-.card-weather.weather-sunny  { background: linear-gradient(175deg, #0f0c00 0%, #1a1400 40%, #0e0a00 100%); border-color: rgba(251,191,36,0.22); }
-.card-weather.weather-cloudy { background: linear-gradient(175deg, #08091a 0%, #10121e 100%); }
-.card-weather.weather-rainy  { background: linear-gradient(175deg, #04060e 0%, #060c18 60%, #080a14 100%); border-color: rgba(79,142,247,0.20); }
-.card-weather.weather-snowy  { background: linear-gradient(175deg, #08091a 0%, #121828 100%); border-color: rgba(186,230,253,0.15); }
-.card-weather.weather-stormy { background: linear-gradient(175deg, #08050f 0%, #0e0818 100%); border-color: rgba(139,92,246,0.22); }
+.card-weather.weather-sunny  {
+  background:
+    radial-gradient(ellipse at 18% 12%, rgba(255,220,80,0.28) 0%, transparent 38%),
+    linear-gradient(155deg, #0a3a6e 0%, #0f5ca8 38%, #1478c8 62%, #0b3d7a 100%);
+  border-color: rgba(255,210,60,0.30);
+}
+.card-weather.weather-cloudy { background: linear-gradient(155deg, #12161e 0%, #1a2030 55%, #111620 100%); border-color: rgba(140,160,200,0.15); }
+.card-weather.weather-rainy  { background: linear-gradient(155deg, #070c18 0%, #0c1630 60%, #090e1c 100%); border-color: rgba(79,142,247,0.22); }
+.card-weather.weather-snowy  { background: linear-gradient(155deg, #0d1220 0%, #16213a 60%, #0a1020 100%); border-color: rgba(186,230,253,0.20); }
+.card-weather.weather-stormy { background: linear-gradient(155deg, #08050f 0%, #110a22 60%, #0a0614 100%); border-color: rgba(139,92,246,0.25); }
 
 /* Weather body — 3-section full-height column */
 .weather-body {
